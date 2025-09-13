@@ -1,0 +1,23 @@
+BF 2.1.4/
+├── main.py             # Entry point, basic setup
+├── config.py           # Constants, locators, defaults
+├── base_urls.csv       # List of base URLs and keywords
+├── settings.json       # (Generated) User preferences
+├── logs/               # (Generated) Log files
+│   └── ...
+├── app_settings.py     # Handles loading/saving settings.json, base_urls.csv
+├── utils.py            # General utility functions (filename, URL parsing)
+├── gui/
+│   ├── __init__.py
+│   ├── main_window.py    # TenderScraperApp class, main layout, notebook
+│   ├── tab_department.py # Widgets and specific logic for Tab 1
+│   ├── tab_id_search.py  # Widgets and specific logic for Tab 2
+│   ├── tab_url_process.py# Widgets and specific logic for Tab 3
+│   ├── tab_settings.py   # Widgets and specific logic for Settings Tab
+│   └── gui_utils.py      # GUI helper functions (dialogs, updates, callbacks)
+└── scraper/
+    ├── __init__.py
+    ├── driver_manager.py # setup_driver, safe_quit_driver, set_download_directory
+    ├── actions.py        # _click_element, _safe_extract_text, _wait_for_downloads, _save_page_as_pdf
+    ├── captcha_handler.py# _handle_captcha (uses GUI callback)
+    └── logic.py          # Core scraping workflow functions (fetch_dept, run_scrape, search_ids, process_urls, _perform_processing, _find_links, _trigger_downloads)

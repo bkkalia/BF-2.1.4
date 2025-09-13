@@ -1,0 +1,22 @@
+{
+    "version": "1.0",
+    "download_directory": "C:\\Users\\kalia\\Downloads",
+    "selected_url_name": "etenders",
+    "window_geometry": "1581x949+2668+71",
+    "dl_more_details": true,
+    "dl_zip": true,
+    "dl_notice_pdfs": true,
+    "deep_scrape_departments": false,
+    "selected_theme": "clam",
+    "use_undetected_driver": true,
+    "headless_mode": false,
+    "PAGE_LOAD_TIMEOUT": 10.0,
+    "ELEMENT_WAIT_TIMEOUT": 8.0,
+    "STABILIZE_WAIT": 2.0,
+    "POST_ACTION_WAIT": 1.0,
+    "POST_CAPTCHA_WAIT": 8.0,
+    "CAPTCHA_CHECK_TIMEOUT": 4.0,
+    "DOWNLOAD_WAIT_TIMEOUT": 22.0,
+    "POPUP_WAIT_TIMEOUT": 8.0,
+    "POST_DOWNLOAD_CLICK_WAIT": 3.0
+}
