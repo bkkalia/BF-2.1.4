@@ -51,7 +51,8 @@ try:
         DOCUMENT_NAME_COLUMN_INDEX, DOWNLOAD_AS_ZIP_LINK_LOCATOR,
         CERTIFICATE_IMAGE_LOCATOR,
         SESSION_TIMEOUT_RESTART_LINK_LOCATOR,
-        CONTRACT_TYPE_LOCATOR, TENDER_FEE_LOCATOR, EMD_AMOUNT_LOCATOR, TENDER_VALUE_LOCATOR, WORK_LOCATION_LOCATOR, INVITING_OFFICER_LOCATOR, INVITING_OFFICER_ADDRESS_LOCATOR
+        CONTRACT_TYPE_LOCATOR, TENDER_FEE_LOCATOR, EMD_AMOUNT_LOCATOR, TENDER_VALUE_LOCATOR, WORK_LOCATION_LOCATOR, INVITING_OFFICER_LOCATOR, INVITING_OFFICER_ADDRESS_LOCATOR,
+        TENDERS_BY_ORG_LOCATORS  # Add the new fallback locators
     )
     from utils import sanitise_filename, get_website_keyword_from_url, generate_tender_urls
     from scraper.driver_manager import setup_driver, set_download_directory, safe_quit_driver
@@ -80,6 +81,36 @@ except Exception as import_err:
     logger.error(f"Unexpected error importing gui_utils: {import_err}", exc_info=True) # logger is now defined
 
 # ==============================================================================
+# ==                           UTILITY FUNCTIONS                              ==
+# ==============================================================================
+
+def find_element_with_fallbacks(driver, locators, description="element", timeout=ELEMENT_WAIT_TIMEOUT, log_callback=None):
+    """
+    Try multiple locators in order until one succeeds.
+    Returns (element, successful_locator) or (None, None) if all fail.
+    """
+    log_callback = log_callback or (lambda x: None)
+    
+    for i, locator in enumerate(locators):
+        try:
+            log_callback(f"  Trying locator {i+1}/{len(locators)} for {description}: {locator}")
+            element = WebDriverWait(driver, timeout).until(
+                EC.element_to_be_clickable(locator)
+            )
+            if element:
+                log_callback(f"  ✓ Found {description} using locator {i+1}: {locator}")
+                return element, locator
+        except (TimeoutException, NoSuchElementException) as e:
+            log_callback(f"  ✗ Locator {i+1} failed for {description}: {e}")
+            continue
+        except Exception as e:
+            log_callback(f"  ⚠ Unexpected error with locator {i+1} for {description}: {e}")
+            continue
+    
+    log_callback(f"  ✗ All {len(locators)} locators failed for {description}")
+    return None, None
+
+# ==============================================================================
 # ==                           DEPARTMENT SCRAPING                           ==
 # ==============================================================================
 
@@ -96,7 +127,7 @@ def fetch_department_list_from_site(target_url, log_callback):
         driver.get(target_url)
         time.sleep(STABILIZE_WAIT)
         
-        # Navigate to organization list page
+        # Navigate to organization list page using resilient method
         log_callback("Worker: Finding Tenders by Organisation link...")
         if not navigate_to_org_list(driver, log_callback):
             raise Exception("Failed to navigate to organization list page")
@@ -877,23 +908,55 @@ def process_tender_page(driver, tender_info, deep_scrape=False):
         return False
 
 def navigate_to_org_list(driver, log_callback=None):
-    """Navigate to the organization list page by clicking the link."""
+    """Navigate to the organization list page using resilient locator strategies."""
+    log_callback = log_callback or (lambda x: None)
+    
     try:
-        # Find and click "Tenders by Organisation" link
-        org_link = driver.find_element("xpath", "//a[@id='PageLink_0'][@title='Tenders by Organisation']")
+        log_callback("Worker: Finding 'Tenders by Organisation' link with fallback strategies...")
+        
+        # Try to find the link using multiple fallback strategies
+        org_link, successful_locator = find_element_with_fallbacks(
+            driver, 
+            TENDERS_BY_ORG_LOCATORS, 
+            "'Tenders by Organisation' link",
+            timeout=10,  # Shorter timeout per attempt
+            log_callback=log_callback
+        )
+        
         if org_link:
-            if log_callback:
-                log_callback("Found 'Tenders by Organisation' link, clicking...")
+            log_callback(f"Found 'Tenders by Organisation' link using: {successful_locator}")
+            log_callback("Clicking 'Tenders by Organisation' link...")
             org_link.click()
             time.sleep(STABILIZE_WAIT)
-            return True
+            
+            # Verify we're on the organization list page by checking for the main table
+            try:
+                WebDriverWait(driver, ELEMENT_WAIT_TIMEOUT).until(
+                    EC.presence_of_element_located(MAIN_TABLE_LOCATOR)
+                )
+                log_callback("✓ Successfully navigated to organization list page")
+                return True
+            except TimeoutException:
+                log_callback("⚠ Link clicked but organization table not found - may still be loading")
+                return True  # Give benefit of doubt
+                
         else:
-            if log_callback:
-                log_callback("Could not find 'Tenders by Organisation' link")
+            log_callback("✗ Could not find 'Tenders by Organisation' link with any fallback strategy")
+            
+            # Last resort: check if we're already on the organization list page
+            try:
+                table = driver.find_element(*MAIN_TABLE_LOCATOR)
+                if table:
+                    log_callback("ℹ Already on organization list page (table found)")
+                    return True
+            except NoSuchElementException:
+                pass
+                
             return False
+            
     except Exception as e:
-        if log_callback:
-            log_callback(f"Error navigating to organization list: {e}")
+        log_callback(f"Error navigating to organization list: {e}")
+        logger.error(f"Error in navigate_to_org_list: {e}", exc_info=True)
         return False
 
 def fetch_department_list_from_site_v2(target_url, log_callback=None):
@@ -913,77 +976,21 @@ def fetch_department_list_from_site_v2(target_url, log_callback=None):
         driver.get(target_url)
         time.sleep(STABILIZE_WAIT)
 
-        # Try to find and click the "Tenders by Organisation" link
-        try:
-            # Try multiple possible XPaths for the link
-            link = None
-            possible_xpaths = [
-                "//a[@id='PageLink_0'][@title='Tenders by Organisation']",
-                "//a[contains(text(), 'Tenders by Organisation')]",
-                "//a[contains(@href, 'FrontEndTendersByOrganisation')]"
-            ]
-            for xpath in possible_xpaths:
-                try:
-                    link = driver.find_element(By.XPATH, xpath)
-                    if link:
-                        break
-                except NoSuchElementException:
-                    continue
+        # Use the new resilient navigation method
+        log_callback("Worker: Finding Tenders by Organisation link...")
+        if not navigate_to_org_list(driver, log_callback):
+            log_callback("Could not navigate to organization list, trying to locate department table directly...")
 
-            if link:
-                if log_callback:
-                    log_callback("Found 'Tenders by Organisation' link, clicking...")
-                link.click()
-            else:
-                if log_callback:
-                    log_callback("Could not find 'Tenders by Organisation' link, trying to locate department table directly...")
+        log_callback("Worker: Waiting for main department table...");
+        try: WebDriverWait(driver, ELEMENT_WAIT_TIMEOUT).until(EC.presence_of_element_located(MAIN_TABLE_LOCATOR)); log_callback("Worker: Main table container located."); time.sleep(STABILIZE_WAIT / 2)
+        except TimeoutException: log_callback(f"Worker: ERROR - Timeout waiting for department table at {target_url}. Check URL/locators."); raise
 
-        except Exception as e:
-            if log_callback:
-                log_callback(f"Error finding/clicking 'Tenders by Organisation' link: {e}")
-
-        # Try to find the department table directly
-        table = None
-        possible_table_xpaths = [
-            "//table[contains(@class, 'table') and .//th[contains(text(), 'Organisation')]]",
-            "//table[contains(@class, 'table') and .//th[contains(text(), 'Department')]]",
-            "//table[contains(@class, 'table') and .//th]",
-            "//table"
-        ]
-        for xpath in possible_table_xpaths:
-            try:
-                table = driver.find_element(By.XPATH, xpath)
-                if table:
-                    break
-            except NoSuchElementException:
-                continue
-
-        if not table:
-            raise Exception("Could not locate department table on the page.")
-
-        log_callback("Worker: Waiting for main department table...")
-        try:
-            WebDriverWait(driver, ELEMENT_WAIT_TIMEOUT).until(EC.presence_of_element_located(MAIN_TABLE_LOCATOR))
-            log_callback("Worker: Main table container located.")
-            time.sleep(STABILIZE_WAIT / 2)
-        except TimeoutException:
-            log_callback(f"Worker: ERROR - Timeout waiting for department table at {target_url}. Check URL/locators.")
-            raise
-
-        log_callback("Worker: Extracting department data...")
-        time.sleep(STABILIZE_WAIT)
-        table_body = None
-        rows = []
-        try:
-            table_body = WebDriverWait(driver, ELEMENT_WAIT_TIMEOUT / 2).until(EC.presence_of_element_located(MAIN_TABLE_BODY_LOCATOR))
-            rows = table_body.find_elements(By.TAG_NAME, "tr")
-            log_callback(f"Worker: Found {len(rows)} rows using tbody.")
+        log_callback("Worker: Extracting department data..."); time.sleep(STABILIZE_WAIT)
+        table_body = None; rows = []
+        try: table_body = WebDriverWait(driver, ELEMENT_WAIT_TIMEOUT / 2).until(EC.presence_of_element_located(MAIN_TABLE_BODY_LOCATOR)); rows = table_body.find_elements(By.TAG_NAME, "tr"); log_callback(f"Worker: Found {len(rows)} rows using tbody.")
         except (NoSuchElementException, TimeoutException):
             log_callback(f"Worker: WARN - tbody locator ({MAIN_TABLE_BODY_LOCATOR}) not found/timed out. Checking table ({MAIN_TABLE_LOCATOR}).")
-            try:
-                main_table = driver.find_element(*MAIN_TABLE_LOCATOR)
-                rows = main_table.find_elements(By.TAG_NAME, "tr")
-                log_callback(f"Worker: Found {len(rows)} rows in table (fallback).")
+            try: main_table = driver.find_element(*MAIN_TABLE_LOCATOR); rows = main_table.find_elements(By.TAG_NAME, "tr"); log_callback(f"Worker: Found {len(rows)} rows in table (fallback).")
             except Exception as fb_err: log_callback(f"Worker: ERROR - Fallback failed: {fb_err}"); raise
             if rows and rows[0].find_elements(By.TAG_NAME, "th"): log_callback("Worker: Skipped header row (<th>) in fallback."); rows = rows[1:]
 

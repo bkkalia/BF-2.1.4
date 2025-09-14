@@ -68,6 +68,23 @@ LOG_DIR_NAME = "logs"
 
 # --- Selenium Locators (Verify!) ---
 # Locators for "Scrape by Department" Tab (Organisation List Page)
+
+# Fallback locator strategies for "Tenders by Organisation" link
+TENDERS_BY_ORG_LOCATORS = [
+    # Primary locator (current failing one)
+    (By.XPATH, "//a[@id='PageLink_0'][@title='Tenders by Organisation']"),
+    # Fallback by text content
+    (By.XPATH, "//a[contains(text(), 'Tenders by Organisation')]"),
+    # Fallback by partial text
+    (By.XPATH, "//a[contains(text(), 'Organisation')]"),
+    # Fallback by href pattern
+    (By.XPATH, "//a[contains(@href, 'FrontEndTendersByOrganisation')]"),
+    # Fallback by partial href
+    (By.XPATH, "//a[contains(@href, 'Organisation')]"),
+    # Very broad fallback - any link with "tender" and "org"
+    (By.XPATH, "//a[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'tender') and contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'org')]")
+]
+
 MAIN_TABLE_LOCATOR = (By.ID, "table")
 MAIN_TABLE_BODY_LOCATOR = (By.CSS_SELECTOR, f"#{MAIN_TABLE_LOCATOR[1]} tbody")
 DEPT_LIST_SNO_COLUMN_INDEX = 0
