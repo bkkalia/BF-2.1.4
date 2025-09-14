@@ -73,7 +73,8 @@ class IdSearchTab(ttk.Frame):
         super().__init__(parent, **kwargs)
         self.main_app = main_app_ref
         self.log_callback = self.main_app.update_log
-        self.portal_var = tk.StringVar(value=self.main_app.base_urls_data[0]['Name'])
+        # Remove the local portal_var - use main app's selection instead
+        # self.portal_var = tk.StringVar(value=self.main_app.base_urls_data[0]['Name'])
         self._create_widgets()
 
     def _create_widgets(self):
@@ -602,18 +603,20 @@ class IdSearchTab(ttk.Frame):
         try:
             tender_ids = self.get_tender_ids_from_input()
             if not tender_ids:
+                gui_utils.show_message("No IDs", "Please enter at least one Tender ID.", type="warning", parent=self.main_app.root)
                 return
 
-            # Use selected portal's URL config
-            selected_portal = self.portal_var.get()
-            url_config = next(
-                (url for url in self.main_app.base_urls_data if url['Name'] == selected_portal),
-                self.main_app.base_urls_data[0]
-            )
-
-            logger.info(f"Starting Search & Download for {len(tender_ids)} ID(s). Base download dir: {self.main_app.download_dir_var.get()}")
+            # Use the main app's selected URL config (from the global dropdown)
+            url_config = self.main_app.get_current_url_config()
             
-            # Get current URL config and download directory
+            # Log which portal is being used
+            portal_name = url_config.get('Name', 'Unknown')
+            base_url = url_config.get('BaseURL', 'Unknown')
+            self.log_callback(f"Starting search on {portal_name} ({base_url}) for {len(tender_ids)} ID(s)")
+
+            logger.info(f"Starting Search & Download for {len(tender_ids)} ID(s) on {portal_name}. Base download dir: {self.main_app.download_dir_var.get()}")
+            
+            # Get current download directory
             download_dir = self.main_app.download_dir_var.get()
             
             # Validate download directory before starting
@@ -630,6 +633,7 @@ class IdSearchTab(ttk.Frame):
         except Exception as e:
             logger.error(f"Error starting ID search: {e}", exc_info=True)
             self.main_app.update_log(f"Error starting search: {e}")
+            gui_utils.show_message("Error", f"Failed to start search:\n\n{e}", type="error", parent=self.main_app.root)
 
     def _search_worker(self, tender_ids, base_url_config, download_dir, **kwargs):
         """Worker function to process tender ID search."""

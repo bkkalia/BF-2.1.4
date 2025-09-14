@@ -584,3 +584,44 @@ SyntaxError: expected 'except' or 'finally' block
 2025-09-14 12:00:40,598 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
 2025-09-14 12:00:47,299 - INFO - [Department Scrape:safe_quit_driver] Closing WebDriver instance...
 2025-09-14 12:00:47,483 - INFO - [Department Scrape:safe_quit_driver] WebDriver quit successfully.
+2025-09-14 12:22:27,387 - INFO - [MainThread:get_tender_ids_from_input] Parsed 1 potential Tender IDs from input.
+2025-09-14 12:22:27,388 - INFO - [MainThread:start_search_ids] Starting Search & Download for 1 ID(s). Base download dir: C:\Users\kalia\Downloads
+2025-09-14 12:22:29,348 - INFO - [Tender ID Search:patch_exe] patching driver executable C:\Users\kalia\appdata\roaming\undetected_chromedriver\undetected_chromedriver.exe
+2025-09-14 12:23:22,370 - INFO - [Tender ID Search:safe_quit_driver] Closing WebDriver instance...
+2025-09-14 12:23:22,625 - INFO - [Tender ID Search:safe_quit_driver] WebDriver quit successfully.
+2025-09-14 12:36:06,252 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility v2.1.4 Starting ---
+2025-09-14 12:36:06,257 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2025-09-14 12:36:06,258 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2025-09-14 12:36:06,259 - INFO - [MainThread:setup_logging] Script Directory: G:\My Drive\0dev\BF 2.1.4
+2025-09-14 12:36:06,259 - INFO - [MainThread:setup_logging] Working Directory: G:\My Drive\0dev\BF 2.1.4
+2025-09-14 12:36:06,260 - INFO - [MainThread:check_package_versions] ✓ selenium 4.34.2 is available
+2025-09-14 12:36:06,824 - INFO - [MainThread:check_package_versions] ✓ pandas 2.3.1 is available
+2025-09-14 12:36:07,030 - INFO - [MainThread:check_package_versions] ✓ openpyxl 3.1.5 is available
+2025-09-14 12:36:07,281 - INFO - [MainThread:check_package_versions] ✓ requests 2.32.4 is available
+2025-09-14 12:36:07,337 - INFO - [MainThread:check_package_versions] ✓ pytesseract 0.3.13 is available
+2025-09-14 12:36:07,545 - INFO - [MainThread:check_package_versions] ✓ undetected_chromedriver 3.5.5 (optional) is available
+2025-09-14 12:36:07,549 - INFO - [MainThread:check_package_versions] ✓ webdriver_manager 4.0.2 (optional) is available
+2025-09-14 12:36:07,554 - INFO - [MainThread:import_application_components] Importing application components...
+2025-09-14 12:36:07,989 - INFO - [MainThread:import_application_components] Application components imported successfully
+2025-09-14 12:36:07,989 - INFO - [MainThread:<module>] 🚀 Starting application initialization...
+2025-09-14 12:36:07,990 - INFO - [MainThread:load_and_validate_configurations] Loading base URL configurations from G:\My Drive\0dev\BF 2.1.4\base_urls.csv...
+2025-09-14 12:36:07,999 - INFO - [MainThread:load_base_urls] Loaded 12 base URL configurations from base_urls.csv.
+2025-09-14 12:36:08,000 - INFO - [MainThread:load_and_validate_configurations] ✓ Loaded 12 URL configurations
+2025-09-14 12:36:08,000 - INFO - [MainThread:load_and_validate_configurations] Loading application settings...
+2025-09-14 12:36:08,010 - INFO - [MainThread:load_settings] Settings loaded and merged with defaults from G:\My Drive\0dev\BF 2.1.4\settings.json
+2025-09-14 12:36:08,011 - INFO - [MainThread:load_and_validate_configurations] ✓ Settings loaded and validated
+2025-09-14 12:36:08,011 - INFO - [MainThread:<module>] Creating main application window...
+2025-09-14 12:36:08,077 - INFO - [MainThread:<module>] Creating MainWindow instance...
+2025-09-14 12:36:08,126 - INFO - [MainThread:load_persistent_folders] Loaded 1 persistent folders
+2025-09-14 12:36:09,017 - INFO - [MainThread:<module>] ✓ Application initialization completed successfully
+2025-09-14 12:36:09,018 - INFO - [MainThread:<module>] 🎯 Starting main event loop...
+2025-09-14 12:36:55,628 - INFO - [MainThread:_configure_tesseract] Tesseract configured successfully at: C:\Program Files\Tesseract-OCR\tesseract.exe
+2025-09-14 12:37:00,932 - INFO - [MainThread:get_tender_ids_from_input] Parsed 3 potential Tender IDs from input.
+2025-09-14 12:37:00,933 - INFO - [MainThread:start_search_ids] Starting Search & Download for 3 ID(s) on HP Tenders. Base download dir: C:\Users\kalia\Downloads
+2025-09-14 12:37:02,625 - INFO - [Tender ID Search:patch_exe] patching driver executable C:\Users\kalia\appdata\roaming\undetected_chromedriver\undetected_chromedriver.exe
+2025-09-14 12:37:28,472 - WARNING - [Tender ID Search:safe_extract_text] Tender Title (('xpath', "//td[normalize-space(.)='Tender Title']/following-sibling::td[1]")) not found/visible in 15s.
+2025-09-14 12:37:30,617 - INFO - [Tender ID Search:click_element] Standard click successful for 'View More Details Link'.
+2025-09-14 12:37:51,588 - WARNING - [Tender ID Search:safe_extract_text] Work Desc from More Details (('xpath', "//td[normalize-space(.)='Work Description:']/following-sibling::td[1]")) not found/visible in 15s.
+2025-09-14 12:37:51,592 - INFO - [Tender ID Search:save_page_as_pdf] Attempting to save current page as PDF: 2025_DFHW_113596_1_more_details.pdf
+2025-09-14 12:37:51,866 - INFO - [Tender ID Search:save_page_as_pdf] Successfully saved PDF: 2025_DFHW_113596_1_more_details.pdf (Size: 174681 bytes)
+2025-09-14 12:37:55,405 - INFO - [Tender ID Search:click_element] Standard click successful for 'Initial Download Link ('Download as zip file...')'.
