@@ -73,16 +73,18 @@ LOG_DIR_NAME = "logs"
 TENDERS_BY_ORG_LOCATORS = [
     # Primary locator (current failing one)
     (By.XPATH, "//a[@id='PageLink_0'][@title='Tenders by Organisation']"),
-    # Fallback by text content
-    (By.XPATH, "//a[contains(text(), 'Tenders by Organisation')]"),
-    # Fallback by partial text
-    (By.XPATH, "//a[contains(text(), 'Organisation')]"),
-    # Fallback by href pattern
+    # Most specific - correct href pattern for NIC websites
     (By.XPATH, "//a[contains(@href, 'FrontEndTendersByOrganisation')]"),
-    # Fallback by partial href
+    # Fallback by text content (exact match)
+    (By.XPATH, "//a[normalize-space(text())='Tenders by Organisation']"),
+    # Fallback by partial text but more specific
+    (By.XPATH, "//a[contains(text(), 'Tenders by Organisation')]"),
+    # Fallback by partial text with case insensitive
+    (By.XPATH, "//a[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'tenders by organisation')]"),
+    # Backup - any link with "organisation" in href
     (By.XPATH, "//a[contains(@href, 'Organisation')]"),
-    # Very broad fallback - any link with "tender" and "org"
-    (By.XPATH, "//a[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'tender') and contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'org')]")
+    # Last resort - link text contains "organisation"
+    (By.XPATH, "//a[contains(translate(text(), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'organisation')]")
 ]
 
 MAIN_TABLE_LOCATOR = (By.ID, "table")
@@ -164,3 +166,7 @@ STOP_BUTTON_ACTIVE_COLOR = "#E53935"
 # --- Logging ---
 LOG_FORMAT = '%(asctime)s - %(levelname)s - [%(threadName)s:%(funcName)s] %(message)s'
 LOG_LEVEL = logging.INFO
+
+# URL patterns for validation
+SITE_COMPATIBILITY_URL_PATTERN = "page=SiteComp"
+TENDERS_BY_ORG_URL_PATTERN = "page=FrontEndTendersByOrganisation"

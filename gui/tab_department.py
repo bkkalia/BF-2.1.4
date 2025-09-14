@@ -210,13 +210,71 @@ class DepartmentTab(ttk.Frame):
     def _start_scraping(self):
         """Start the scraping process for selected departments."""
         try:
-            selected_indices = self.dept_listbox.curselection()
-            if not selected_indices:
-                gui_utils.show_message("No Selection", "Please select at least one department.", type="warning", parent=self.main_app.root)
-                return
-
-            selected_depts = [self.filtered_departments[i-2] for i in selected_indices if i >= 2]  # Subtract 2 to skip header rows
-            logger.info(f"Starting scraping for {len(selected_depts)} departments.")
+            # Check scrape mode
+            scrape_mode = self.scrape_mode_var.get()
+            
+            if scrape_mode == 1:  # Scrape All Departments
+                if not self.filtered_departments:
+                    gui_utils.show_message("No Departments", "No departments available to scrape. Please fetch departments first.", type="warning", parent=self.main_app.root)
+                    return
+                
+                # Filter out header-like departments before scraping
+                valid_depts = []
+                for dept in self.filtered_departments:
+                    s_no = dept.get('s_no', '').strip().lower()
+                    name = dept.get('name', '').strip().lower()
+                    
+                    # Skip header-like rows
+                    if (s_no in ['s.no', 'sr.no', 'serial', '#'] or 
+                        name in ['organisation name', 'department name', 'organization', 'organization name']):
+                        self.log_callback(f"Skipping header-like department: {dept.get('name', 'Unknown')}")
+                        continue
+                    
+                    # Skip rows without proper S.No
+                    if not s_no or not s_no.isdigit():
+                        self.log_callback(f"Skipping department with invalid S.No: {dept.get('name', 'Unknown')}")
+                        continue
+                        
+                    valid_depts.append(dept)
+                
+                if not valid_depts:
+                    gui_utils.show_message("No Valid Departments", "No valid departments found to scrape after filtering.", type="warning", parent=self.main_app.root)
+                    return
+                    
+                selected_depts = valid_depts
+                logger.info(f"Starting scraping for ALL {len(selected_depts)} valid departments (filtered from {len(self.filtered_departments)} total).")
+                
+            else:  # Scrape Selected Departments
+                selected_indices = self.dept_listbox.curselection()
+                if not selected_indices:
+                    gui_utils.show_message("No Selection", "Please select at least one department.", type="warning", parent=self.main_app.root)
+                    return
+                
+                # Filter out header rows (first 2 rows are header and separator)
+                selected_depts = []
+                for i in selected_indices:
+                    if i >= 2:  # Skip header rows
+                        dept = self.filtered_departments[i-2]
+                        s_no = dept.get('s_no', '').strip().lower()
+                        name = dept.get('name', '').strip().lower()
+                        
+                        # Additional validation for selected departments
+                        if (s_no in ['s.no', 'sr.no', 'serial', '#'] or 
+                            name in ['organisation name', 'department name', 'organization']):
+                            self.log_callback(f"Skipping selected header-like department: {dept.get('name', 'Unknown')}")
+                            continue
+                            
+                        if not s_no or not s_no.isdigit():
+                            self.log_callback(f"Skipping selected department with invalid S.No: {dept.get('name', 'Unknown')}")
+                            continue
+                            
+                        selected_depts.append(dept)
+                
+                if not selected_depts:
+                    gui_utils.show_message("Invalid Selection", "Please select valid department rows (not header rows).", type="warning", parent=self.main_app.root)
+                    return
+                    
+                logger.info(f"Starting scraping for {len(selected_depts)} selected valid departments.")
 
             # Get current URL config and download directory
             url_config = self.main_app.get_current_url_config()

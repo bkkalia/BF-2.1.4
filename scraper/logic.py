@@ -52,7 +52,7 @@ try:
         CERTIFICATE_IMAGE_LOCATOR,
         SESSION_TIMEOUT_RESTART_LINK_LOCATOR,
         CONTRACT_TYPE_LOCATOR, TENDER_FEE_LOCATOR, EMD_AMOUNT_LOCATOR, TENDER_VALUE_LOCATOR, WORK_LOCATION_LOCATOR, INVITING_OFFICER_LOCATOR, INVITING_OFFICER_ADDRESS_LOCATOR,
-        TENDERS_BY_ORG_LOCATORS  # Add the new fallback locators
+        TENDERS_BY_ORG_LOCATORS, SITE_COMPATIBILITY_URL_PATTERN, TENDERS_BY_ORG_URL_PATTERN  # Add the new constants
     )
     from utils import sanitise_filename, get_website_keyword_from_url, generate_tender_urls
     from scraper.driver_manager import setup_driver, set_download_directory, safe_quit_driver
@@ -151,6 +151,12 @@ def fetch_department_list_from_site(target_url, log_callback):
                 cells = row.find_elements(By.TAG_NAME, "td");
                 if len(cells) < required_cols: continue
                 s_no = cells[DEPT_LIST_SNO_COLUMN_INDEX].text.strip(); dept_name = cells[DEPT_LIST_NAME_COLUMN_INDEX].text.strip(); count_cell = cells[DEPT_LIST_LINK_COLUMN_INDEX]; count_text = count_cell.text.strip()
+                
+                # Skip header rows
+                if s_no.lower() in ['s.no', 'sr.no', 'serial', '#'] or dept_name.lower() in ['organisation name', 'department name', 'organization']:
+                    log_callback(f"Worker: Skipping header row: S.No='{s_no}', Name='{dept_name[:30]}'")
+                    continue
+                    
                 if not s_no and not dept_name: continue
                 dept_info = {'s_no': s_no, 'name': dept_name, 'count_text': count_text, 'has_link': False, 'processed': False, 'tenders_found': 0}
                 has_link = False
@@ -173,6 +179,12 @@ def fetch_department_list_from_site(target_url, log_callback):
 def _find_and_click_dept_link(driver, dept_info, log_callback):
     """Finds and clicks the specific department link by S.No with retries."""
     s_no = dept_info['s_no']; name = dept_info['name']; log_callback(f"  Finding link for Dept S.No: {s_no} - {name[:30]}..."); attempts = 3
+    
+    # Skip if this looks like a header row
+    if s_no.lower() in ['s.no', 'sr.no', 'serial', '#']:
+        log_callback(f"  SKIP: S.No '{s_no}' appears to be a header row")
+        return False
+    
     for attempt in range(attempts):
         if attempt > 0: log_callback(f"  Retry {attempt}/{attempts-1} find link {s_no}..."); time.sleep(STABILIZE_WAIT * attempt)
         try:
@@ -181,7 +193,16 @@ def _find_and_click_dept_link(driver, dept_info, log_callback):
             for idx, row in enumerate(rows):
                 try:
                     cells = row.find_elements(By.TAG_NAME, "td")
-                    if len(cells) > DEPT_LIST_SNO_COLUMN_INDEX and cells[DEPT_LIST_SNO_COLUMN_INDEX].text.strip() == s_no: log_callback(f"    Found match row index {idx}."); target_row = row; break
+                    if len(cells) > DEPT_LIST_SNO_COLUMN_INDEX:
+                        cell_text = cells[DEPT_LIST_SNO_COLUMN_INDEX].text.strip()
+                        # Skip header-like rows
+                        if cell_text.lower() in ['s.no', 'sr.no', 'serial', '#']:
+                            log_callback(f"    Skip header-like row {idx}: '{cell_text}'")
+                            continue
+                        if cell_text == s_no:
+                            log_callback(f"    Found match row index {idx}.")
+                            target_row = row
+                            break
                 except StaleElementReferenceException: log_callback(f"    WARN: Stale row {idx} (Attempt {attempt+1}). Retrying find."); stale = True; break
             if stale: continue
             if not target_row:
@@ -218,8 +239,16 @@ def _find_and_click_dept_link(driver, dept_info, log_callback):
 
 
 def _scrape_tender_details(driver, department_name, base_url, log_callback):
-    """ Scrapes tender details from the department's tender list page."""
+    """ Scrapes tender details from the department's tender list page with session validation."""
     tender_data = []; log_callback(f"  Scraping details for: {department_name}...")
+    
+    # Check session before starting
+    try:
+        driver.current_url
+    except Exception as session_err:
+        log_callback(f"  ERROR: Driver session invalid before scraping {department_name}: {session_err}")
+        return []
+    
     try:
         table = WebDriverWait(driver, ELEMENT_WAIT_TIMEOUT).until(EC.presence_of_element_located(DETAILS_TABLE_LOCATOR)); log_callback("    Details table located."); time.sleep(STABILIZE_WAIT / 2)
         try: body = table.find_element(*DETAILS_TABLE_BODY_LOCATOR)
@@ -271,23 +300,78 @@ def _scrape_tender_details(driver, department_name, base_url, log_callback):
             except Exception as row_err: log_callback(f"{prefix} WARN - Unexpected row error: {row_err}"); logger.warning(f"Error tender detail row {i}", exc_info=True); continue
         log_callback(f"  Successfully extracted details for {processed_count} tenders from {department_name}.")
         return tender_data
-    except (TimeoutException, NoSuchElementException) as table_err: log_callback(f"  ERROR: Details table ({DETAILS_TABLE_LOCATOR}) not found/timeout for {department_name}: {table_err}"); return []
-    except WebDriverException as wde: log_callback(f"  ERROR: WebDriverException scraping {department_name}: {wde}"); logger.error(f"WebDriverException scraping details {department_name}", exc_info=True); return []
+    except (TimeoutException, NoSuchElementException) as table_err: 
+        log_callback(f"  ERROR: Details table ({DETAILS_TABLE_LOCATOR}) not found/timeout for {department_name}: {table_err}"); return []
+    except WebDriverException as wde: 
+        # Check if it's a session error
+        if "invalid session id" in str(wde).lower() or "session deleted" in str(wde).lower():
+            log_callback(f"  ERROR: WebDriver session lost while scraping {department_name}: {wde}")
+        else:
+            log_callback(f"  ERROR: WebDriverException scraping {department_name}: {wde}")
+        logger.error(f"WebDriverException scraping details {department_name}", exc_info=True); return []
     except Exception as e: log_callback(f"  ERROR: Unexpected error scraping {department_name}: {e}"); logger.error(f"Unexpected error scraping details {department_name}", exc_info=True); return []
 
 
 def _click_on_page_back_button(driver, log_callback):
-    """Clicks the website's 'Back' button from dept tender list."""
-    log_callback("  Attempting site 'Back' button click...");
-    if click_element(driver, BACK_BUTTON_FROM_DEPT_LIST_LOCATOR, "Dept List Back Button"): log_callback("    Site 'Back' button clicked."); time.sleep(STABILIZE_WAIT * 1.5); return True
-    else: log_callback("  WARN: Failed site 'Back' button click."); return False
+    """Clicks the website's 'Back' button from dept tender list with session validation."""
+    log_callback("  Attempting site 'Back' button click...")
+    
+    # Check session before clicking
+    try:
+        driver.current_url
+    except Exception as session_err:
+        log_callback(f"  ERROR: Driver session invalid before back button click: {session_err}")
+        return False
+    
+    if click_element(driver, BACK_BUTTON_FROM_DEPT_LIST_LOCATOR, "Dept List Back Button"):
+        log_callback("    Site 'Back' button clicked.")
+        time.sleep(STABILIZE_WAIT * 1.5)
+        
+        # Check session after clicking
+        try:
+            current_url = driver.current_url
+        except Exception as session_err:
+            log_callback(f"  ERROR: Driver session lost after back button click: {session_err}")
+            return False
+        
+        # Check if we ended up on Site Compatibility page
+        if SITE_COMPATIBILITY_URL_PATTERN in current_url:
+            log_callback("    ⚠ Back button led to Site Compatibility page - recovering...")
+            
+            # Try to navigate directly to organization list
+            base_url = current_url.split('?')[0]
+            org_url = f"{base_url}?page=FrontEndTendersByOrganisation&service=page"
+            log_callback(f"    Navigating directly to: {org_url}")
+            
+            try:
+                driver.get(org_url)
+                time.sleep(STABILIZE_WAIT * 2)
+                
+                # Verify we're on the correct page
+                final_url = driver.current_url
+                if TENDERS_BY_ORG_URL_PATTERN in final_url:
+                    log_callback("    ✓ Successfully recovered to organization list page")
+                    return True
+                else:
+                    log_callback(f"    ✗ Recovery failed, ended up at: {final_url}")
+                    return False
+                    
+            except Exception as recovery_err:
+                log_callback(f"    ✗ Recovery navigation failed: {recovery_err}")
+                return False
+        else:
+            log_callback(f"    ✓ Back navigation successful, URL: {current_url}")
+            return True
+    else:
+        log_callback("  WARN: Failed site 'Back' button click.")
+        return False
 
 
 def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
                       log_callback=None, progress_callback=None, timer_callback=None, 
                       status_callback=None, stop_event=None, driver=None,
                       deep_scrape=False, **kwargs):
-    """Main scraping function."""
+    """Main scraping function with improved session management."""
     if not driver:
         raise ValueError("WebDriver instance required")
 
@@ -305,7 +389,20 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
 
         # Navigate to org list and ensure initial page load
         log_callback("Navigating to organization list...")
+        
+        # Check driver session before starting
+        try:
+            driver.current_url  # Test if session is valid
+        except Exception as session_err:
+            log_callback(f"Driver session invalid at start: {session_err}")
+            raise ValueError("WebDriver session is not valid")
+        
         driver.get(base_url_config['OrgListURL'])
+        
+        # Make sure we're on the right page before starting
+        if not navigate_to_org_list(driver, log_callback):
+            log_callback("WARNING: Could not verify organization list page navigation")
+        
         WebDriverWait(driver, PAGE_LOAD_TIMEOUT).until(
             EC.presence_of_element_located(MAIN_TABLE_LOCATOR)
         )
@@ -319,8 +416,27 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
                 break
 
             processed_depts += 1
-            if log_callback:
-                log_callback(f"\nProcessing department {processed_depts}/{total_depts}: {dept_info['name']}")
+            dept_name = dept_info.get('name', 'Unknown')
+            dept_sno = dept_info.get('s_no', 'Unknown')
+            
+            log_callback(f"\nProcessing department {processed_depts}/{total_depts}: {dept_name}")
+            
+            # Validate department info before processing
+            if dept_sno.lower() in ['s.no', 'sr.no', 'serial', '#']:
+                log_callback(f"SKIP: Department S.No '{dept_sno}' appears to be a header row")
+                continue
+                
+            if dept_name.lower() in ['organisation name', 'department name', 'organization']:
+                log_callback(f"SKIP: Department name '{dept_name}' appears to be a header")
+                continue
+            
+            # Check driver session before each department
+            try:
+                current_url = driver.current_url
+                log_callback(f"Current URL before processing: {current_url}")
+            except Exception as session_err:
+                log_callback(f"Driver session lost before dept {dept_name}: {session_err}")
+                break  # Stop processing if session is lost
             
             # Click department link and get tender data
             if not _find_and_click_dept_link(driver, dept_info, log_callback):
@@ -328,9 +444,16 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
                 
             time.sleep(STABILIZE_WAIT * 2)
             
+            # Check session again after clicking
+            try:
+                driver.current_url
+            except Exception as session_err:
+                log_callback(f"Driver session lost after clicking dept {dept_name}: {session_err}")
+                break
+            
             tender_data = _scrape_tender_details(
                 driver=driver,
-                department_name=dept_info['name'],
+                department_name=dept_name,
                 base_url=base_url_config['BaseURL'],
                 log_callback=log_callback
             )
@@ -341,27 +464,40 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
                 all_tender_details.extend(tender_data)
                 dept_info['processed'] = True
                 dept_info['tenders_found'] = dept_tender_count
-                log_callback(f"Found {dept_tender_count} tenders in department {dept_info['name']}")
+                log_callback(f"Found {dept_tender_count} tenders in department {dept_name}")
                 
                 if progress_callback:
                     progress_callback(total_tenders, processed_depts, total_depts, None)
             else:
-                log_callback(f"No tenders found/extracted from department {dept_info['name']}")
+                log_callback(f"No tenders found/extracted from department {dept_name}")
                 dept_info['processed'] = True
                 dept_info['tenders_found'] = 0
             
-            # Navigate back after each department
+            # Check session before navigation
+            try:
+                driver.current_url
+            except Exception as session_err:
+                log_callback(f"Driver session lost before back navigation for {dept_name}: {session_err}")
+                break
+            
+            # Navigate back after each department with Site Compatibility recovery
             back_clicked = _click_on_page_back_button(driver, log_callback)
             if not back_clicked:
                 log_callback("WARNING: Back button click failed, returning to org list URL")
                 try:
+                    # Check session before recovery navigation
+                    driver.current_url
+                    
                     driver.get(base_url_config['OrgListURL'])
+                    # Ensure we navigate to the correct page
+                    if not navigate_to_org_list(driver, log_callback):
+                        log_callback("ERROR: Could not navigate back to organization list")
                     WebDriverWait(driver, PAGE_LOAD_TIMEOUT).until(
                         EC.presence_of_element_located(MAIN_TABLE_LOCATOR)
                     )
                     time.sleep(STABILIZE_WAIT * 2)
                 except Exception as nav_err:
-                    log_callback(f"ERROR: Failed to navigate back: {nav_err}")
+                    log_callback(f"ERROR: Failed to navigate back (session may be lost): {nav_err}")
                     break
 
         # Generate Excel file if we have data
@@ -657,7 +793,7 @@ def _perform_tender_processing(driver, identifier, base_download_dir, log_callba
                         pdf_fpath = os.path.join(tender_subfolder, pdf_fname)
                         log_callback(f"        Attempt save PDF despite timeout...")
                         save_page_as_pdf(driver, pdf_fpath)
-                    except Exception as pop_err: log_callback(f"        ERROR processing 'More Details' window: {pop_err}."); logger.error(f"Error More Details popup {identifier}", exc_info=True)
+                    except Exception as pop_err: log_callback(f"        ERROR processing 'More Details' window: {pop_err}"); logger.error(f"Error More Details popup {identifier}", exc_info=True)
                     finally:
                         try: log_callback("        Close 'More Details'."); driver.close()
                         except Exception as close_err: log_callback(f"        WARN: Error close popup: {close_err}")
@@ -908,10 +1044,26 @@ def process_tender_page(driver, tender_info, deep_scrape=False):
         return False
 
 def navigate_to_org_list(driver, log_callback=None):
-    """Navigate to the organization list page using resilient locator strategies."""
+    """Navigate to the organization list page using resilient locator strategies with wrong page detection."""
     log_callback = log_callback or (lambda x: None)
     
     try:
+        current_url = driver.current_url
+        log_callback(f"Worker: Current URL: {current_url}")
+        
+        # Check if we're already on the correct page
+        if TENDERS_BY_ORG_URL_PATTERN in current_url:
+            log_callback("✓ Already on 'Tenders by Organisation' page")
+            return True
+        
+        # Check if we're on the wrong page (Site Compatibility)
+        if SITE_COMPATIBILITY_URL_PATTERN in current_url:
+            log_callback("⚠ Detected Site Compatibility page - navigating back to home")
+            base_url = current_url.split('?')[0]  # Get base URL without parameters
+            log_callback(f"Navigating to base URL: {base_url}")
+            driver.get(base_url)
+            time.sleep(STABILIZE_WAIT * 2)
+        
         log_callback("Worker: Finding 'Tenders by Organisation' link with fallback strategies...")
         
         # Try to find the link using multiple fallback strategies
@@ -919,27 +1071,58 @@ def navigate_to_org_list(driver, log_callback=None):
             driver, 
             TENDERS_BY_ORG_LOCATORS, 
             "'Tenders by Organisation' link",
-            timeout=10,  # Shorter timeout per attempt
+            timeout=8,  # Shorter timeout per attempt
             log_callback=log_callback
         )
         
         if org_link:
-            log_callback(f"Found 'Tenders by Organisation' link using: {successful_locator}")
-            log_callback("Clicking 'Tenders by Organisation' link...")
-            org_link.click()
-            time.sleep(STABILIZE_WAIT)
+            # Validate the link before clicking
+            href = org_link.get_attribute('href')
+            if href and TENDERS_BY_ORG_URL_PATTERN in href:
+                log_callback(f"✓ Found correct 'Tenders by Organisation' link: {href}")
+            elif href and SITE_COMPATIBILITY_URL_PATTERN in href:
+                log_callback(f"✗ Link leads to Site Compatibility page, skipping: {href}")
+                org_link = None
+            else:
+                log_callback(f"? Found link with uncertain destination: {href}")
             
-            # Verify we're on the organization list page by checking for the main table
-            try:
-                WebDriverWait(driver, ELEMENT_WAIT_TIMEOUT).until(
-                    EC.presence_of_element_located(MAIN_TABLE_LOCATOR)
-                )
-                log_callback("✓ Successfully navigated to organization list page")
-                return True
-            except TimeoutException:
-                log_callback("⚠ Link clicked but organization table not found - may still be loading")
-                return True  # Give benefit of doubt
+            if org_link:
+                log_callback(f"Found 'Tenders by Organisation' link using: {successful_locator}")
+                log_callback("Clicking 'Tenders by Organisation' link...")
+                org_link.click()
+                time.sleep(STABILIZE_WAIT * 2)
                 
+                # Verify we're on the correct page after clicking
+                final_url = driver.current_url
+                if TENDERS_BY_ORG_URL_PATTERN in final_url:
+                    log_callback("✓ Successfully navigated to 'Tenders by Organisation' page")
+                    
+                    # Double-check for the main table
+                    try:
+                        WebDriverWait(driver, ELEMENT_WAIT_TIMEOUT).until(
+                            EC.presence_of_element_located(MAIN_TABLE_LOCATOR)
+                        )
+                        log_callback("✓ Organization table confirmed on page")
+                        return True
+                    except TimeoutException:
+                        log_callback("⚠ Link clicked and URL correct, but organization table not found")
+                        return True  # URL is correct, give benefit of doubt
+                
+                elif SITE_COMPATIBILITY_URL_PATTERN in final_url:
+                    log_callback("✗ Link led to Site Compatibility page instead")
+                    return False
+                else:
+                    log_callback(f"? Link led to unexpected page: {final_url}")
+                    # Try to find table anyway
+                    try:
+                        table = driver.find_element(*MAIN_TABLE_LOCATOR)
+                        if table:
+                            log_callback("✓ Found organization table on unexpected page")
+                            return True
+                    except NoSuchElementException:
+                        pass
+                    return False
+                    
         else:
             log_callback("✗ Could not find 'Tenders by Organisation' link with any fallback strategy")
             
@@ -947,10 +1130,26 @@ def navigate_to_org_list(driver, log_callback=None):
             try:
                 table = driver.find_element(*MAIN_TABLE_LOCATOR)
                 if table:
-                    log_callback("ℹ Already on organization list page (table found)")
+                    log_callback("ℹ Found organization table - may already be on correct page")
                     return True
             except NoSuchElementException:
                 pass
+            
+            # Try direct URL navigation as final fallback
+            current_base = driver.current_url.split('?')[0]
+            direct_org_url = f"{current_base}?page=FrontEndTendersByOrganisation&service=page"
+            log_callback(f"Last resort: Direct navigation to {direct_org_url}")
+            try:
+                driver.get(direct_org_url)
+                time.sleep(STABILIZE_WAIT * 2)
+                
+                # Check if this worked
+                table = driver.find_element(*MAIN_TABLE_LOCATOR)
+                if table:
+                    log_callback("✓ Direct URL navigation successful")
+                    return True
+            except Exception as direct_err:
+                log_callback(f"✗ Direct URL navigation failed: {direct_err}")
                 
             return False
             
@@ -1000,6 +1199,12 @@ def fetch_department_list_from_site_v2(target_url, log_callback=None):
                 cells = row.find_elements(By.TAG_NAME, "td");
                 if len(cells) < required_cols: continue
                 s_no = cells[DEPT_LIST_SNO_COLUMN_INDEX].text.strip(); dept_name = cells[DEPT_LIST_NAME_COLUMN_INDEX].text.strip(); count_cell = cells[DEPT_LIST_LINK_COLUMN_INDEX]; count_text = count_cell.text.strip()
+                
+                # Skip header rows
+                if s_no.lower() in ['s.no', 'sr.no', 'serial', '#'] or dept_name.lower() in ['organisation name', 'department name', 'organization']:
+                    log_callback(f"Worker: Skipping header row: S.No='{s_no}', Name='{dept_name[:30]}'")
+                    continue
+                    
                 if not s_no and not dept_name: continue
                 dept_info = {'s_no': s_no, 'name': dept_name, 'count_text': count_text, 'has_link': False, 'processed': False, 'tenders_found': 0}
                 has_link = False
