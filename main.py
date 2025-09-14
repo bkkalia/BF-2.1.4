@@ -503,19 +503,59 @@ if __name__ == "__main__":
                 except Exception as save_err:
                     logging.warning(f"Could not save final settings: {save_err}")
             
-            # Destroy Tkinter root
-            if root and root.winfo_exists():
-                logging.debug("Destroying main window...")
-                root.destroy()
+            # Destroy Tkinter root safely
+            if root:
+                try:
+                    # Check if root still exists before calling winfo_exists()
+                    if hasattr(root, 'winfo_exists'):
+                        root.winfo_exists()  # This will raise TclError if destroyed
+                        logging.debug("Destroying main window...")
+                        root.destroy()
+                    else:
+                        logging.debug("Root window already destroyed")
+                except tk.TclError:
+                    # Window already destroyed
+                    logging.debug("Root window already destroyed (TclError)")
+                except Exception as destroy_err:
+                    logging.debug(f"Error during window cleanup: {destroy_err}")
             
             logging.info("✅ Application shutdown completed successfully")
             
         except Exception as cleanup_err:
-            print(f"Cleanup error: {cleanup_err}")
-            # Force exit if cleanup fails
-            if root:
-                try:
-                    root.quit()
-                except Exception:
-                    pass
+            logging.warning(f"Cleanup error: {cleanup_err}")
+            # Don't force exit on cleanup errors - let normal shutdown proceed
+
+        except Exception as main_err:
+            error_message = str(main_err)
+            logging.exception("🔥 Fatal error in main execution")
+            print(f"\nFATAL ERROR: {error_message}")
+            
+            # Show error dialog if possible
+            try:
+                if root:
+                    try:
+                        # Safely check if window exists
+                        root.winfo_exists()
+                        tkinter.messagebox.showerror(
+                            "Fatal Application Error",
+                            f"A critical error occurred:\n\n{error_message}\n\n"
+                            f"Check the log file for detailed information.\n"
+                            f"Log location: {ABS_LOG_DIR}",
+                            parent=root
+                        )
+                    except tk.TclError:
+                        # Window destroyed, show without parent
+                        logging.debug("Showing error dialog without parent (window destroyed)")
+                        temp_root = tk.Tk()
+                        temp_root.withdraw()
+                        tkinter.messagebox.showerror(
+                            "Fatal Application Error",
+                            f"A critical error occurred:\n\n{error_message}\n\n"
+                            f"Check the log file for detailed information.\n"
+                            f"Log location: {ABS_LOG_DIR}"
+                        )
+                        temp_root.destroy()
+            except Exception as gui_err:
+                logging.error(f"Could not show error dialog: {gui_err}")
+            
             sys.exit(1)

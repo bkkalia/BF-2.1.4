@@ -671,28 +671,46 @@ def _find_download_links(driver, log_callback, include_zip=True, include_notice_
 
 def _find_and_trigger_downloads(driver, identifier, target_subfolder, log_callback, status_callback, stop_event, download_zip, download_notice_pdfs):
     """Finds, handles CAPTCHA, clicks download links based on options, waits."""
-    if stop_event.is_set(): return
+    if stop_event and stop_event.is_set(): 
+        return
+        
     log_callback(f"  Starting downloads for '{identifier}' -> Target: {os.path.basename(target_subfolder)}")
-    if not set_download_directory(driver, target_subfolder, log_callback): log_callback(f"    WARN: Failed set download dir '{os.path.basename(target_subfolder)}'. Downloads may go elsewhere.")
+    if not set_download_directory(driver, target_subfolder, log_callback): 
+        log_callback(f"    WARN: Failed set download dir '{os.path.basename(target_subfolder)}'. Downloads may go elsewhere.")
 
     initial_links = _find_download_links(driver, log_callback, include_zip=download_zip, include_notice_pdfs=download_notice_pdfs)
-    if not initial_links: log_callback(f"    No download links found matching options for '{identifier}'."); return
+    if not initial_links: 
+        log_callback(f"    No download links found matching options for '{identifier}'.")
+        return
 
-    first_link = initial_links[0]; first_desc = f"'{first_link.text.strip()[:30]}...'" if first_link.text else "first link"
+    first_link = initial_links[0]
+    first_desc = f"'{first_link.text.strip()[:30]}...'" if first_link.text else "first link"
     log_callback(f"    Attempt initial click {first_desc} for CAPTCHA check...")
     first_click_ok = click_element(driver, first_link, f"Initial Download Link ({first_desc})")
+    
     if first_click_ok:
         log_callback(f"    Clicked {first_desc}. Wait {CAPTCHA_CHECK_TIMEOUT}s for CAPTCHA...")
         time.sleep(CAPTCHA_CHECK_TIMEOUT)
     else:
         log_callback(f"    WARN: Failed initial click {first_desc}. CAPTCHA check might be skipped.")
 
+    # Enhanced CAPTCHA handling with GUI
     captcha_handled = False
     if not stop_event.is_set():
-         captcha_handled = handle_captcha(driver, identifier, target_subfolder, log_callback, status_callback, stop_event)
-         if captcha_handled is False and stop_event.is_set(): log_callback("    Stop requested during CAPTCHA handling."); return
+        log_callback(f"    Checking for CAPTCHA requirements for '{identifier}'...")
+        
+        # The handle_captcha function now shows GUI dialog and waits for user input
+        captcha_handled = handle_captcha(driver, identifier, target_subfolder, log_callback, status_callback, stop_event)
+        
+        # Check if user cancelled via stop_event
+        if stop_event.is_set():
+            log_callback(f"    User cancelled scraping for '{identifier}' via CAPTCHA dialog")
+            return
+        
+        if captcha_handled is False:
+            log_callback(f"    CAPTCHA handling failed or cancelled for '{identifier}'")
+            return
 
-    if stop_event.is_set(): return
     log_callback(f"    Re-finding download links for '{identifier}' post-CAPTCHA check...")
     final_links = _find_download_links(driver, log_callback, include_zip=download_zip, include_notice_pdfs=download_notice_pdfs)
     if not final_links:
@@ -816,20 +834,39 @@ def search_and_download_tenders(tender_ids, base_url_config, download_dir, drive
                               dl_more_details=True, dl_zip=True,
                               dl_notice_pdfs=True, **kwargs):
     """Search and process tenders by ID."""
+    from config import EXCEL_ID_SEARCH_FILENAME_FORMAT
+    
     all_tender_details = []  # List to store all tender details
     if not driver:
         raise ValueError("WebDriver instance required")
 
+    # Create no-op callbacks if None provided
+    log_callback = log_callback or (lambda x: None)
+    progress_callback = progress_callback or (lambda *args: None)
+    timer_callback = timer_callback or (lambda x: None)
+    status_callback = status_callback or (lambda x: None)
+    
+    start_time = datetime.now()
+
     try:
         total_tenders = len(tender_ids)
-        if log_callback:
-            log_callback(f"Processing {total_tenders} tender IDs...")
+        log_callback(f"Processing {total_tenders} tender IDs...")
+        processed_count = 0
 
         for idx, tender_id in enumerate(tender_ids, 1):
             if stop_event and stop_event.is_set():
                 break
 
             try:
+                log_callback(f"Searching for tender ID: {tender_id} ({idx}/{total_tenders})")
+                
+                # Check driver session
+                try:
+                    driver.current_url
+                except Exception as session_err:
+                    log_callback(f"Driver session lost for {tender_id}: {session_err}")
+                    continue
+
                 # Navigate to base URL
                 driver.get(base_url_config['BaseURL'])
                 time.sleep(STABILIZE_WAIT)
@@ -861,6 +898,8 @@ def search_and_download_tenders(tender_ids, base_url_config, download_dir, drive
                     # Process the tender details page and collect details
                     details = extract_tender_details(driver, deep_scrape=deep_scrape)
                     details['Search ID'] = tender_id  # Add search ID to details
+                    details['Search Index'] = idx
+                    details['Portal'] = base_url_config.get('Name', 'Unknown')
                     all_tender_details.append(details)
                     
                     _perform_tender_processing(
@@ -874,18 +913,34 @@ def search_and_download_tenders(tender_ids, base_url_config, download_dir, drive
                         download_zip=dl_zip,
                         download_notice_pdfs=dl_notice_pdfs
                     )
+                    
+                    processed_count += 1
 
                 except TimeoutException:
-                    if log_callback:
-                        log_callback(f"No results found for tender ID: {tender_id}")
+                    log_callback(f"No results found for tender ID: {tender_id}")
+                    all_tender_details.append({
+                        'Search ID': tender_id,
+                        'Search Index': idx,
+                        'Portal': base_url_config.get('Name', 'Unknown'),
+                        'Tender ID': 'N/A',
+                        'Title': 'No results found',
+                        'Status': 'Not Found'
+                    })
                     continue
 
                 if progress_callback:
                     progress_callback(idx, idx, total_tenders, None)
 
             except Exception as e:
-                if log_callback:
-                    log_callback(f"Error processing tender ID {tender_id}: {e}")
+                log_callback(f"Error processing tender ID {tender_id}: {e}")
+                all_tender_details.append({
+                    'Search ID': tender_id,
+                    'Search Index': idx,
+                    'Portal': base_url_config.get('Name', 'Unknown'),
+                    'Tender ID': 'N/A',
+                    'Title': 'Processing error',
+                    'Error': str(e)
+                })
                 continue
 
         # Generate Excel file after all tenders are processed
@@ -893,31 +948,26 @@ def search_and_download_tenders(tender_ids, base_url_config, download_dir, drive
             try:
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
                 website_keyword = get_website_keyword_from_url(base_url_config['BaseURL'])
-                # Define EXCEL_ID_SEARCH_FILENAME_FORMAT if not already defined
-                EXCEL_ID_SEARCH_FILENAME_FORMAT = "{website_keyword}_tender_ids_{timestamp}.xlsx"
-                excel_filename = EXCEL_ID_SEARCH_FILENAME_FORMAT.format(
-                    website_keyword=website_keyword,
-                    timestamp=timestamp
-                )
+                excel_filename = f"{website_keyword}_tender_ids_{timestamp}.xlsx"
                 excel_path = os.path.join(download_dir, excel_filename)
                 
                 # Convert details to DataFrame and save
                 df = pd.DataFrame(all_tender_details)
+                df = df.sort_values('Search Index')
                 df.to_excel(excel_path, index=False, engine='openpyxl')
                 
-                if log_callback:
-                    log_callback(f"Saved tender details to Excel: {excel_filename}")
+                log_callback(f"Saved tender details to Excel: {excel_filename}")
             except Exception as excel_err:
-                if log_callback:
-                    log_callback(f"Error saving Excel file: {excel_err}")
-        elif log_callback:
+                log_callback(f"Error saving Excel file: {excel_err}")
+        else:
             log_callback("No tender details collected to save to Excel.")
 
     except Exception as e:
-        if log_callback:
-            log_callback(f"Error in search and download process: {e}")
+        log_callback(f"Error in search and download process: {e}")
         raise
-
+    finally:
+        if timer_callback:
+            timer_callback(start_time)
 
 def process_direct_urls(urls, base_dir, *args, **kwargs):
     """Process a list of direct tender URLs."""
