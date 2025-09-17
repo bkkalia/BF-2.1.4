@@ -1,0 +1,128 @@
+2025-09-17 10:08:19,741 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility v2.1.4 Starting ---
+2025-09-17 10:08:19,749 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2025-09-17 10:08:19,750 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2025-09-17 10:08:19,750 - INFO - [MainThread:setup_logging] Script Directory: G:\My Drive\0dev\BF 2.1.4
+2025-09-17 10:08:19,751 - INFO - [MainThread:setup_logging] Working Directory: G:\My Drive\0dev\BF 2.1.4
+2025-09-17 10:08:19,752 - INFO - [MainThread:check_package_versions] ✓ selenium 4.34.2 is available
+2025-09-17 10:08:22,958 - INFO - [MainThread:check_package_versions] ✓ pandas 2.3.1 is available
+2025-09-17 10:08:23,360 - INFO - [MainThread:check_package_versions] ✓ openpyxl 3.1.5 is available
+2025-09-17 10:08:23,713 - INFO - [MainThread:check_package_versions] ✓ requests 2.32.4 is available
+2025-09-17 10:08:23,738 - INFO - [MainThread:check_package_versions] ✓ pytesseract 0.3.13 is available
+2025-09-17 10:08:24,190 - INFO - [MainThread:check_package_versions] ✓ undetected_chromedriver 3.5.5 (optional) is available
+2025-09-17 10:08:24,194 - INFO - [MainThread:check_package_versions] ✓ webdriver_manager 4.0.2 (optional) is available
+2025-09-17 10:08:24,197 - INFO - [MainThread:import_application_components] Importing application components...
+2025-09-17 10:08:25,032 - INFO - [MainThread:import_application_components] Application components imported successfully
+2025-09-17 10:08:25,033 - INFO - [MainThread:<module>] 🚀 Starting application initialization...
+2025-09-17 10:08:25,034 - INFO - [MainThread:load_and_validate_configurations] Loading base URL configurations from G:\My Drive\0dev\BF 2.1.4\base_urls.csv...
+2025-09-17 10:08:25,072 - INFO - [MainThread:load_base_urls] Loaded 12 base URL configurations from base_urls.csv.
+2025-09-17 10:08:25,075 - INFO - [MainThread:load_and_validate_configurations] ✓ Loaded 12 URL configurations
+2025-09-17 10:08:25,075 - INFO - [MainThread:load_and_validate_configurations] Loading application settings...
+2025-09-17 10:08:25,101 - INFO - [MainThread:load_settings] Settings loaded and merged with defaults from G:\My Drive\0dev\BF 2.1.4\settings.json
+2025-09-17 10:08:25,103 - INFO - [MainThread:load_and_validate_configurations] ✓ Settings loaded and validated
+2025-09-17 10:08:25,103 - INFO - [MainThread:<module>] Creating main application window...
+2025-09-17 10:08:25,533 - INFO - [MainThread:<module>] Creating MainWindow instance...
+2025-09-17 10:08:25,587 - INFO - [MainThread:load_persistent_folders] Loaded 1 persistent folders
+2025-09-17 10:08:30,244 - INFO - [MainThread:<module>] ✓ Application initialization completed successfully
+2025-09-17 10:08:30,245 - INFO - [MainThread:<module>] 🎯 Starting main event loop...
+2025-09-17 10:09:07,628 - INFO - [MainThread:_start_fetch_departments_thread] Fetch Departments button clicked.
+2025-09-17 10:09:09,312 - INFO - [DeptFetchThread:patch_exe] patching driver executable C:\Users\kalia\appdata\roaming\undetected_chromedriver\undetected_chromedriver.exe
+2025-09-17 10:09:18,602 - INFO - [DeptFetchThread:safe_quit_driver] Closing WebDriver instance...
+2025-09-17 10:09:18,907 - INFO - [DeptFetchThread:safe_quit_driver] WebDriver quit successfully.
+2025-09-17 10:12:33,680 - INFO - [MainThread:_get_all_valid_departments] Starting scraping for ALL 47 valid departments (filtered from 47 total).
+2025-09-17 10:12:35,112 - INFO - [Department Scrape:patch_exe] patching driver executable C:\Users\kalia\appdata\roaming\undetected_chromedriver\undetected_chromedriver.exe
+2025-09-17 10:12:40,005 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Baddi Barotiwala Nal' (SNo:1)'.
+2025-09-17 10:12:46,763 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-17 10:12:54,224 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Chief Project Direct' (SNo:2)'.
+2025-09-17 10:13:04,737 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-17 10:13:12,076 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'DC Office Kullu' (SNo:3)'.
+2025-09-17 10:13:17,724 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-17 10:13:25,240 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Department of Health' (SNo:4)'.
+2025-09-17 10:13:31,271 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-17 10:13:39,153 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Department of Inform' (SNo:5)'.
+2025-09-17 10:13:44,774 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-17 10:13:52,180 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'DHARAMSHALA SMART CI' (SNo:6)'.
+2025-09-17 10:13:57,975 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-17 10:14:05,570 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Directorate Animal H' (SNo:7)'.
+2025-09-17 10:14:11,471 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-17 10:14:18,994 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Directorate of Food ' (SNo:8)'.
+2025-09-17 10:14:24,757 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-17 10:14:32,432 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Directorate of Foren' (SNo:9)'.
+2025-09-17 10:14:38,699 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-17 10:14:46,137 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Directorate of Horti' (SNo:10)'.
+2025-09-17 10:14:51,804 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-17 10:14:59,444 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Directorate of Medic' (SNo:11)'.
+2025-09-17 10:15:05,982 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-17 10:15:13,855 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Directorate of Techn' (SNo:12)'.
+2025-09-17 10:15:19,529 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-17 10:15:27,085 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Directorate of Urban' (SNo:13)'.
+2025-09-17 10:15:35,112 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-17 10:15:42,709 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Directorate Rural De' (SNo:14)'.
+2025-09-17 10:15:48,368 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-17 10:15:55,845 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Director of Agricult' (SNo:15)'.
+2025-09-17 10:16:01,734 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-17 10:16:09,494 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Disaster Management ' (SNo:16)'.
+2025-09-17 10:16:15,266 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-17 10:16:23,308 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Dr. Yashwant Singh P' (SNo:17)'.
+2025-09-17 10:16:29,286 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-17 10:16:37,152 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Eco-Tourism Society ' (SNo:18)'.
+2025-09-17 10:16:44,788 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-17 10:16:52,867 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Himachal Pradesh Agr' (SNo:19)'.
+2025-09-17 10:16:58,803 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-17 10:17:06,611 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Himachal Pradesh Boa' (SNo:20)'.
+2025-09-17 10:17:12,236 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-17 10:17:20,090 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Himachal Pradesh For' (SNo:21)'.
+2025-09-17 10:17:26,015 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-17 10:17:33,878 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Himachal Pradesh Med' (SNo:22)'.
+2025-09-17 10:17:39,664 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-17 10:17:47,545 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Himachal Pradesh Sch' (SNo:23)'.
+2025-09-17 10:17:53,166 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-17 10:18:01,019 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Himachal Pradesh Tou' (SNo:24)'.
+2025-09-17 10:18:06,563 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-17 10:18:14,282 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Himachal Pradesh Tou' (SNo:25)'.
+2025-09-17 10:18:20,484 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-17 10:18:28,156 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Himachal Pradesh Uni' (SNo:26)'.
+2025-09-17 10:18:33,800 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-17 10:18:41,535 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Himachal Urban Devel' (SNo:27)'.
+2025-09-17 10:18:47,376 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-17 10:18:55,152 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'HP Aquaculture Fishe' (SNo:28)'.
+2025-09-17 10:19:00,792 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-17 10:19:08,706 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'HP Cooperative Marke' (SNo:29)'.
+2025-09-17 10:19:14,388 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-17 10:19:22,836 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'HP General Industrie' (SNo:30)'.
+2025-09-17 10:19:28,621 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-17 10:19:36,445 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'HP-HRTC-Manging Dire' (SNo:31)'.
+2025-09-17 10:19:42,028 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-17 10:19:49,786 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'HP Irrigation and Pu' (SNo:32)'.
+2025-09-17 10:20:07,384 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-17 10:20:15,646 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'HP Krishi Vishva Vid' (SNo:33)'.
+2025-09-17 10:20:21,716 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-17 10:20:29,574 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'HP Power Transmissio' (SNo:34)'.
+2025-09-17 10:20:35,914 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-17 10:20:44,040 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'HPSEBL' (SNo:35)'.
+2025-09-17 10:20:59,009 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-17 10:21:06,922 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'HP SIDC Limited' (SNo:36)'.
+2025-09-17 10:21:12,635 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-17 10:21:20,866 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'HP State Civil Suppl' (SNo:37)'.
+2025-09-17 10:21:26,470 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-17 10:21:34,284 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'HP State Forest Deve' (SNo:38)'.
+2025-09-17 10:21:39,993 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-17 10:21:48,165 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Industries Departmen' (SNo:39)'.
+2025-09-17 10:21:54,288 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-17 10:22:02,261 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Municipal Corporatio' (SNo:40)'.
+2025-09-17 10:22:08,308 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-17 10:22:16,400 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Non Conventional Ene' (SNo:41)'.
+2025-09-17 10:22:22,125 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-17 10:22:30,694 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Printing and Station' (SNo:42)'.
+2025-09-17 10:22:36,236 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-17 10:22:44,663 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'PWD' (SNo:43)'.
+2025-09-17 10:23:34,366 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-17 10:23:42,364 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Ropeway and Rapid Tr' (SNo:44)'.
+2025-09-17 10:23:48,190 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-17 10:23:56,477 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Shimla Jal Prabandha' (SNo:45)'.
+2025-09-17 10:24:02,495 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-17 10:24:10,830 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Trust Baba Balak Nat' (SNo:46)'.
+2025-09-17 10:24:16,452 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-17 10:24:24,601 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Wool Fedration' (SNo:47)'.
+2025-09-17 10:24:30,217 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-17 10:24:37,293 - INFO - [Department Scrape:safe_quit_driver] Closing WebDriver instance...
+2025-09-17 10:24:37,743 - INFO - [Department Scrape:safe_quit_driver] WebDriver quit successfully.

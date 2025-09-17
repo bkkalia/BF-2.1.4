@@ -20,12 +20,18 @@ try:
     from selenium.webdriver.common.by import By
     from selenium.webdriver.support.ui import WebDriverWait
     from selenium.webdriver.support import expected_conditions as EC
+    from selenium.webdriver.remote.webdriver import WebDriver
     from selenium.common.exceptions import (
         NoSuchElementException, TimeoutException, WebDriverException,
         StaleElementReferenceException
     )
+    SELENIUM_IMPORTED = True
 except ImportError as e:
     print(f"Error importing selenium components: {e}")
+    # Define fallback types
+    WebDriver = object
+    WebDriverWait = object
+    SELENIUM_IMPORTED = False
     raise
 
 # Local imports - using absolute paths
@@ -65,6 +71,21 @@ except ImportError as e:
 # Initialize logger before it might be used in except blocks below
 logger = logging.getLogger(__name__)
 
+# Constants for repeated strings
+DEPARTMENT_NAME_KEY = 'Department Name'
+TITLE_REF_KEY = "Title and Ref.No./Tender ID"
+EMD_AMOUNT_KEY = 'EMD Amount'
+WEBDRIVER_REQUIRED_MSG = "WebDriver instance required"
+
+# Header keywords to identify and skip
+HEADER_SNO_KEYWORDS = ['s.no', 'sr.no', 'serial', '#']
+HEADER_NAME_KEYWORDS = ['organisation name', 'department name', 'organization']
+
+# Constants for search processing
+SEARCH_ID_KEY = 'Search ID'
+SEARCH_INDEX_KEY = 'Search Index'
+TENDER_ID_KEY = 'Tender ID'
+
 # --- GUI Import Check ---
 # Use absolute import based on sys.path modification in main.py
 try:
@@ -84,7 +105,7 @@ except Exception as import_err:
 # ==                           UTILITY FUNCTIONS                              ==
 # ==============================================================================
 
-def find_element_with_fallbacks(driver, locators, description="element", timeout=ELEMENT_WAIT_TIMEOUT, log_callback=None):
+def find_element_with_fallbacks(driver: WebDriver, locators, description="element", timeout=ELEMENT_WAIT_TIMEOUT, log_callback=None):
     """
     Try multiple locators in order until one succeeds.
     Returns (element, successful_locator) or (None, None) if all fail.
@@ -94,12 +115,13 @@ def find_element_with_fallbacks(driver, locators, description="element", timeout
     for i, locator in enumerate(locators):
         try:
             log_callback(f"  Trying locator {i+1}/{len(locators)} for {description}: {locator}")
-            element = WebDriverWait(driver, timeout).until(
-                EC.element_to_be_clickable(locator)
-            )
-            if element:
-                log_callback(f"  ✓ Found {description} using locator {i+1}: {locator}")
-                return element, locator
+            if hasattr(driver, 'find_element') and hasattr(WebDriverWait, '__call__'):
+                element = WebDriverWait(driver, timeout).until(
+                    EC.element_to_be_clickable(locator)
+                )
+                if element:
+                    log_callback(f"  ✓ Found {description} using locator {i+1}: {locator}")
+                    return element, locator
         except (TimeoutException, NoSuchElementException) as e:
             log_callback(f"  ✗ Locator {i+1} failed for {description}: {e}")
             continue
@@ -173,7 +195,8 @@ def fetch_department_list_from_site(target_url, log_callback):
         return departments, total_tenders
     except WebDriverException as wde: log_callback(f"Worker: CRITICAL WebDriver ERROR: {wde}"); logger.critical("WebDriverException fetch_dept_list", exc_info=True); return None, 0
     except Exception as e: log_callback(f"Worker: CRITICAL UNEXPECTED ERROR: {e}"); logger.critical("Unexpected error fetch_dept_list", exc_info=True); return None, 0
-    finally: safe_quit_driver(driver, log_callback)
+    finally:
+        safe_quit_driver(driver, log_callback)
 
 
 def _find_and_click_dept_link(driver, dept_info, log_callback):
@@ -240,7 +263,8 @@ def _find_and_click_dept_link(driver, dept_info, log_callback):
 
 def _scrape_tender_details(driver, department_name, base_url, log_callback):
     """ Scrapes tender details from the department's tender list page with session validation."""
-    tender_data = []; log_callback(f"  Scraping details for: {department_name}...")
+    tender_data = []
+    log_callback(f"  Scraping details for: {department_name}...")
     
     # Check session before starting
     try:
@@ -250,66 +274,129 @@ def _scrape_tender_details(driver, department_name, base_url, log_callback):
         return []
     
     try:
-        table = WebDriverWait(driver, ELEMENT_WAIT_TIMEOUT).until(EC.presence_of_element_located(DETAILS_TABLE_LOCATOR)); log_callback("    Details table located."); time.sleep(STABILIZE_WAIT / 2)
-        try: body = table.find_element(*DETAILS_TABLE_BODY_LOCATOR)
-        except NoSuchElementException: log_callback("    Details tbody not found, use table."); body = table
+        table = WebDriverWait(driver, ELEMENT_WAIT_TIMEOUT).until(EC.presence_of_element_located(DETAILS_TABLE_LOCATOR))
+        log_callback("    Details table located.")
+        time.sleep(STABILIZE_WAIT / 2)
+        
+        try: 
+            body = table.find_element(*DETAILS_TABLE_BODY_LOCATOR)
+        except NoSuchElementException: 
+            log_callback("    Details tbody not found, use table.")
+            body = table
+            
         rows = body.find_elements(By.TAG_NAME, "tr")
-        if not rows: log_callback(f"    No rows found in details table for {department_name}."); return []
+        if not rows: 
+            log_callback(f"    No rows found in details table for {department_name}.")
+            return []
 
-        header_skipped = False; first_row_cells = rows[0].find_elements(By.XPATH, ".//th|.//td")
+        first_row_cells = rows[0].find_elements(By.XPATH, ".//th|.//td")
         if first_row_cells:
-            if rows[0].find_elements(By.TAG_NAME, "th"): log_callback("    Skipping header row (<th>)."); rows = rows[1:]; header_skipped = True
+            if rows[0].find_elements(By.TAG_NAME, "th"): 
+                log_callback("    Skipping header row (<th>).")
+                rows = rows[1:]
             elif DETAILS_TABLE_HEADER_FRAGMENTS:
-                first_row_text = " ".join(c.text.strip().lower() for c in first_row_cells); matches = [f.lower() for f in DETAILS_TABLE_HEADER_FRAGMENTS if f.lower() in first_row_text]
-                if len(matches) >= 2: log_callback(f"    Skipping header row (content match: {matches})."); rows = rows[1:]; header_skipped = True
-                else: log_callback("    First row not matching header content.")
-        if not rows: log_callback(f"    No data rows after header check for {department_name}."); return []
+                first_row_text = " ".join(c.text.strip().lower() for c in first_row_cells)
+                matches = [f.lower() for f in DETAILS_TABLE_HEADER_FRAGMENTS if f.lower() in first_row_text]
+                if len(matches) >= 2: 
+                    log_callback(f"    Skipping header row (content match: {matches}).")
+                    rows = rows[1:]
+                else: 
+                    log_callback("    First row not matching header content.")
+                    
+        if not rows: 
+            log_callback(f"    No data rows after header check for {department_name}.")
+            return []
+            
         log_callback(f"    Found {len(rows)} data rows for {department_name}.")
 
-        processed_count = 0; req_cols = max(DETAILS_COL_SNO, DETAILS_COL_PUB_DATE, DETAILS_COL_CLOSE_DATE, DETAILS_COL_OPEN_DATE, DETAILS_COL_TITLE_REF, DETAILS_COL_ORG_CHAIN) + 1
+        processed_count = 0
+        req_cols = max(DETAILS_COL_SNO, DETAILS_COL_PUB_DATE, DETAILS_COL_CLOSE_DATE, DETAILS_COL_OPEN_DATE, DETAILS_COL_TITLE_REF, DETAILS_COL_ORG_CHAIN) + 1
+        
         for i, row in enumerate(rows, 1):
-            data = {"Department Name": department_name}; prefix = f"    Row {i}:"
+            data = {"Department Name": department_name}
+            prefix = f"    Row {i}:"
+            
             try:
                 cells = row.find_elements(By.TAG_NAME, "td")
                 if len(cells) < req_cols:
-                    if any(c.text for c in cells): log_callback(f"{prefix} WARN - Skip: {len(cells)} cells < {req_cols}.")
+                    if any(c.text for c in cells): 
+                        log_callback(f"{prefix} WARN - Skip: {len(cells)} cells < {req_cols}.")
                     continue
+                    
                 data["S.No"] = cells[DETAILS_COL_SNO].text.strip() if DETAILS_COL_SNO < len(cells) else "N/A"
                 data["e-Published Date"] = cells[DETAILS_COL_PUB_DATE].text.strip() if DETAILS_COL_PUB_DATE < len(cells) else "N/A"
                 data["Closing Date"] = cells[DETAILS_COL_CLOSE_DATE].text.strip() if DETAILS_COL_CLOSE_DATE < len(cells) else "N/A"
                 data["Opening Date"] = cells[DETAILS_COL_OPEN_DATE].text.strip() if DETAILS_COL_OPEN_DATE < len(cells) else "N/A"
                 data["Organisation Chain"] = cells[DETAILS_COL_ORG_CHAIN].text.strip() if DETAILS_COL_ORG_CHAIN < len(cells) else "N/A"
 
-                link, t_id, direct_url, status_url = None, None, None, None; title_text = "N/A"
+                t_id, direct_url, status_url = None, None, None
+                title_text = "N/A"
+                
                 if DETAILS_COL_TITLE_REF < len(cells):
                     try:
-                        title_cell = cells[DETAILS_COL_TITLE_REF]; title_text = title_cell.text.strip(); data["Title and Ref.No./Tender ID"] = title_text
-                        try: a = title_cell.find_element(By.XPATH, DETAILS_TITLE_LINK_XPATH); href = a.get_attribute('href')
-                        except NoSuchElementException: href = None
-                        if href: urls = generate_tender_urls(href, base_url); direct_url = urls.get('direct_url'); status_url = urls.get('status_url'); logger.debug(f"{prefix} Processed link: {direct_url}")
-                        else: logger.debug(f"{prefix} No link in title cell.")
+                        title_cell = cells[DETAILS_COL_TITLE_REF]
+                        title_text = title_cell.text.strip()
+                        data[TITLE_REF_KEY] = title_text
+                        
+                        try: 
+                            a = title_cell.find_element(By.XPATH, DETAILS_TITLE_LINK_XPATH)
+                            href = a.get_attribute('href')
+                        except NoSuchElementException: 
+                            href = None
+                            
+                        if href: 
+                            urls = generate_tender_urls(href, base_url)
+                            direct_url = urls.get('direct_url')
+                            status_url = urls.get('status_url')
+                            logger.debug(f"{prefix} Processed link: {direct_url}")
+                        else: 
+                            logger.debug(f"{prefix} No link in title cell.")
+                            
                         match = re.search(r'\[(\d{4}_[A-Z0-9_]+(?:_\d+)?)\]', title_text) or re.search(r'\[([A-Z0-9_]{5,})\]', title_text)
-                        if match: t_id = match.group(1); logger.debug(f"{prefix} Extracted ID: {t_id}")
-                        else: logger.debug(f"{prefix} No ID pattern in title: '{title_text[:50]}...'")
-                    except Exception as title_err: log_callback(f"{prefix} WARN - Error processing title cell: {title_err}"); data["Title and Ref.No./Tender ID"] = "Error"
-                else: data["Title and Ref.No./Tender ID"] = "N/A (Col Idx OOR)"
+                        if match: 
+                            t_id = match.group(1)
+                            logger.debug(f"{prefix} Extracted ID: {t_id}")
+                        else: 
+                            logger.debug(f"{prefix} No ID pattern in title: '{title_text[:50]}...'")
+                            
+                    except Exception as title_err: 
+                        log_callback(f"{prefix} WARN - Error processing title cell: {title_err}")
+                        data[TITLE_REF_KEY] = "Error"
+                else: 
+                    data[TITLE_REF_KEY] = "N/A (Col Idx OOR)"
 
-                data["Tender ID (Extracted)"] = t_id; data["Direct URL"] = direct_url; data["Status URL"] = status_url
-                tender_data.append(data); processed_count += 1
-            except StaleElementReferenceException: log_callback(f"{prefix} WARN - Stale element. Skipping."); continue
-            except Exception as row_err: log_callback(f"{prefix} WARN - Unexpected row error: {row_err}"); logger.warning(f"Error tender detail row {i}", exc_info=True); continue
+                data["Tender ID (Extracted)"] = t_id
+                data["Direct URL"] = direct_url
+                data["Status URL"] = status_url
+                tender_data.append(data)
+                processed_count += 1
+                
+            except StaleElementReferenceException: 
+                log_callback(f"{prefix} WARN - Stale element. Skipping.")
+                continue
+            except Exception as row_err: 
+                log_callback(f"{prefix} WARN - Unexpected row error: {row_err}")
+                logger.warning(f"Error tender detail row {i}", exc_info=True)
+                continue
+                
         log_callback(f"  Successfully extracted details for {processed_count} tenders from {department_name}.")
         return tender_data
+        
     except (TimeoutException, NoSuchElementException) as table_err: 
-        log_callback(f"  ERROR: Details table ({DETAILS_TABLE_LOCATOR}) not found/timeout for {department_name}: {table_err}"); return []
+        log_callback(f"  ERROR: Details table ({DETAILS_TABLE_LOCATOR}) not found/timeout for {department_name}: {table_err}")
+        return []
     except WebDriverException as wde: 
         # Check if it's a session error
         if "invalid session id" in str(wde).lower() or "session deleted" in str(wde).lower():
             log_callback(f"  ERROR: WebDriver session lost while scraping {department_name}: {wde}")
         else:
             log_callback(f"  ERROR: WebDriverException scraping {department_name}: {wde}")
-        logger.error(f"WebDriverException scraping details {department_name}", exc_info=True); return []
-    except Exception as e: log_callback(f"  ERROR: Unexpected error scraping {department_name}: {e}"); logger.error(f"Unexpected error scraping details {department_name}", exc_info=True); return []
+        logger.error(f"WebDriverException scraping details {department_name}", exc_info=True)
+        return []
+    except Exception as e: 
+        log_callback(f"  ERROR: Unexpected error scraping {department_name}: {e}")
+        logger.error(f"Unexpected error scraping details {department_name}", exc_info=True)
+        return []
 
 
 def _click_on_page_back_button(driver, log_callback):
@@ -441,7 +528,7 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
             # Click department link and get tender data
             if not _find_and_click_dept_link(driver, dept_info, log_callback):
                 continue
-                
+                 
             time.sleep(STABILIZE_WAIT * 2)
             
             # Check session again after clicking
@@ -633,38 +720,77 @@ def process_department(dept_info, base_url_config, download_dir, driver,
 
 def _find_download_links(driver, log_callback, include_zip=True, include_notice_pdfs=True):
     """Finds potential download links based on options, filters certificates."""
-    links_to_attempt = []; doc_section = driver
+    doc_section = driver
     if TENDER_DOCUMENTS_PARENT_TABLE_LOCATOR:
-        try: doc_section = WebDriverWait(driver, 5).until(EC.presence_of_element_located(TENDER_DOCUMENTS_PARENT_TABLE_LOCATOR)); log_callback("      Search in Tender Docs parent table.")
-        except Exception: log_callback(f"      WARN: Tender Docs parent ({TENDER_DOCUMENTS_PARENT_TABLE_LOCATOR}) not found. Search whole page."); doc_section = driver
-    else: log_callback("      TENDER_DOCUMENTS_PARENT_TABLE_LOCATOR not defined. Search whole page.")
+        try: 
+            doc_section = WebDriverWait(driver, 5).until(EC.presence_of_element_located(TENDER_DOCUMENTS_PARENT_TABLE_LOCATOR))
+            log_callback("      Search in Tender Docs parent table.")
+        except Exception: 
+            log_callback(f"      WARN: Tender Docs parent ({TENDER_DOCUMENTS_PARENT_TABLE_LOCATOR}) not found. Search whole page.")
+            doc_section = driver
+    else: 
+        log_callback("      TENDER_DOCUMENTS_PARENT_TABLE_LOCATOR not defined. Search whole page.")
 
     potential_links = []
     if include_zip:
-        try: zip_link = WebDriverWait(doc_section, 3).until(EC.element_to_be_clickable(DOWNLOAD_AS_ZIP_LINK_LOCATOR)); log_callback("        Found 'Download as zip'."); potential_links.append(zip_link)
-        except Exception: log_callback("        'Download as zip' not found/clickable/requested.")
+        try: 
+            zip_link = WebDriverWait(doc_section, 3).until(EC.element_to_be_clickable(DOWNLOAD_AS_ZIP_LINK_LOCATOR))
+            log_callback("        Found 'Download as zip'.")
+            potential_links.append(zip_link)
+        except Exception: 
+            log_callback("        'Download as zip' not found/clickable/requested.")
+            
     if include_notice_pdfs:
         if NIT_DOC_TABLE_LOCATOR:
-             try: nit_table = WebDriverWait(doc_section, 3).until(EC.presence_of_element_located(NIT_DOC_TABLE_LOCATOR)); pdf_links = nit_table.find_elements(By.XPATH, TENDER_NOTICE_LINK_XPATH)
-             except Exception: pdf_links = []
-             if pdf_links: log_callback(f"        Found {len(pdf_links)} TenderNotice PDFs in NIT table."); potential_links.extend(pdf_links)
+             try: 
+                 nit_table = WebDriverWait(doc_section, 3).until(EC.presence_of_element_located(NIT_DOC_TABLE_LOCATOR))
+                 pdf_links = nit_table.find_elements(By.XPATH, TENDER_NOTICE_LINK_XPATH)
+             except Exception: 
+                 pdf_links = []
+             if pdf_links: 
+                 log_callback(f"        Found {len(pdf_links)} TenderNotice PDFs in NIT table.")
+                 potential_links.extend(pdf_links)
+                 
         if WORK_ITEM_DOC_TABLE_LOCATOR:
-             try: work_table = WebDriverWait(doc_section, 3).until(EC.presence_of_element_located(WORK_ITEM_DOC_TABLE_LOCATOR)); pdf_links = work_table.find_elements(By.XPATH, TENDER_NOTICE_LINK_XPATH)
-             except Exception: pdf_links = []
-             if pdf_links: log_callback(f"        Found {len(pdf_links)} TenderNotice PDFs in Work Item table."); potential_links.extend(pdf_links)
-        if not potential_links and (not NIT_DOC_TABLE_LOCATOR or not WORK_ITEM_DOC_TABLE_LOCATOR): # Fallback broad search
-             log_callback("       Broad search for TenderNotice PDFs...");
-             try: pdf_links = doc_section.find_elements(By.XPATH, TENDER_NOTICE_LINK_XPATH); log_callback(f"        Found {len(pdf_links)} via broad search."); potential_links.extend(pdf_links)
-             except Exception as e: log_callback(f"      WARN: Broad PDF search error: {e}")
+             try: 
+                 work_table = WebDriverWait(doc_section, 3).until(EC.presence_of_element_located(WORK_ITEM_DOC_TABLE_LOCATOR))
+                 pdf_links = work_table.find_elements(By.XPATH, TENDER_NOTICE_LINK_XPATH)
+             except Exception: 
+                 pdf_links = []
+             if pdf_links: 
+                 log_callback(f"        Found {len(pdf_links)} TenderNotice PDFs in Work Item table.")
+                 potential_links.extend(pdf_links)
+                 
+        if not potential_links and (not NIT_DOC_TABLE_LOCATOR or not WORK_ITEM_DOC_TABLE_LOCATOR):  
+             log_callback("       Broad search for TenderNotice PDFs...")
+             try: 
+                 pdf_links = doc_section.find_elements(By.XPATH, TENDER_NOTICE_LINK_XPATH)
+                 log_callback(f"        Found {len(pdf_links)} via broad search.")
+                 potential_links.extend(pdf_links)
+             except Exception as e: 
+                 log_callback(f"      WARN: Broad PDF search error: {e}")
 
-    final_links = []; skipped_cert = 0; log_callback(f"      Filtering {len(potential_links)} links for certificates...")
-    seen = set(); unique_potential = [x for x in potential_links if x not in seen and not seen.add(x)] # Preserve order, make unique
+    final_links = []
+    skipped_cert = 0
+    log_callback(f"      Filtering {len(potential_links)} links for certificates...")
+    seen = set()
+    unique_potential = [x for x in potential_links if x not in seen and not seen.add(x)]  # Preserve order, make unique
+    
     for link in unique_potential:
         try:
-            if link.find_elements(*CERTIFICATE_IMAGE_LOCATOR): logger.debug(f"        Skip cert link: '{link.text[:30]}...'"); skipped_cert += 1; continue
-            final_links.append(link); logger.debug(f"        Keep link: '{link.text[:30]}...'")
-        except StaleElementReferenceException: log_callback("        WARN: Link stale during cert filter. Skip."); skipped_cert += 1
-        except Exception as filter_err: log_callback(f"       WARN: Error filtering cert link: {filter_err}. Include."); final_links.append(link)
+            if link.find_elements(*CERTIFICATE_IMAGE_LOCATOR): 
+                logger.debug(f"        Skip cert link: '{link.text[:30]}...'")
+                skipped_cert += 1
+                continue
+            final_links.append(link)
+            logger.debug(f"        Keep link: '{link.text[:30]}...'")
+        except StaleElementReferenceException: 
+            log_callback("        WARN: Link stale during cert filter. Skip.")
+            skipped_cert += 1
+        except Exception as filter_err: 
+            log_callback(f"       WARN: Error filtering cert link: {filter_err}. Include.")
+            final_links.append(link)
+            
     log_callback(f"      Found {len(final_links)} download links ({skipped_cert} cert links skipped).")
     return final_links
 
@@ -694,13 +820,13 @@ def _find_and_trigger_downloads(driver, identifier, target_subfolder, log_callba
     else:
         log_callback(f"    WARN: Failed initial click {first_desc}. CAPTCHA check might be skipped.")
 
-    # Enhanced CAPTCHA handling with GUI
+    # Enhanced CAPTCHA handling with GUI - fix function call
     captcha_handled = False
     if not stop_event.is_set():
         log_callback(f"    Checking for CAPTCHA requirements for '{identifier}'...")
         
-        # The handle_captcha function now shows GUI dialog and waits for user input
-        captcha_handled = handle_captcha(driver, identifier, target_subfolder, log_callback, status_callback, stop_event)
+        # Fix the handle_captcha function call to match the actual signature
+        captcha_handled = handle_captcha(driver, identifier, log_callback, status_callback, stop_event)
         
         # Check if user cancelled via stop_event
         if stop_event.is_set():
@@ -1049,6 +1175,9 @@ def process_direct_urls(urls, base_dir, *args, **kwargs):
 
 def extract_tender_details(driver, deep_scrape=False):
     """Extracts tender details from the details page."""
+    if not driver:
+        raise ValueError(WEBDRIVER_REQUIRED_MSG)
+        
     details = {}
     try:
         # Basic details always collected
@@ -1063,7 +1192,7 @@ def extract_tender_details(driver, deep_scrape=False):
                 'Contract Type': safe_extract_text(driver, CONTRACT_TYPE_LOCATOR, "Contract Type"),
                 'Payment Mode': "Online",  # Usually fixed for e-tenders
                 'Tender Fee': safe_extract_text(driver, TENDER_FEE_LOCATOR, "Tender Fee"),
-                'EMD Amount': safe_extract_text(driver, EMD_AMOUNT_LOCATOR, "EMD Amount"),
+                EMD_AMOUNT_KEY: safe_extract_text(driver, EMD_AMOUNT_LOCATOR, EMD_AMOUNT_KEY),
                 'Tender Value': safe_extract_text(driver, TENDER_VALUE_LOCATOR, "Tender Value"),
                 'Work Description': safe_extract_text(driver, WORK_DESCRIPTION_LOCATOR, "Work Description"),
                 'Location': safe_extract_text(driver, WORK_LOCATION_LOCATOR, "Location"),
@@ -1072,7 +1201,7 @@ def extract_tender_details(driver, deep_scrape=False):
             })
             
             # Clean up monetary values
-            for key in ['Tender Fee', 'EMD Amount', 'Tender Value']:
+            for key in ['Tender Fee', EMD_AMOUNT_KEY, 'Tender Value']:
                 if details.get(key):
                     details[key] = details[key].replace('₹', '').strip()
                     

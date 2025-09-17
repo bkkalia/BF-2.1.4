@@ -232,11 +232,11 @@ def import_application_components():
     except Exception as e:
         logging.error(f"Unexpected import error: {e}", exc_info=True)
         error_message = f"Unexpected error during import.\n\nError: {str(e)}\n\nCheck console output for details."
-        raise Exception(error_message)
+        raise ImportError(error_message)
 
 try:
     load_settings, save_settings, load_base_urls, MainWindow = import_application_components()
-except (ImportError, Exception) as e:
+except ImportError as e:
     error_message = str(e)
     print(f"FATAL ERROR: {error_message}")
     try:
@@ -247,6 +247,18 @@ except (ImportError, Exception) as e:
     except Exception as msg_err:
         logging.error(f"Could not display GUI error message: {msg_err}")
     sys.exit(1)
+
+def _validate_url_config(config):
+    """Validate and enhance a single URL configuration."""
+    required_keys = ['Name', 'BaseURL', 'Keyword']
+    missing_keys = [k for k in required_keys if k not in config]
+    if missing_keys:
+        raise ValueError(f"URL config missing keys: {missing_keys}")
+    
+    # Auto-generate OrgListURL if missing
+    if 'OrgListURL' not in config:
+        config['OrgListURL'] = f"{config['BaseURL']}/nicgep/app"
+        logging.debug(f"Auto-generated OrgListURL for {config['Name']}")
 
 # --- Configuration Loading with Validation ---
 def load_and_validate_configurations():
@@ -267,15 +279,7 @@ def load_and_validate_configurations():
         
         # Validate and enhance URL configurations
         for config in base_urls_data:
-            required_keys = ['Name', 'BaseURL', 'Keyword']
-            missing_keys = [k for k in required_keys if k not in config]
-            if missing_keys:
-                raise ValueError(f"URL config missing keys: {missing_keys}")
-            
-            # Auto-generate OrgListURL if missing
-            if 'OrgListURL' not in config:
-                config['OrgListURL'] = f"{config['BaseURL']}/nicgep/app"
-                logging.debug(f"Auto-generated OrgListURL for {config['Name']}")
+            _validate_url_config(config)
         
         logging.info(f"✓ Loaded {len(base_urls_data)} URL configurations")
         
@@ -524,38 +528,3 @@ if __name__ == "__main__":
         except Exception as cleanup_err:
             logging.warning(f"Cleanup error: {cleanup_err}")
             # Don't force exit on cleanup errors - let normal shutdown proceed
-
-        except Exception as main_err:
-            error_message = str(main_err)
-            logging.exception("🔥 Fatal error in main execution")
-            print(f"\nFATAL ERROR: {error_message}")
-            
-            # Show error dialog if possible
-            try:
-                if root:
-                    try:
-                        # Safely check if window exists
-                        root.winfo_exists()
-                        tkinter.messagebox.showerror(
-                            "Fatal Application Error",
-                            f"A critical error occurred:\n\n{error_message}\n\n"
-                            f"Check the log file for detailed information.\n"
-                            f"Log location: {ABS_LOG_DIR}",
-                            parent=root
-                        )
-                    except tk.TclError:
-                        # Window destroyed, show without parent
-                        logging.debug("Showing error dialog without parent (window destroyed)")
-                        temp_root = tk.Tk()
-                        temp_root.withdraw()
-                        tkinter.messagebox.showerror(
-                            "Fatal Application Error",
-                            f"A critical error occurred:\n\n{error_message}\n\n"
-                            f"Check the log file for detailed information.\n"
-                            f"Log location: {ABS_LOG_DIR}"
-                        )
-                        temp_root.destroy()
-            except Exception as gui_err:
-                logging.error(f"Could not show error dialog: {gui_err}")
-            
-            sys.exit(1)

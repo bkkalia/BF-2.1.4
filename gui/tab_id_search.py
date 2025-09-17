@@ -15,21 +15,65 @@ PROJECT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, ".."))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
+# Third-party imports - with error checking
+try:
+    from selenium.webdriver.common.by import By
+    from selenium.webdriver.support.ui import WebDriverWait
+    from selenium.webdriver.support import expected_conditions as EC
+    from selenium.webdriver.remote.webdriver import WebDriver
+    from selenium.common.exceptions import TimeoutException
+    SELENIUM_IMPORTED = True
+except ImportError as e:
+    print(f"Error importing selenium components: {e}")
+    SELENIUM_IMPORTED = False
+    
+    # Define fallback classes to prevent NameError
+    class By:
+        XPATH = "xpath"
+        ID = "id"
+        CSS_SELECTOR = "css selector"
+    
+    class WebDriverWait:
+        def __init__(self, driver, timeout):
+            # Fallback implementation
+            pass
+        def until(self, condition):
+            # Fallback implementation
+            return None
+    
+    class EC:
+        @staticmethod
+        def presence_of_element_located(locator):
+            # Fallback implementation
+            return None
+        @staticmethod
+        def element_to_be_clickable(locator):
+            # Fallback implementation
+            return None
+    
+    TimeoutException = Exception
+    WebDriver = object
+
+# Constants for repeated strings
+TESSERACT_EXE = "tesseract.exe"
+NO_IDS_FOUND_MSG = "No IDs Found"
+IDS_ADDED_MSG = "IDs Added"
+
 # Update Tesseract path configuration
 TESSERACT_PATHS = [
-    r"C:\Program Files\Tesseract-OCR\tesseract.exe",
-    r"C:\Program Files (x86)\Tesseract-OCR\tesseract.exe",
-    r"C:\Tesseract-OCR\tesseract.exe",  # Common custom install location
-    os.path.join(os.environ.get('LOCALAPPDATA', ''), 'Programs', 'Tesseract-OCR', 'tesseract.exe'),
-    os.path.join(os.environ.get('PROGRAMFILES', ''), 'Tesseract-OCR', 'tesseract.exe'),
-    os.path.join(os.environ.get('PROGRAMFILES(X86)', ''), 'Tesseract-OCR', 'tesseract.exe'),
+    rf"C:\Program Files\Tesseract-OCR\{TESSERACT_EXE}",
+    rf"C:\Program Files (x86)\Tesseract-OCR\{TESSERACT_EXE}",
+    rf"C:\Tesseract-OCR\{TESSERACT_EXE}",  # Common custom install location
+    os.path.join(os.environ.get('LOCALAPPDATA', ''), 'Programs', 'Tesseract-OCR', TESSERACT_EXE),
+    os.path.join(os.environ.get('PROGRAMFILES', ''), 'Tesseract-OCR', TESSERACT_EXE),
+    os.path.join(os.environ.get('PROGRAMFILES(X86)', ''), 'Tesseract-OCR', TESSERACT_EXE),
 ]
 
 def _configure_tesseract():
     """Configure Tesseract OCR path."""
     try:
         # First try the default configuration
-        test_text = pytesseract.image_to_string(Image.new('RGB', (1, 1)))
+        _ = pytesseract.image_to_string(Image.new('RGB', (1, 1)))
         logger.debug("Tesseract working with default configuration")
         return True
     except Exception:
@@ -38,7 +82,7 @@ def _configure_tesseract():
             if os.path.isfile(path):
                 try:
                     pytesseract.pytesseract.tesseract_cmd = path
-                    test_text = pytesseract.image_to_string(Image.new('RGB', (1, 1)))
+                    _ = pytesseract.image_to_string(Image.new('RGB', (1, 1)))
                     logger.info(f"Tesseract configured successfully at: {path}")
                     return True
                 except Exception as e:
@@ -63,6 +107,7 @@ except ImportError:
 # Absolute imports from project root
 from scraper.logic import search_and_download_tenders
 from gui import gui_utils # Absolute import
+from utils import get_website_keyword_from_url
 
 logger = logging.getLogger(__name__)
 
@@ -341,7 +386,7 @@ class IdSearchTab(ttk.Frame):
 
             if not found_ids:
                 self.log_callback(f"No tender IDs found in {source}")
-                messagebox.showinfo("No IDs Found", 
+                messagebox.showinfo(NO_IDS_FOUND_MSG, 
                                   "No text matching the Tender ID pattern was found.", 
                                   parent=self.main_app.root)
                 return False
@@ -362,7 +407,6 @@ class IdSearchTab(ttk.Frame):
 
             # Add new IDs to text area
             current_text = self.tender_id_text.get("1.0", tk.END).strip()
-            next_line_num = len(current_text.splitlines()) + 1 if current_text else 1
             
             separator = "\n" if current_text else ""
             new_ids_text = separator + "\n".join(new_ids)
@@ -373,7 +417,7 @@ class IdSearchTab(ttk.Frame):
             
             # Show success message
             success_msg = f"Successfully extracted and added {len(new_ids)} new unique Tender IDs from {source}."
-            messagebox.showinfo("IDs Added", success_msg, parent=self.main_app.root)
+            messagebox.showinfo(IDS_ADDED_MSG, success_msg, parent=self.main_app.root)
             
             # Update line numbers
             self._update_line_numbers()
@@ -439,7 +483,7 @@ class IdSearchTab(ttk.Frame):
 
             if not found_ids:
                 self.log_callback("No tender IDs found in the file.")
-                messagebox.showinfo("No IDs Found", 
+                messagebox.showinfo(NO_IDS_FOUND_MSG, 
                                   "No text matching the Tender ID pattern was found.", 
                                   parent=self.main_app.root)
                 return
@@ -452,7 +496,7 @@ class IdSearchTab(ttk.Frame):
             
             # Show success message
             success_msg = f"Successfully extracted and added {len(found_ids)} unique Tender IDs from {os.path.basename(filepath)}."
-            messagebox.showinfo("IDs Added", success_msg, parent=self.main_app.root)
+            messagebox.showinfo(IDS_ADDED_MSG, success_msg, parent=self.main_app.root)
             
             self.log_callback(f"Added {len(found_ids)} unique Tender IDs from {os.path.basename(filepath)}")
             self.main_app.update_status(f"Added {len(found_ids)} IDs from file")
@@ -567,7 +611,7 @@ class IdSearchTab(ttk.Frame):
 
         if not full_matches:
             self.log_callback("  No potential Tender IDs matching the pattern found in the PDF text.")
-            messagebox.showinfo("No IDs Found", "No text matching the Tender ID pattern (e.g., 2025_ABC_12345_1) was found in the PDF.", parent=self.main_app.root)
+            messagebox.showinfo(NO_IDS_FOUND_MSG, "No text matching the Tender ID pattern (e.g., 2025_ABC_12345_1) was found in the PDF.", parent=self.main_app.root)
             self.main_app.update_status("No matching IDs found in PDF.")
             return
 
@@ -596,7 +640,7 @@ class IdSearchTab(ttk.Frame):
         self.tender_id_text.insert(tk.END, separator + ids_to_add_str + "\n")
         self.log_callback(f"  Added {len(new_ids_found)} new unique Tender IDs from PDF to the list.")
         self.main_app.update_status(f"Added {len(new_ids_found)} IDs from PDF.")
-        messagebox.showinfo("IDs Added", f"Successfully extracted and added {len(new_ids_found)} new unique Tender IDs to the list.", parent=self.main_app.root)
+        messagebox.showinfo(IDS_ADDED_MSG, f"Successfully extracted and added {len(new_ids_found)} new unique Tender IDs to the list.", parent=self.main_app.root)
 
     def start_search_ids(self):
         """Start the search process for entered tender IDs."""
@@ -689,7 +733,12 @@ class IdSearchTab(ttk.Frame):
                 parent=self.main_app.root
             )
 
-def search_and_download_tenders(tender_ids, base_url_config, download_dir, driver,
+# Constants for search processing
+SEARCH_ID_KEY = 'Search ID'
+SEARCH_INDEX_KEY = 'Search Index'  
+TENDER_ID_KEY = 'Tender ID'
+
+def search_and_download_tenders(tender_ids, base_url_config, download_dir, driver: WebDriver,
                               log_callback=None, progress_callback=None, timer_callback=None, 
                               status_callback=None, stop_event=None, deep_scrape=False,
                               dl_more_details=True, dl_zip=True, dl_notice_pdfs=True):
@@ -719,7 +768,7 @@ def search_and_download_tenders(tender_ids, base_url_config, download_dir, drive
             STABILIZE_WAIT, ELEMENT_WAIT_TIMEOUT
         )
         
-        processed_count = 0
+        success_count = 0
 
         for idx, tender_id in enumerate(tender_ids, 1):
             if stop_event and stop_event.is_set():
@@ -740,65 +789,73 @@ def search_and_download_tenders(tender_ids, base_url_config, download_dir, drive
 
                 # Navigate to base URL
                 driver.get(base_url_config['BaseURL'])
+                import time
                 time.sleep(STABILIZE_WAIT)
 
                 # Find and fill tender ID input
                 try:
-                    id_input = WebDriverWait(driver, ELEMENT_WAIT_TIMEOUT).until(
-                        EC.presence_of_element_located(BASE_PAGE_TENDER_ID_INPUT_LOCATOR)
-                    )
-                    id_input.clear()
-                    id_input.send_keys(tender_id)
-                    log_callback(f"Entered tender ID: {tender_id}")
+                    if hasattr(driver, 'find_element') and SELENIUM_IMPORTED:
+                        id_input = WebDriverWait(driver, ELEMENT_WAIT_TIMEOUT).until(
+                            EC.presence_of_element_located(BASE_PAGE_TENDER_ID_INPUT_LOCATOR)
+                        )
+                        if id_input:
+                            id_input.clear()
+                            id_input.send_keys(tender_id)
+                            log_callback(f"Entered tender ID: {tender_id}")
                 except Exception as input_err:
                     log_callback(f"Error finding/filling input for {tender_id}: {input_err}")
                     continue
 
                 # Click search button
                 try:
-                    search_button = WebDriverWait(driver, ELEMENT_WAIT_TIMEOUT).until(
-                        EC.element_to_be_clickable(BASE_PAGE_SEARCH_BUTTON_LOCATOR)
-                    )
-                    search_button.click()
-                    time.sleep(STABILIZE_WAIT * 2)
-                    log_callback(f"Clicked search button for: {tender_id}")
+                    if hasattr(driver, 'find_element') and SELENIUM_IMPORTED:
+                        search_button = WebDriverWait(driver, ELEMENT_WAIT_TIMEOUT).until(
+                            EC.element_to_be_clickable(BASE_PAGE_SEARCH_BUTTON_LOCATOR)
+                        )
+                        if search_button:
+                            search_button.click()
+                            time.sleep(STABILIZE_WAIT * 2)
+                            log_callback(f"Clicked search button for: {tender_id}")
                 except Exception as search_err:
                     log_callback(f"Error clicking search button for {tender_id}: {search_err}")
                     continue
 
                 # Handle search results
                 try:
-                    results_table = WebDriverWait(driver, ELEMENT_WAIT_TIMEOUT).until(
-                        EC.presence_of_element_located(SEARCH_RESULTS_TABLE_LOCATOR)
-                    )
-                    log_callback(f"Found search results table for: {tender_id}")
-                    
-                    # Find and click tender link
-                    tender_link = results_table.find_element(By.XPATH, SEARCH_RESULT_TITLE_LINK_XPATH)
-                    tender_link.click()
-                    time.sleep(STABILIZE_WAIT * 2)
-                    log_callback(f"Clicked tender link for: {tender_id}")
+                    if hasattr(driver, 'find_element') and SELENIUM_IMPORTED:
+                        results_table = WebDriverWait(driver, ELEMENT_WAIT_TIMEOUT).until(
+                            EC.presence_of_element_located(SEARCH_RESULTS_TABLE_LOCATOR)
+                        )
+                        if results_table:
+                            log_callback(f"Found search results table for: {tender_id}")
+                            
+                            # Find and click tender link
+                            tender_link = results_table.find_element(By.XPATH, SEARCH_RESULT_TITLE_LINK_XPATH)
+                            if tender_link:
+                                tender_link.click()
+                                time.sleep(STABILIZE_WAIT * 2)
+                                log_callback(f"Clicked tender link for: {tender_id}")
 
-                    # Extract tender details for Excel
-                    try:
-                        details = extract_tender_details(driver, deep_scrape=deep_scrape)
-                        details['Search ID'] = tender_id  # Add search ID to details
-                        details['Search Index'] = idx
-                        details['Portal'] = base_url_config.get('Name', 'Unknown')
-                        all_tender_details.append(details)
-                        log_callback(f"Extracted details for: {tender_id}")
-                    except Exception as extract_err:
-                        log_callback(f"Error extracting details for {tender_id}: {extract_err}")
-                        # Add minimal details even if extraction fails
-                        all_tender_details.append({
-                            'Search ID': tender_id,
-                            'Search Index': idx,
-                            'Portal': base_url_config.get('Name', 'Unknown'),
-                            'Tender ID': 'N/A',
-                            'Title': 'Error during extraction',
-                            'Error': str(extract_err)
-                        })
-                    
+                        # Extract tender details for Excel
+                        try:
+                            details = extract_tender_details(driver, deep_scrape=deep_scrape)
+                            details[SEARCH_ID_KEY] = tender_id  # Add search ID to details
+                            details[SEARCH_INDEX_KEY] = idx
+                            details['Portal'] = base_url_config.get('Name', 'Unknown')
+                            all_tender_details.append(details)
+                            log_callback(f"Extracted details for: {tender_id}")
+                        except Exception as extract_err:
+                            log_callback(f"Error extracting details for {tender_id}: {extract_err}")
+                            # Add minimal details even if extraction fails
+                            all_tender_details.append({
+                                SEARCH_ID_KEY: tender_id,
+                                SEARCH_INDEX_KEY: idx,
+                                'Portal': base_url_config.get('Name', 'Unknown'),
+                                TENDER_ID_KEY: 'N/A',
+                                'Title': 'Error during extraction',
+                                'Error': str(extract_err)
+                            })
+
                     # Process the tender for downloads if enabled
                     if dl_more_details or dl_zip or dl_notice_pdfs:
                         try:
@@ -816,16 +873,16 @@ def search_and_download_tenders(tender_ids, base_url_config, download_dir, drive
                         except Exception as process_err:
                             log_callback(f"Error processing downloads for {tender_id}: {process_err}")
 
-                    processed_count += 1
+                    success_count += 1
 
                 except TimeoutException:
                     log_callback(f"No results found for tender ID: {tender_id}")
                     # Add "not found" entry to Excel
                     all_tender_details.append({
-                        'Search ID': tender_id,
-                        'Search Index': idx,
+                        SEARCH_ID_KEY: tender_id,
+                        SEARCH_INDEX_KEY: idx,
                         'Portal': base_url_config.get('Name', 'Unknown'),
-                        'Tender ID': 'N/A',
+                        TENDER_ID_KEY: 'N/A',
                         'Title': 'No results found',
                         'Status': 'Not Found'
                     })
@@ -833,16 +890,16 @@ def search_and_download_tenders(tender_ids, base_url_config, download_dir, drive
 
                 # Update progress
                 if progress_callback:
-                    progress_callback(processed_count, idx, total_tenders, None)
+                    progress_callback(success_count, idx, total_tenders, None)
 
             except Exception as e:
                 log_callback(f"Error processing tender ID {tender_id}: {e}")
                 # Add error entry to Excel
                 all_tender_details.append({
-                    'Search ID': tender_id,
-                    'Search Index': idx,
+                    SEARCH_ID_KEY: tender_id,
+                    SEARCH_INDEX_KEY: idx,
                     'Portal': base_url_config.get('Name', 'Unknown'),
-                    'Tender ID': 'N/A',
+                    TENDER_ID_KEY: 'N/A',
                     'Title': 'Processing error',
                     'Error': str(e)
                 })
@@ -859,11 +916,11 @@ def search_and_download_tenders(tender_ids, base_url_config, download_dir, drive
                 # Convert details to DataFrame and save
                 df = pd.DataFrame(all_tender_details)
                 # Sort by search index to maintain order
-                df = df.sort_values('Search Index')
+                df = df.sort_values(SEARCH_INDEX_KEY)
                 df.to_excel(excel_path, index=False, engine='openpyxl')
                 
                 log_callback(f"Saved tender search results to Excel: {excel_filename}")
-                log_callback(f"Excel contains {len(all_tender_details)} entries ({processed_count} successful)")
+                log_callback(f"Excel contains {len(all_tender_details)} entries ({success_count} successful)")
                 
             except Exception as excel_err:
                 log_callback(f"Error saving Excel file: {excel_err}")
@@ -874,16 +931,17 @@ def search_and_download_tenders(tender_ids, base_url_config, download_dir, drive
         end_time = datetime.now()
         duration = end_time - start_time
         log_callback(f"Search completed in {duration.total_seconds():.1f} seconds")
-        log_callback(f"Processed: {processed_count}/{total_tenders} tender IDs")
+        log_callback(f"Processed: {success_count}/{total_tenders} tender IDs")
         
         if timer_callback:
             timer_callback(start_time)
             
         if status_callback:
-            status_callback(f"Search completed - {processed_count}/{total_tenders} processed")
+            status_callback(f"Search completed - {success_count}/{total_tenders} processed")
 
     except Exception as e:
         log_callback(f"Error in search and download process: {e}")
         if status_callback:
             status_callback("Error during search")
         raise
+

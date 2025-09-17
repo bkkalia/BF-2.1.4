@@ -809,3 +809,16 @@ SyntaxError: expected 'except' or 'finally' block
 2025-09-14 14:36:53,059 - INFO - [Tender ID Search:wait_for_downloads] No active downloads detected in '2025_PWD_114080_1' after 0.0s.
 2025-09-14 14:36:53,099 - INFO - [Tender ID Search:safe_quit_driver] Closing WebDriver instance...
 2025-09-14 14:36:53,301 - INFO - [Tender ID Search:safe_quit_driver] WebDriver quit successfully.
+2025-09-14 15:21:00,943 - INFO - [MainThread:on_closing] Close requested.
+2025-09-14 15:21:00,944 - INFO - [MainThread:_save_current_settings_and_show_message] Saving current settings...
+2025-09-14 15:21:00,949 - ERROR - [MainThread:on_closing] Failed to save settings on exit: invalid literal for int() with base 10: '10.0'
+2025-09-14 15:21:01,043 - INFO - [MainThread:on_closing] Tkinter root window destroyed.
+2025-09-14 15:21:01,043 - INFO - [MainThread:on_closing] --- Application Shutdown Sequence Complete ---
+2025-09-14 15:21:01,044 - INFO - [MainThread:<module>] Main event loop ended normally
+2025-09-14 15:21:01,045 - INFO - [MainThread:<module>] 🛑 Application shutdown initiated...
+2025-09-14 15:21:01,045 - INFO - [MainThread:_save_current_settings] Saving current settings...
+2025-09-14 15:21:01,047 - WARNING - [MainThread:_save_current_settings] Could not get window geometry, possibly already closed.
+2025-09-14 15:21:01,068 - INFO - [MainThread:save_settings] Settings saved successfully to G:\My Drive\0dev\BF 2.1.4\settings.json
+2025-09-14 15:21:01,069 - INFO - [MainThread:<module>] ✅ Application shutdown completed successfully
+2025-09-14 15:21:01,624 - INFO - [MainThread:_ensure_close] ensuring close
+2025-09-14 15:21:01,626 - INFO - [MainThread:_ensure_close] ensuring close

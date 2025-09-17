@@ -1,23 +1,29 @@
 # config.py v2.1.4
 # Stores configuration constants, defaults, and locators
 
-# Try to import selenium, provide fallback values if not available
-# Define By class that will be used whether Selenium is available or not
-class By:
-    ID = "id"
-    CSS_SELECTOR = "css selector"
-    XPATH = "xpath"
-    LINK_TEXT = "link text"
-    TAG_NAME = "tag name"
+import logging
 
+# Try to import selenium, provide fallback values if not available
 try:
-    import selenium.webdriver.common.by
+    from selenium.webdriver.common.by import By
+    from selenium.webdriver.remote.webdriver import WebDriver
+    from selenium.webdriver.support.ui import WebDriverWait
     SELENIUM_AVAILABLE = True
 except ImportError:
     print("WARNING: Selenium not installed. Using string values for locators.")
     SELENIUM_AVAILABLE = False
-
-import logging
+    
+    # Define fallback By class when Selenium is not available
+    class By:
+        ID = "id"
+        CSS_SELECTOR = "css selector"
+        XPATH = "xpath"
+        LINK_TEXT = "link text"
+        TAG_NAME = "tag name"
+    
+    # Define fallback types
+    WebDriver = None
+    WebDriverWait = None
 
 # --- Application ---
 APP_VERSION = "2.1.4"
