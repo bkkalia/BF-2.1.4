@@ -21,19 +21,45 @@ from config import (
 
 logger = logging.getLogger(__name__)
 
-def safe_extract_text(driver, locator, description, timeout_multiplier=1.0, default=""):
+def safe_extract_text(driver, locator, description, timeout_multiplier=1.0, default="", quick_mode=False):
     """Safely extracts text using a locator, waiting briefly for visibility."""
-    wait_time = max(3, int((ELEMENT_WAIT_TIMEOUT / 3) * timeout_multiplier))
+    if quick_mode:
+        # For download operations, use very short timeout (2-3 seconds max)
+        wait_time = 2
+        presence_timeout = 3
+    else:
+        wait_time = max(3, int((ELEMENT_WAIT_TIMEOUT / 3) * timeout_multiplier))
+        presence_timeout = wait_time + 2
+
     try:
-        element_present = WebDriverWait(driver, wait_time + 2).until(EC.presence_of_element_located(locator))
+        element_present = WebDriverWait(driver, presence_timeout).until(EC.presence_of_element_located(locator))
         element_visible = WebDriverWait(driver, wait_time).until(EC.visibility_of(element_present))
         text = element_visible.text.strip()
-        logger.debug(f"Extracted {description}: '{text[:70]}...'") if text else logger.debug(f"{description} found but text empty.")
+        if quick_mode:
+            logger.debug(f"Quick extract {description}: '{text[:50]}...'") if text else logger.debug(f"{description} found but empty.")
+        else:
+            logger.debug(f"Extracted {description}: '{text[:70]}...'") if text else logger.debug(f"{description} found but text empty.")
         return text
-    except TimeoutException: logger.warning(f"{description} ({locator}) not found/visible in {wait_time}s.")
-    except StaleElementReferenceException: logger.warning(f"{description} ({locator}) became stale during text extraction.")
-    except WebDriverException as e: logger.error(f"WebDriver error extracting text for {description} ({locator}): {e}")
-    except Exception as e: logger.error(f"Unexpected error extracting text for {description} ({locator}): {e}", exc_info=True)
+    except TimeoutException:
+        if quick_mode:
+            logger.debug(f"{description} not found in {presence_timeout}s (quick mode).")
+        else:
+            logger.warning(f"{description} ({locator}) not found/visible in {wait_time}s.")
+    except StaleElementReferenceException:
+        if quick_mode:
+            logger.debug(f"{description} became stale (quick mode).")
+        else:
+            logger.warning(f"{description} ({locator}) became stale during text extraction.")
+    except WebDriverException as e:
+        if quick_mode:
+            logger.debug(f"WebDriver error extracting {description}: {type(e).__name__}")
+        else:
+            logger.error(f"WebDriver error extracting text for {description} ({locator}): {e}")
+    except Exception as e:
+        if quick_mode:
+            logger.debug(f"Error extracting {description}: {type(e).__name__}")
+        else:
+            logger.error(f"Unexpected error extracting text for {description} ({locator}): {e}", exc_info=True)
     return default
 
 def click_element(driver, locator, description, scroll=True, timeout_multiplier=1.0, wait_condition=EC.element_to_be_clickable):
@@ -48,7 +74,7 @@ def click_element(driver, locator, description, scroll=True, timeout_multiplier=
             elif isinstance(locator, WebElement):
                  if not locator.is_displayed(): element = WebDriverWait(driver, wait_time).until(EC.visibility_of(locator)) # Check visibility if passed element
                  else: element = locator # Assume usable if displayed
-                 element = WebDriverWait(driver, wait_time).until(current_wait_condition(locator)); logger.debug(f"'{description}' passed directly, confirmed state.") # Re-wait for condition
+                 logger.debug(f"'{description}' passed directly, confirmed state.") # Re-wait for condition
             else: logger.error(f"Invalid locator type for '{description}': {type(locator)}"); return False
 
             if scroll:
@@ -110,6 +136,7 @@ def save_page_as_pdf(driver, pdf_filepath, scale=0.75):
     try: os.makedirs(pdf_dir, exist_ok=True)
     except OSError as e: logger.error(f"Failed create directory for PDF '{pdf_filepath}': {e}."); return False
     logger.info(f"Attempting to save current page as PDF: {pdf_filename}")
+    result = None
     try:
         print_options = {'landscape': False, 'displayHeaderFooter': False, 'printBackground': True, 'preferCSSPageSize': True, 'marginTop': 0.4, 'marginBottom': 0.4, 'marginLeft': 0.4, 'marginRight': 0.4, 'scale': scale}
         result = driver.execute_cdp_cmd("Page.printToPDF", print_options)
@@ -122,7 +149,10 @@ def save_page_as_pdf(driver, pdf_filepath, scale=0.75):
         except NoAlertPresentException: logger.warning("UnexpectedAlertPresentException but no alert found.")
         except Exception as dismiss_err: logger.warning(f"Failed to handle alert saving PDF: {dismiss_err}")
         return False
-    except KeyError as ke: logger.error(f"Error saving PDF '{pdf_filename}': CDP result missing 'data' key. Result: {result}. Error: {ke}", exc_info=True); return False
+    except KeyError as ke:
+        result_desc = f"Result: {result}" if result else "No result available"
+        logger.error(f"Error saving PDF '{pdf_filename}': CDP result missing 'data' key. {result_desc}. Error: {ke}", exc_info=True)
+        return False
     except WebDriverException as wde:
          if "execute_cdp_cmd" in str(wde) or "Command is not supported" in str(wde): logger.error(f"Error saving PDF '{pdf_filename}': WebDriver does not support CDP 'Page.printToPDF'.")
          else: logger.error(f"WebDriverException saving PDF '{pdf_filename}': {wde}", exc_info=True)

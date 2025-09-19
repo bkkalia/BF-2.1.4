@@ -27,27 +27,26 @@ try:
 except ImportError as e:
     print(f"Error importing selenium components: {e}")
     SELENIUM_IMPORTED = False
-    
-    # Define fallback classes to prevent NameError
-    class By:
-        XPATH = "xpath"
-        ID = "id"
-        CSS_SELECTOR = "css selector"
-    
-    class WebDriverWait:
-        def __init__(self, driver, timeout):
-            pass
-        def until(self, condition):
-            return None
-    
-    class EC:
-        @staticmethod
-        def presence_of_element_located(locator):
-            return None
-    
+
+    # Use fallback classes from config
+    from config import By, WebDriverWait
     NoSuchElementException = Exception
     TimeoutException = Exception
     WebDriverException = Exception
+
+    # Define EC as a module-like object to avoid type conflicts
+    class ECFallback:
+        @staticmethod
+        def presence_of_element_located(locator):
+            return None
+        @staticmethod
+        def element_to_be_clickable(locator):
+            return None
+        @staticmethod
+        def visibility_of_element_located(locator):
+            return None
+
+    EC = ECFallback()
 
 logger = logging.getLogger(__name__)
 
@@ -65,73 +64,66 @@ except ImportError:
     GUI_UTILS_AVAILABLE = False # Handle case where GUI isn't available/import fails
     gui_utils_module = None
 
+def _detect_captcha_elements(driver, identifier, log_callback):
+    """Detect various CAPTCHA elements on the page."""
+    from config import CAPTCHA_IMAGE_LOCATOR, CAPTCHA_INPUT_LOCATOR, CAPTCHA_PROMPT_LOCATOR
+
+    captcha_indicators = [
+        (CAPTCHA_IMAGE_LOCATOR, "CAPTCHA image"),
+        (CAPTCHA_INPUT_LOCATOR, "CAPTCHA input field"),
+        (CAPTCHA_PROMPT_LOCATOR, "CAPTCHA prompt")
+    ]
+
+    for locator, description in captcha_indicators:
+        try:
+            element = driver.find_element(*locator)
+            if element and element.is_displayed():
+                log_callback(f"{description} detected for {identifier}")
+                return True
+        except (NoSuchElementException, WebDriverException):
+            continue
+
+    return False
+
+def _handle_captcha_dialog(identifier, log_callback, status_callback, stop_event):
+    """Show CAPTCHA dialog and handle user response."""
+    log_callback(f"CAPTCHA detected for {identifier} - showing user dialog")
+    status_callback(f"CAPTCHA required for {identifier}")
+
+    captcha_dialog = CaptchaDialog(identifier, stop_event)
+    result = captcha_dialog.show()
+
+    if stop_event.is_set():
+        log_callback(f"User cancelled via CAPTCHA dialog for {identifier}")
+        return False
+
+    if result == "solved":
+        log_callback(f"User reported CAPTCHA solved for {identifier}")
+        return True
+    elif result == "skip":
+        log_callback(f"User chose to skip {identifier}")
+        return False
+    else:
+        log_callback(f"CAPTCHA dialog cancelled for {identifier}")
+        return False
+
 def handle_captcha(driver, identifier, log_callback, status_callback, stop_event):
     """
     Enhanced CAPTCHA handling with GUI dialog and user interaction.
-    Removed unused target_subfolder parameter.
     """
     if not SELENIUM_IMPORTED:
         log_callback("CAPTCHA handling skipped - Selenium not available")
         return True
-        
+
     try:
-        # Check for CAPTCHA elements on the page
-        captcha_detected = False
-        
-        # Import CAPTCHA detection constants
-        from config import CAPTCHA_IMAGE_LOCATOR, CAPTCHA_INPUT_LOCATOR, CAPTCHA_PROMPT_LOCATOR
-        
-        try:
-            # Look for various CAPTCHA indicators
-            captcha_image = driver.find_element(*CAPTCHA_IMAGE_LOCATOR)
-            if captcha_image and captcha_image.is_displayed():
-                captcha_detected = True
-                log_callback(f"CAPTCHA image detected for {identifier}")
-        except (NoSuchElementException, WebDriverException):
-            pass
-            
-        try:
-            captcha_input = driver.find_element(*CAPTCHA_INPUT_LOCATOR)
-            if captcha_input and captcha_input.is_displayed():
-                captcha_detected = True
-                log_callback(f"CAPTCHA input field detected for {identifier}")
-        except (NoSuchElementException, WebDriverException):
-            pass
-            
-        try:
-            captcha_prompt = driver.find_element(*CAPTCHA_PROMPT_LOCATOR)
-            if captcha_prompt and captcha_prompt.is_displayed():
-                captcha_detected = True
-                log_callback(f"CAPTCHA prompt detected for {identifier}")
-        except (NoSuchElementException, WebDriverException):
-            pass
-        
-        if not captcha_detected:
+        # Check for CAPTCHA elements
+        if not _detect_captcha_elements(driver, identifier, log_callback):
             log_callback(f"No CAPTCHA detected for {identifier}")
             return True
-            
-        # CAPTCHA detected - show user dialog
-        log_callback(f"CAPTCHA detected for {identifier} - showing user dialog")
-        status_callback(f"CAPTCHA required for {identifier}")
-        
-        # Create and show CAPTCHA dialog
-        captcha_dialog = CaptchaDialog(identifier, stop_event)
-        result = captcha_dialog.show()
-        
-        if stop_event.is_set():
-            log_callback(f"User cancelled via CAPTCHA dialog for {identifier}")
-            return False
-            
-        if result == "solved":
-            log_callback(f"User reported CAPTCHA solved for {identifier}")
-            return True
-        elif result == "skip":
-            log_callback(f"User chose to skip {identifier}")
-            return False
-        else:
-            log_callback(f"CAPTCHA dialog cancelled for {identifier}")
-            return False
-            
+
+        # Handle CAPTCHA dialog
+        return _handle_captcha_dialog(identifier, log_callback, status_callback, stop_event)
+
     except Exception as e:
         log_callback(f"Error in CAPTCHA handling for {identifier}: {e}")
         logger.error(f"CAPTCHA handling error: {e}", exc_info=True)
@@ -165,7 +157,7 @@ class CaptchaDialog:
         # Dialog content
         tk.Label(
             self.dialog,
-            text=f"CAPTCHA Detected",
+            text="CAPTCHA Detected",
             font=("Arial", 14, "bold")
         ).pack(pady=10)
         
@@ -224,4 +216,5 @@ class CaptchaDialog:
         self.result = result
         if result == "cancel":
             self.stop_event.set()
-        self.dialog.destroy()
+        if self.dialog:
+            self.dialog.destroy()

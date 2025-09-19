@@ -5,25 +5,46 @@ import logging
 
 # Try to import selenium, provide fallback values if not available
 try:
-    from selenium.webdriver.common.by import By
+    from selenium.webdriver.common.by import By as SeleniumBy
     from selenium.webdriver.remote.webdriver import WebDriver
     from selenium.webdriver.support.ui import WebDriverWait
     SELENIUM_AVAILABLE = True
 except ImportError:
     print("WARNING: Selenium not installed. Using string values for locators.")
     SELENIUM_AVAILABLE = False
-    
+
     # Define fallback By class when Selenium is not available
-    class By:
+    class SeleniumBy:
         ID = "id"
         CSS_SELECTOR = "css selector"
         XPATH = "xpath"
         LINK_TEXT = "link text"
         TAG_NAME = "tag name"
-    
+
     # Define fallback types
-    WebDriver = None
-    WebDriverWait = None
+    WebDriver = object  # Use object instead of None for type compatibility
+    WebDriverWait = object
+
+# Define our own By class that works with type annotations
+class By:
+    """Custom By class for consistent type annotations."""
+    if SELENIUM_AVAILABLE:
+        # Use the actual Selenium By constants
+        ID = SeleniumBy.ID
+        CSS_SELECTOR = SeleniumBy.CSS_SELECTOR
+        XPATH = SeleniumBy.XPATH
+        LINK_TEXT = SeleniumBy.LINK_TEXT
+        TAG_NAME = SeleniumBy.TAG_NAME
+    else:
+        # Use string fallbacks
+        ID = "id"
+        CSS_SELECTOR = "css selector"
+        XPATH = "xpath"
+        LINK_TEXT = "link text"
+        TAG_NAME = "tag name"
+
+# For type annotations, use the selenium By if available, otherwise use our custom class
+ByType = SeleniumBy if SELENIUM_AVAILABLE else By
 
 # --- Application ---
 APP_VERSION = "2.1.4"

@@ -341,21 +341,55 @@ def load_and_validate_configurations():
     
     return base_urls_data, settings
 
+# --- CLI Mode Detection ---
+def is_cli_mode():
+    """Check if application should run in CLI mode."""
+    # Check for CLI arguments (skip the script name)
+    args = sys.argv[1:]
+    if not args:
+        return False
+
+    # Check for CLI commands
+    cli_commands = ['department', 'tender-id', 'url', 'help', '--help', '-h']
+    return any(cmd in args for cmd in cli_commands)
+
+# --- CLI Mode Handler ---
+def run_cli_mode():
+    """Run application in CLI mode."""
+    try:
+        logging.info("🔧 Starting CLI mode...")
+
+        # Import CLI components
+        from cli_runner import main as cli_main
+
+        # Run CLI
+        cli_main()
+
+    except Exception as cli_err:
+        logging.error(f"CLI mode error: {cli_err}", exc_info=True)
+        print(f"CLI Error: {cli_err}")
+        sys.exit(1)
+
 # --- Main Execution Block ---
 if __name__ == "__main__":
+    # Check if running in CLI mode
+    if is_cli_mode():
+        run_cli_mode()
+        sys.exit(0)
+
     root = None
     app = None
-    
+
     try:
-        logging.info("🚀 Starting application initialization...")
-        
+        logging.info("🚀 Starting GUI application initialization...")
+
         # Show system warnings if any
         if system_warnings:
             logging.warning("System warnings detected - application may run with reduced performance")
-        
+
         # Load configurations
         base_urls_data, settings = load_and_validate_configurations()
-        
+
         # Initialize Tkinter with better error handling
         logging.info("Creating main application window...")
         root = tk.Tk()

@@ -29,13 +29,7 @@ from gui.tab_settings import SettingsTab
 from scraper.webdriver_manager import get_driver, quit_driver  # Add this import
 from scraper.driver_manager import setup_driver, safe_quit_driver  # Add setup_driver import
 from gui.tab_help import HelpTab
-try:
-    from gui.tab_search import SearchTab
-except Exception as e:
-    import traceback
-    print("Error importing SearchTab:", e)
-    traceback.print_exc()
-    SearchTab = None
+
 
 logger = logging.getLogger(__name__)
 
@@ -265,7 +259,6 @@ class MainWindow:
             ("By Department", self._show_department),
             ("By Tender ID", self._show_id_search),
             ("By Direct URL", self._show_url_process),
-            ("Search", self._show_search),  # <-- Add this line
             ("Settings", self._show_settings),
             ("Help", self._show_help),  # Add Help menu item
             ("Logs", self._show_logs),
@@ -370,7 +363,6 @@ class MainWindow:
             "By Department": DepartmentTab,
             "By Tender ID": IdSearchTab,
             "By Direct URL": UrlProcessTab,
-            "Search": SearchTab,  # <-- Make sure this is not None
             "Settings": SettingsTab,
             "Help": HelpTab,  # Add Help tab
         }
@@ -456,7 +448,6 @@ class MainWindow:
     def _show_department(self): self._show_section("By Department")
     def _show_id_search(self): self._show_section("By Tender ID")
     def _show_url_process(self): self._show_section("By Direct URL")
-    def _show_search(self): self._show_section("Search")
     def _show_settings(self): self._show_section("Settings")
     def _show_help(self): self._show_section("Help")  # Add help method
     def _show_logs(self): self._show_section("Logs")

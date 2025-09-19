@@ -28,9 +28,6 @@ try:
     SELENIUM_IMPORTED = True
 except ImportError as e:
     print(f"Error importing selenium components: {e}")
-    # Define fallback types
-    WebDriver = object
-    WebDriverWait = object
     SELENIUM_IMPORTED = False
     raise
 
@@ -76,6 +73,9 @@ DEPARTMENT_NAME_KEY = 'Department Name'
 TITLE_REF_KEY = "Title and Ref.No./Tender ID"
 EMD_AMOUNT_KEY = 'EMD Amount'
 WEBDRIVER_REQUIRED_MSG = "WebDriver instance required"
+SNO_LITERAL = 'sr.no'
+DEPARTMENT_NAME_LITERAL = 'department name'
+ORGANISATION_NAME_LITERAL = 'organisation name'
 
 # Header keywords to identify and skip
 HEADER_SNO_KEYWORDS = ['s.no', 'sr.no', 'serial', '#']
@@ -85,6 +85,18 @@ HEADER_NAME_KEYWORDS = ['organisation name', 'department name', 'organization']
 SEARCH_ID_KEY = 'Search ID'
 SEARCH_INDEX_KEY = 'Search Index'
 TENDER_ID_KEY = 'Tender ID'
+
+# Additional constants for commonly used strings
+SNO_KEY = 'sr.no'
+DEPARTMENT_NAME_LITERAL = 'department name'
+ORGANISATION_NAME_LITERAL = 'organisation name'
+
+# Additional constants for error messages and status
+SESSION_TIMEOUT_ERROR = "session deleted"
+INVALID_SESSION_ERROR = "invalid session id"
+WEBDRIVER_EXCEPTION_MSG = "WebDriverException"
+UNEXPECTED_ERROR_MSG = "Unexpected error"
+CRITICAL_ERROR_MSG = "CRITICAL"
 
 # --- GUI Import Check ---
 # Use absolute import based on sys.path modification in main.py
@@ -105,7 +117,7 @@ except Exception as import_err:
 # ==                           UTILITY FUNCTIONS                              ==
 # ==============================================================================
 
-def find_element_with_fallbacks(driver: WebDriver, locators, description="element", timeout=ELEMENT_WAIT_TIMEOUT, log_callback=None):
+def find_element_with_fallbacks(driver, locators, description="element", timeout=ELEMENT_WAIT_TIMEOUT, log_callback=None):
     """
     Try multiple locators in order until one succeeds.
     Returns (element, successful_locator) or (None, None) if all fail.
@@ -193,70 +205,110 @@ def fetch_department_list_from_site(target_url, log_callback):
             except Exception as e: log_callback(f"Worker: ERROR processing row {i+1}: {e}"); logger.error(f"Error processing dept row {i+1}", exc_info=True); continue
         log_callback(f"Worker: Processed {processed_rows} rows. Found {len(departments)} depts. Est tenders: {total_tenders}")
         return departments, total_tenders
-    except WebDriverException as wde: log_callback(f"Worker: CRITICAL WebDriver ERROR: {wde}"); logger.critical("WebDriverException fetch_dept_list", exc_info=True); return None, 0
-    except Exception as e: log_callback(f"Worker: CRITICAL UNEXPECTED ERROR: {e}"); logger.critical("Unexpected error fetch_dept_list", exc_info=True); return None, 0
+    except (TimeoutException, NoSuchElementException) as nav_err:
+        log_callback(f"Worker: CRITICAL NAVIGATION ERROR: {nav_err}")
+        logger.critical("Navigation error fetch_dept_list", exc_info=True)
+        return None, 0
+    except WebDriverException as wde:
+        log_callback(f"Worker: CRITICAL WebDriver ERROR: {wde}")
+        logger.critical("WebDriverException fetch_dept_list", exc_info=True)
+        return None, 0
+    except Exception as e:
+        log_callback(f"Worker: CRITICAL UNEXPECTED ERROR: {e}")
+        logger.critical("Unexpected error fetch_dept_list", exc_info=True)
+        return None, 0
     finally:
         safe_quit_driver(driver, log_callback)
 
 
+def _is_header_row(s_no):
+    """Check if S.No indicates a header row."""
+    return s_no.lower() in HEADER_SNO_KEYWORDS
+
+def _find_target_row(driver, s_no, attempt, log_callback):
+    """Find the target row for the given S.No."""
+    try:
+        table_body = WebDriverWait(driver, ELEMENT_WAIT_TIMEOUT).until(
+            EC.presence_of_element_located(MAIN_TABLE_BODY_LOCATOR)
+        )
+        rows = table_body.find_elements(By.TAG_NAME, "tr")
+        log_callback(f"    Attempt {attempt+1}: Check {len(rows)} rows for S.No '{s_no}'...")
+
+        for idx, row in enumerate(rows):
+            try:
+                cells = row.find_elements(By.TAG_NAME, "td")
+                if len(cells) > DEPT_LIST_SNO_COLUMN_INDEX:
+                    cell_text = cells[DEPT_LIST_SNO_COLUMN_INDEX].text.strip()
+                    if _is_header_row(cell_text):
+                        log_callback(f"    Skip header-like row {idx}: '{cell_text}'")
+                        continue
+                    if cell_text == s_no:
+                        log_callback(f"    Found match row index {idx}.")
+                        return row
+            except StaleElementReferenceException:
+                log_callback(f"    WARN: Stale row {idx} (Attempt {attempt+1}). Retrying find.")
+                return None
+        return None
+    except (TimeoutException, NoSuchElementException):
+        log_callback(f"    ERROR: Table body ({MAIN_TABLE_BODY_LOCATOR}) not found att {attempt+1}.")
+        return None
+
+def _click_department_link(driver, target_row, s_no, name, log_callback):
+    """Click the department link in the target row."""
+    try:
+        cells = target_row.find_elements(By.TAG_NAME, "td")
+        if len(cells) <= DEPT_LIST_LINK_COLUMN_INDEX:
+            log_callback(f"    ERROR: Row S.No {s_no} has only {len(cells)} cells.")
+            return False
+
+        link_cell = cells[DEPT_LIST_LINK_COLUMN_INDEX]
+        link_element = WebDriverWait(link_cell, 5).until(
+            EC.element_to_be_clickable((By.TAG_NAME, "a"))
+        )
+        log_callback(f"    Link found S.No '{s_no}'. Clicking...")
+        return click_element(driver, link_element, f"Dept Link '{name[:20]}' (SNo:{s_no})")
+    except (TimeoutException, NoSuchElementException):
+        log_callback(f"    ERROR: Link not found/clickable S.No '{s_no}'.")
+        return False
+    except StaleElementReferenceException:
+        log_callback(f"    WARN: Link cell/element stale S.No '{s_no}'. Retrying.")
+        return False
+
 def _find_and_click_dept_link(driver, dept_info, log_callback):
     """Finds and clicks the specific department link by S.No with retries."""
-    s_no = dept_info['s_no']; name = dept_info['name']; log_callback(f"  Finding link for Dept S.No: {s_no} - {name[:30]}..."); attempts = 3
-    
+    s_no = dept_info['s_no']
+    name = dept_info['name']
+    log_callback(f"  Finding link for Dept S.No: {s_no} - {name[:30]}...")
+
     # Skip if this looks like a header row
-    if s_no.lower() in ['s.no', 'sr.no', 'serial', '#']:
+    if _is_header_row(s_no):
         log_callback(f"  SKIP: S.No '{s_no}' appears to be a header row")
         return False
-    
+
+    attempts = 3
     for attempt in range(attempts):
-        if attempt > 0: log_callback(f"  Retry {attempt}/{attempts-1} find link {s_no}..."); time.sleep(STABILIZE_WAIT * attempt)
+        if attempt > 0:
+            log_callback(f"  Retry {attempt}/{attempts-1} find link {s_no}...")
+            time.sleep(STABILIZE_WAIT * attempt)
+
         try:
-            table_body = WebDriverWait(driver, ELEMENT_WAIT_TIMEOUT).until(EC.presence_of_element_located(MAIN_TABLE_BODY_LOCATOR)); rows = table_body.find_elements(By.TAG_NAME, "tr"); target_row = None; stale = False
-            log_callback(f"    Attempt {attempt+1}: Check {len(rows)} rows for S.No '{s_no}'...")
-            for idx, row in enumerate(rows):
-                try:
-                    cells = row.find_elements(By.TAG_NAME, "td")
-                    if len(cells) > DEPT_LIST_SNO_COLUMN_INDEX:
-                        cell_text = cells[DEPT_LIST_SNO_COLUMN_INDEX].text.strip()
-                        # Skip header-like rows
-                        if cell_text.lower() in ['s.no', 'sr.no', 'serial', '#']:
-                            log_callback(f"    Skip header-like row {idx}: '{cell_text}'")
-                            continue
-                        if cell_text == s_no:
-                            log_callback(f"    Found match row index {idx}.")
-                            target_row = row
-                            break
-                except StaleElementReferenceException: log_callback(f"    WARN: Stale row {idx} (Attempt {attempt+1}). Retrying find."); stale = True; break
-            if stale: continue
-            if not target_row:
-                log_callback(f"    ERROR: Row S.No '{s_no}' not found (Attempt {attempt+1}).")
+            target_row = _find_target_row(driver, s_no, attempt, log_callback)
+            if target_row is None:
                 if attempt == attempts - 1:
                     log_callback(f"    Final attempt failed for S.No '{s_no}'.")
                 continue
-            try:
-                cells = target_row.find_elements(By.TAG_NAME, "td")
-                if len(cells) > DEPT_LIST_LINK_COLUMN_INDEX:
-                    link_cell = cells[DEPT_LIST_LINK_COLUMN_INDEX]
-                    link_element = WebDriverWait(link_cell, 5).until(EC.element_to_be_clickable((By.TAG_NAME, "a")))
-                    log_callback(f"    Link found S.No '{s_no}'. Clicking...")
-                    if click_element(driver, link_element, f"Dept Link '{name[:20]}' (SNo:{s_no})"):
-                        return True
-                    else:
-                        log_callback(f"    ERROR: click_element failed S.No '{s_no}' (Attempt {attempt+1}).")
-                else:
-                    log_callback(f"    ERROR: Row S.No {s_no} has only {len(cells)} cells.")
-                    return False
-            except (TimeoutException, NoSuchElementException):
-                log_callback(f"    ERROR: Link not found/clickable S.No '{s_no}' (Att {attempt+1}).")
-            except StaleElementReferenceException:
-                log_callback(f"    WARN: Link cell/element stale S.No '{s_no}' (Att {attempt+1}). Retrying.")
-        except (TimeoutException, NoSuchElementException):
-            log_callback(f"    ERROR: Table body ({MAIN_TABLE_BODY_LOCATOR}) not found att {attempt+1}.")
-            if attempt == attempts - 1: return False
+
+            if _click_department_link(driver, target_row, s_no, name, log_callback):
+                return True
+            else:
+                log_callback(f"    ERROR: click_element failed S.No '{s_no}' (Attempt {attempt+1}).")
+
         except Exception as e:
             log_callback(f"    UNEXPECTED ERROR finding/click S.No {s_no} (Att {attempt+1}): {e}")
             logger.error(f"Unexpected error find/click S.No {s_no}", exc_info=True)
-            if attempt == attempts - 1: return False
+            if attempt == attempts - 1:
+                return False
+
     log_callback(f"  ERROR: Failed find/click S.No {s_no} after {attempts} attempts.")
     return False
 
@@ -313,7 +365,7 @@ def _scrape_tender_details(driver, department_name, base_url, log_callback):
         req_cols = max(DETAILS_COL_SNO, DETAILS_COL_PUB_DATE, DETAILS_COL_CLOSE_DATE, DETAILS_COL_OPEN_DATE, DETAILS_COL_TITLE_REF, DETAILS_COL_ORG_CHAIN) + 1
         
         for i, row in enumerate(rows, 1):
-            data = {"Department Name": department_name}
+            data = {DEPARTMENT_NAME_KEY: department_name}
             prefix = f"    Row {i}:"
             
             try:
@@ -601,16 +653,16 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
                 # Add some derived/calculated fields
                 for tender in all_tender_details:
                     try:
-                        if 'EMD Amount' in tender:
+                        if EMD_AMOUNT_KEY in tender:
                             tender['EMD Amount (Numeric)'] = float(
-                                re.sub(r'[^\d.]', '', tender['EMD Amount']) or 0
+                                re.sub(r'[^\d.]', '', tender[EMD_AMOUNT_KEY]) or 0
                             )
                     except: pass
                     
                 # Create DataFrame and sort by department name
                 df = pd.DataFrame(all_tender_details)
-                if 'Department Name' in df.columns:
-                    df = df.sort_values('Department Name')
+                if DEPARTMENT_NAME_KEY in df.columns:
+                    df = df.sort_values(DEPARTMENT_NAME_KEY)
                 
                 # Save Excel with index=False
                 df.to_excel(excel_path, index=False, engine='openpyxl')
@@ -638,13 +690,12 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
 
 
 def process_department(dept_info, base_url_config, download_dir, driver,
-                      log_callback=None, progress_callback=None, stop_event=None, 
-                      deep_scrape=False, dl_more_details=True, dl_zip=True, dl_notice_pdfs=True):
+                      log_callback=None, progress_callback=None, stop_event=None):
     """Process a single department and return tender data."""
     # Create no-op callbacks if None provided
     log_callback = log_callback or (lambda x: None)
     progress_callback = progress_callback or (lambda *args: None)
-    
+
     try:
         if not dept_info['has_link'] or dept_info['processed']:
             log_callback(f"Skipping department {dept_info['name']}: already processed or no link")
@@ -654,14 +705,14 @@ def process_department(dept_info, base_url_config, download_dir, driver,
         if not _find_and_click_dept_link(driver, dept_info, log_callback):
             log_callback(f"Failed to click link for department: {dept_info['name']}")
             return None
-            
+
         log_callback(f"Processing department {dept_info['name']}...")
         time.sleep(STABILIZE_WAIT)
-        
+
         # Extract tender details
         tender_data = _scrape_tender_details(
             driver=driver,
-            department_name=dept_info['name'], 
+            department_name=dept_info['name'],
             base_url=base_url_config['BaseURL'],
             log_callback=log_callback
         )
@@ -672,25 +723,11 @@ def process_department(dept_info, base_url_config, download_dir, driver,
             dept_info['tenders_found'] = 0
             return None
 
-        # Process each tender's details if deep scrape enabled
-        if deep_scrape:
-            log_callback("Deep scraping tender details...")
-            for tender in tender_data:
-                try:
-                    if tender.get('Direct URL'):
-                        driver.get(tender['Direct URL'])
-                        time.sleep(STABILIZE_WAIT)
-                        details = extract_tender_details(driver, deep_scrape=True)
-                        tender.update(details)
-                except Exception as e:
-                    log_callback(f"Error deep scraping tender: {e}")
-                    continue
-
         # Update department info
         dept_info['processed'] = True
         dept_info['tenders_found'] = len(tender_data)
         log_callback(f"Found {len(tender_data)} tenders in department {dept_info['name']}")
-        
+
         # Click back to department list
         back_clicked = _click_on_page_back_button(driver, log_callback)
         if not back_clicked:
@@ -704,7 +741,7 @@ def process_department(dept_info, base_url_config, download_dir, driver,
 
         if progress_callback:
             progress_callback(len(tender_data))
-            
+
         return tender_data
 
     except Exception as e:
@@ -796,60 +833,71 @@ def _find_download_links(driver, log_callback, include_zip=True, include_notice_
 
 
 def _find_and_trigger_downloads(driver, identifier, target_subfolder, log_callback, status_callback, stop_event, download_zip, download_notice_pdfs):
-    """Finds, handles CAPTCHA, clicks download links based on options, waits."""
-    if stop_event and stop_event.is_set(): 
+    """Finds, handles CAPTCHA, clicks download links based on options, waits - optimized timing."""
+    if stop_event and stop_event.is_set():
         return
-        
-    log_callback(f"  Starting downloads for '{identifier}' -> Target: {os.path.basename(target_subfolder)}")
-    if not set_download_directory(driver, target_subfolder, log_callback): 
-        log_callback(f"    WARN: Failed set download dir '{os.path.basename(target_subfolder)}'. Downloads may go elsewhere.")
+
+    log_callback(f"  🚀 Starting downloads for '{identifier}' -> Target: {os.path.basename(target_subfolder)}")
+    if not set_download_directory(driver, target_subfolder, log_callback):
+        log_callback(f"    ⚠️ Failed set download dir '{os.path.basename(target_subfolder)}'. Downloads may go elsewhere.")
 
     initial_links = _find_download_links(driver, log_callback, include_zip=download_zip, include_notice_pdfs=download_notice_pdfs)
-    if not initial_links: 
-        log_callback(f"    No download links found matching options for '{identifier}'.")
+    if not initial_links:
+        log_callback(f"    ℹ️ No download links found matching options for '{identifier}'.")
         return
 
     first_link = initial_links[0]
     first_desc = f"'{first_link.text.strip()[:30]}...'" if first_link.text else "first link"
-    log_callback(f"    Attempt initial click {first_desc} for CAPTCHA check...")
+    log_callback(f"    🔍 Attempt initial click {first_desc} for CAPTCHA check...")
     first_click_ok = click_element(driver, first_link, f"Initial Download Link ({first_desc})")
-    
-    if first_click_ok:
-        log_callback(f"    Clicked {first_desc}. Wait {CAPTCHA_CHECK_TIMEOUT}s for CAPTCHA...")
-        time.sleep(CAPTCHA_CHECK_TIMEOUT)
-    else:
-        log_callback(f"    WARN: Failed initial click {first_desc}. CAPTCHA check might be skipped.")
 
-    # Enhanced CAPTCHA handling with GUI - fix function call
+    if first_click_ok:
+        log_callback(f"    ✅ Clicked {first_desc}. Quick CAPTCHA check...")
+        # Reduced CAPTCHA wait time from CAPTCHA_CHECK_TIMEOUT to 3 seconds
+        time.sleep(3)
+    else:
+        log_callback(f"    ⚠️ Failed initial click {first_desc}. CAPTCHA check might be skipped.")
+
+    # Optimized CAPTCHA handling - skip for first-time "View More Details" PDFs
     captcha_handled = False
     if not stop_event.is_set():
-        log_callback(f"    Checking for CAPTCHA requirements for '{identifier}'...")
-        
-        # Fix the handle_captcha function call to match the actual signature
-        captcha_handled = handle_captcha(driver, identifier, log_callback, status_callback, stop_event)
-        
+        # Check if this is a "View More Details" PDF (doesn't need CAPTCHA on first access)
+        is_more_details_pdf = "_more_details" in identifier.lower()
+
+        if is_more_details_pdf:
+            log_callback(f"    ℹ️ Skipping CAPTCHA for 'More Details' PDF (first-time access)")
+            captcha_handled = True  # Mark as handled to proceed
+        else:
+            log_callback(f"    🔐 Checking for CAPTCHA requirements for '{identifier}'...")
+            captcha_handled = handle_captcha(driver, identifier, log_callback, status_callback, stop_event)
+
         # Check if user cancelled via stop_event
         if stop_event.is_set():
-            log_callback(f"    User cancelled scraping for '{identifier}' via CAPTCHA dialog")
-            return
-        
-        if captcha_handled is False:
-            log_callback(f"    CAPTCHA handling failed or cancelled for '{identifier}'")
+            log_callback(f"    🛑 User cancelled scraping for '{identifier}' via CAPTCHA dialog")
             return
 
-    log_callback(f"    Re-finding download links for '{identifier}' post-CAPTCHA check...")
+        if captcha_handled is False:
+            log_callback(f"    ❌ CAPTCHA handling failed or cancelled for '{identifier}'")
+            return
+
+    log_callback(f"    🔄 Re-finding download links for '{identifier}' post-CAPTCHA check...")
     final_links = _find_download_links(driver, log_callback, include_zip=download_zip, include_notice_pdfs=download_notice_pdfs)
     if not final_links:
-        log_callback(f"    No links found after re-scan for '{identifier}'.")
-        if first_click_ok and not captcha_handled: log_callback(f"    Wait for potential download from initial click..."); wait_for_downloads(target_subfolder, timeout=60)
+        log_callback(f"    ℹ️ No links found after re-scan for '{identifier}'.")
+        if first_click_ok and not captcha_handled:
+            log_callback(f"    ⏳ Wait for potential download from initial click...")
+            wait_for_downloads(target_subfolder, timeout=30)  # Reduced from 60s to 30s
         return
 
-    if not set_download_directory(driver, target_subfolder, log_callback): log_callback(f"    WARN: Failed re-set download dir before loop for '{identifier}'.")
+    if not set_download_directory(driver, target_subfolder, log_callback):
+        log_callback(f"    ⚠️ Failed re-set download dir before loop for '{identifier}'.")
 
-    status_callback(f"Attempt {len(final_links)} downloads: {identifier[:25]}...")
+    status_callback(f"📥 Attempt {len(final_links)} downloads: {identifier[:25]}...")
     download_count = 0
     for idx, link in enumerate(final_links):
-        if stop_event.is_set(): log_callback("    Stop req during download loop."); break
+        if stop_event.is_set():
+            log_callback("    🛑 Stop requested during download loop.")
+            break
         link_name = f"link_{idx+1}"
         try:
             lname = link.text.strip()
@@ -857,108 +905,153 @@ def _find_and_trigger_downloads(driver, identifier, target_subfolder, log_callba
                 link_name=lname
         except Exception as e:
             pass # Keep default name
-        log_callback(f"    Attempt download {idx+1}/{len(final_links)}: '{link_name[:50]}...'")
+        log_callback(f"    📄 Attempt download {idx+1}/{len(final_links)}: '{link_name[:50]}...'")
         try:
-            if click_element(driver, link, f"Download Link '{link_name[:30]}'"): download_count += 1; time.sleep(POST_DOWNLOAD_CLICK_WAIT)
-            else: log_callback(f"    WARN: Failed click download link '{link_name[:50]}...'. Skip.")
-        except StaleElementReferenceException: log_callback(f"    WARN: Link '{link_name[:50]}...' stale before click. Skip."); continue
-        except Exception as click_err: log_callback(f"    ERROR click download '{link_name[:50]}...': {click_err}"); logger.error(f"Error click download '{link_name}'", exc_info=True)
+            if click_element(driver, link, f"Download Link '{link_name[:30]}'"):
+                download_count += 1
+                # Reduced post-download wait from POST_DOWNLOAD_CLICK_WAIT to 1 second
+                time.sleep(1)
+            else:
+                log_callback(f"    ⚠️ Failed click download link '{link_name[:50]}...'. Skip.")
+        except StaleElementReferenceException:
+            log_callback(f"    ⚠️ Link '{link_name[:50]}...' stale before click. Skip.")
+            continue
+        except Exception as click_err:
+            log_callback(f"    ❌ ERROR click download '{link_name[:50]}...': {click_err}")
+            logger.error(f"Error click download '{link_name}'", exc_info=True)
 
     if download_count > 0 or first_click_ok:
-        log_callback(f"    Finished attempts (initiated {download_count} in loop + pot. first). Wait downloads complete...")
-        wait_for_downloads(target_subfolder); log_callback(f"    Download wait finished for '{identifier}'.")
-    elif len(final_links) > 0: log_callback(f"    No downloads initiated despite {len(final_links)} links found.")
+        log_callback(f"    ✅ Finished attempts (initiated {download_count} in loop + pot. first). Wait downloads complete...")
+        wait_for_downloads(target_subfolder, timeout=30)  # Reduced from default to 30s
+        log_callback(f"    🎉 Download wait finished for '{identifier}'.")
+    elif len(final_links) > 0:
+        log_callback(f"    ℹ️ No downloads initiated despite {len(final_links)} links found.")
 
 
-def _perform_tender_processing(driver, identifier, base_download_dir, log_callback, status_callback, stop_event,
-                               download_more_details, download_zip, download_notice_pdfs):
-    """Core logic for processing a single tender page."""
+def _perform_tender_processing(driver, identifier, base_download_dir, log_callback, status_callback, stop_event, dl_more_details=True, dl_zip=True, dl_notice_pdfs=True):
+    """Core logic for processing a single tender page - IMMEDIATE DOWNLOAD START."""
     if stop_event.is_set(): return False
-    log_callback(f"  Processing details page for: {identifier}")
-    try: # Wait for key elements to confirm page load
-        WebDriverWait(driver, ELEMENT_WAIT_TIMEOUT + 10).until(EC.any_of(EC.presence_of_element_located(TENDER_ID_ON_PAGE_LOCATOR), EC.presence_of_element_located(TENDER_TITLE_LOCATOR), EC.presence_of_element_located(NIT_DOC_TABLE_LOCATOR), EC.presence_of_element_located(WORK_ITEM_DOC_TABLE_LOCATOR)))
-        log_callback(f"    Details page elements loaded for {identifier}."); time.sleep(STABILIZE_WAIT)
+    log_callback(f"  ⚡ Processing details page for: {identifier}")
+
+    try:
+        # Wait for key elements to confirm page load - reduced timeout
+        WebDriverWait(driver, 5).until(EC.any_of(
+            EC.presence_of_element_located(TENDER_ID_ON_PAGE_LOCATOR),
+            EC.presence_of_element_located(TENDER_TITLE_LOCATOR),
+            EC.presence_of_element_located(NIT_DOC_TABLE_LOCATOR),
+            EC.presence_of_element_located(WORK_ITEM_DOC_TABLE_LOCATOR)
+        ))
+        log_callback(f"    ✅ Page loaded for {identifier}")
+
+        # IMMEDIATE DOWNLOAD START - just 1 second wait as requested
+        time.sleep(1)
+        log_callback(f"    🚀 Starting downloads immediately...")
+
     except TimeoutException:
-        log_callback(f"  ERROR: Timeout waiting for key details page elements for {identifier}. Cannot process.")
+        log_callback(f"  ❌ Timeout waiting for page elements for {identifier}")
         try:
-            # Save error page as HTML for debugging (this is the only legitimate HTML usage)
             fname=f"error_page_load_{sanitise_filename(identifier)}.html"
-            fpath=os.path.join(base_download_dir,fname)
+            fpath=os.path.join(base_download_dir, fname)
             with open(fpath,'w',encoding='utf-8') as f:
                 f.write(driver.page_source)
-            log_callback(f"    Saved error page: {fname}")
-        except Exception as save_err: log_callback(f"    WARN: Could not save error page source: {save_err}")
+            log_callback(f"    💾 Saved error page: {fname}")
+        except Exception as save_err:
+            log_callback(f"    ⚠️ Could not save error page: {save_err}")
         return False
 
-    tender_id = safe_extract_text(driver, TENDER_ID_ON_PAGE_LOCATOR, "Tender ID on Page")
+    # Quick tender ID extraction
+    tender_id = safe_extract_text(driver, TENDER_ID_ON_PAGE_LOCATOR, "Tender ID", quick_mode=True)
     if not tender_id:
-        title = safe_extract_text(driver, TENDER_TITLE_LOCATOR, "Tender Title on Page")
-        match = None
+        title = safe_extract_text(driver, TENDER_TITLE_LOCATOR, "Tender Title", quick_mode=True)
         if title:
-             # Try specific format first, then broader format
-             match = re.search(r'(\d{4}_[A-Z0-9_]+(?:_\d+)?)', title) or re.search(r'([A-Z0-9_]{6,})', title) # Use at least 6 chars for broader match
-        if match:
-            tender_id = match.group(1)
-            log_callback(f"    Extracted ID from title: {tender_id}")
-        else:
-            log_callback("    WARN: Could not find/extract Tender ID from page or title.")
-            tender_id = None
+            match = re.search(r'(\d{4}_[A-Z0-9_]+(?:_\d+)?)', title) or re.search(r'([A-Z0-9_]{6,})', title)
+            if match:
+                tender_id = match.group(1)
+                log_callback(f"    🆔 Extracted ID: {tender_id}")
 
     folder_base = tender_id if tender_id else identifier
     folder_name = sanitise_filename(folder_base)
-    tender_subfolder = os.path.join(base_download_dir, folder_name); log_callback(f"    Target subfolder: {folder_name}")
-    try: os.makedirs(tender_subfolder, exist_ok=True)
-    except OSError as fe: log_callback(f"    ERROR: Cannot create subfolder '{tender_subfolder}': {fe}. Using base dir."); tender_subfolder = base_download_dir
+    tender_subfolder = os.path.join(base_download_dir, folder_name)
+    try:
+        os.makedirs(tender_subfolder, exist_ok=True)
+    except OSError as fe:
+        log_callback(f"    ❌ Cannot create subfolder '{tender_subfolder}': {fe}. Using base dir.")
+        tender_subfolder = base_download_dir
 
-    if download_more_details:
-        if stop_event.is_set(): return True
-        log_callback("    Check 'View More Details'..."); view_more_link = None; original_handle = driver.current_window_handle
-        if VIEW_MORE_DETAILS_LINK_LOCATOR:
-            try: view_more_link = WebDriverWait(driver, 10).until(EC.element_to_be_clickable(VIEW_MORE_DETAILS_LINK_LOCATOR)); log_callback("      'View More Details' link found.")
-            except Exception: log_callback("      'View More Details' link not found/clickable.")
-        else: log_callback("      Skip 'View More Details' (locator not defined).")
-        if view_more_link and not stop_event.is_set():
-            log_callback("      Click 'View More Details'..."); status_callback(f"Checking More Details: {identifier[:30]}..."); windows_before = set(driver.window_handles)
-            if click_element(driver, view_more_link, "View More Details Link"):
-                time.sleep(STABILIZE_WAIT * 1.5); windows_after = set(driver.window_handles); new_handles = list(windows_after - windows_before)
-                if new_handles:
-                    popup = new_handles[0]; log_callback(f"      Switch to 'More Details' win/tab ({popup})...")
+    # Handle 'View More Details' PDF download - ULTRA FAST
+    if dl_more_details:
+        try:
+            log_callback("    🔍 Finding 'View More Details' link...")
+            # IMMEDIATE link detection - 1 second timeout
+            more_details_link = WebDriverWait(driver, 1).until(
+                EC.element_to_be_clickable(VIEW_MORE_DETAILS_LINK_LOCATOR)
+            )
+            if more_details_link:
+                log_callback("    ✅ Found 'View More Details' link. Clicking...")
+                if click_element(driver, more_details_link, "View More Details Link"):
                     try:
-                        driver.switch_to.window(popup); log_callback(f"        Wait popup content ({POPUP_CONTENT_INDICATOR_LOCATOR})...")
-                        WebDriverWait(driver, POPUP_WAIT_TIMEOUT).until(EC.visibility_of_element_located(POPUP_CONTENT_INDICATOR_LOCATOR)); log_callback(f"        Popup loaded. URL: {driver.current_url}"); time.sleep(STABILIZE_WAIT / 2)
-                        work_desc = safe_extract_text(driver, WORK_DESCRIPTION_LOCATOR, "Work Desc from More Details"); pdf_name_base = f"{folder_name}_more_details" + (f"_{work_desc}" if work_desc else "")
-                        pdf_fname = sanitise_filename(pdf_name_base) + ".pdf"
-                        pdf_fpath = os.path.join(tender_subfolder, pdf_fname)
-                        log_callback(f"        Saving 'More Details' PDF: {pdf_fname}...")
-                        save_page_as_pdf(driver, pdf_fpath)
+                        # Wait for popup content - reduced to 3 seconds
+                        WebDriverWait(driver, 3).until(
+                            EC.presence_of_element_located(POPUP_CONTENT_INDICATOR_LOCATOR)
+                        )
+                        log_callback("    ✅ Popup ready")
+
+                        # Quick document ready check - 3 seconds
+                        WebDriverWait(driver, 3).until(
+                            lambda d: d.execute_script("return document.readyState") == "complete"
+                        )
+                        log_callback("    ✅ Page ready, saving PDF...")
+
+                        pdf_filename = f"{folder_name}_more_details.pdf"
+                        pdf_filepath = os.path.join(tender_subfolder, pdf_filename)
+                        log_callback(f"    💾 Saving PDF: {pdf_filename}")
+                        if save_page_as_pdf(driver, pdf_filepath):
+                            log_callback(f"    🎉 PDF saved: {pdf_filename}")
+                        else:
+                            log_callback("    ❌ PDF save failed")
                     except TimeoutException:
-                        log_callback(f"        WARN: Timeout wait popup content ({POPUP_CONTENT_INDICATOR_LOCATOR}). PDF might be blank.")
-                        pdf_fname = sanitise_filename(f"{folder_name}_more_details_TIMEOUT") + ".pdf"
-                        pdf_fpath = os.path.join(tender_subfolder, pdf_fname)
-                        log_callback(f"        Attempt save PDF despite timeout...")
-                        save_page_as_pdf(driver, pdf_fpath)
-                    except Exception as pop_err: log_callback(f"        ERROR processing 'More Details' window: {pop_err}"); logger.error(f"Error More Details popup {identifier}", exc_info=True)
-                    finally:
-                        try: log_callback("        Close 'More Details'."); driver.close()
-                        except Exception as close_err: log_callback(f"        WARN: Error close popup: {close_err}")
-                        try: log_callback(f"        Switch back to original ({original_handle})."); driver.switch_to.window(original_handle); time.sleep(STABILIZE_WAIT / 2)
-                        except Exception as sw_err: log_callback(f"      CRITICAL: Failed switch back! {sw_err}")
-                else: log_callback("      WARN: 'More Details' clicked, no new window detected.")
-            else: log_callback("      WARN: Failed click 'View More Details' link.")
-    else: log_callback("    Skip 'More Details' PDF (option disabled).")
+                        log_callback("    ❌ Popup timeout")
+                    except Exception as popup_err:
+                        log_callback(f"    ❌ Popup error: {type(popup_err).__name__}")
+                else:
+                    log_callback("    ❌ Link click failed")
+            else:
+                log_callback("    ℹ️ 'View More Details' link not found")
+        except TimeoutException:
+            log_callback("    ℹ️ 'View More Details' link not found/clickable")
+        except Exception as more_err:
+            log_callback(f"    ❌ 'More Details' error: {type(more_err).__name__}")
+    else:
+        log_callback("    ⏭️ Skip 'More Details' PDF")
 
     if stop_event.is_set(): return True
-    if download_zip or download_notice_pdfs: log_callback(f"    Start document downloads check for {folder_name}..."); status_callback(f"Downloading docs: {identifier[:30]}..."); _find_and_trigger_downloads(driver, folder_name, tender_subfolder, log_callback, status_callback, stop_event, download_zip, download_notice_pdfs)
-    else: log_callback("    Skip document downloads (options disabled).")
-    log_callback(f"  Finished processing: {identifier}"); return True
+
+    # Handle document downloads if enabled - START IMMEDIATELY
+    if dl_zip or dl_notice_pdfs:
+        try:
+            _find_and_trigger_downloads(
+                driver=driver,
+                identifier=identifier,
+                target_subfolder=tender_subfolder,
+                log_callback=log_callback,
+                status_callback=status_callback,
+                stop_event=stop_event,
+                download_zip=dl_zip,
+                download_notice_pdfs=dl_notice_pdfs
+            )
+        except Exception as download_err:
+            log_callback(f"    ❌ Download error: {type(download_err).__name__}")
+    else:
+        log_callback("    ⏭️ Skip document downloads")
+
+    log_callback(f"  ✅ Finished processing: {identifier}")
+    return True
 
 
 def search_and_download_tenders(tender_ids, base_url_config, download_dir, driver,
                               log_callback=None, progress_callback=None,
                               timer_callback=None, status_callback=None,
-                              stop_event=None, deep_scrape=False,
-                              dl_more_details=True, dl_zip=True,
-                              dl_notice_pdfs=True, **kwargs):
+                              stop_event=None, deep_scrape=False, **kwargs):
     """Search and process tenders by ID."""
     from config import EXCEL_ID_SEARCH_FILENAME_FORMAT
     
@@ -977,7 +1070,6 @@ def search_and_download_tenders(tender_ids, base_url_config, download_dir, drive
     try:
         total_tenders = len(tender_ids)
         log_callback(f"Processing {total_tenders} tender IDs...")
-        processed_count = 0
 
         for idx, tender_id in enumerate(tender_ids, 1):
             if stop_event and stop_event.is_set():
@@ -1023,8 +1115,8 @@ def search_and_download_tenders(tender_ids, base_url_config, download_dir, drive
 
                     # Process the tender details page and collect details
                     details = extract_tender_details(driver, deep_scrape=deep_scrape)
-                    details['Search ID'] = tender_id  # Add search ID to details
-                    details['Search Index'] = idx
+                    details[SEARCH_ID_KEY] = tender_id  # Add search ID to details
+                    details[SEARCH_INDEX_KEY] = idx
                     details['Portal'] = base_url_config.get('Name', 'Unknown')
                     all_tender_details.append(details)
                     
@@ -1035,20 +1127,18 @@ def search_and_download_tenders(tender_ids, base_url_config, download_dir, drive
                         log_callback=log_callback,
                         status_callback=status_callback,
                         stop_event=stop_event,
-                        download_more_details=dl_more_details,
-                        download_zip=dl_zip,
-                        download_notice_pdfs=dl_notice_pdfs
+                        dl_more_details=True,
+                        dl_zip=True,
+                        dl_notice_pdfs=True
                     )
-                    
-                    processed_count += 1
 
                 except TimeoutException:
                     log_callback(f"No results found for tender ID: {tender_id}")
                     all_tender_details.append({
-                        'Search ID': tender_id,
-                        'Search Index': idx,
+                        SEARCH_ID_KEY: tender_id,
+                        SEARCH_INDEX_KEY: idx,
                         'Portal': base_url_config.get('Name', 'Unknown'),
-                        'Tender ID': 'N/A',
+                        TENDER_ID_KEY: 'N/A',
                         'Title': 'No results found',
                         'Status': 'Not Found'
                     })
@@ -1060,10 +1150,10 @@ def search_and_download_tenders(tender_ids, base_url_config, download_dir, drive
             except Exception as e:
                 log_callback(f"Error processing tender ID {tender_id}: {e}")
                 all_tender_details.append({
-                    'Search ID': tender_id,
-                    'Search Index': idx,
+                    SEARCH_ID_KEY: tender_id,
+                    SEARCH_INDEX_KEY: idx,
                     'Portal': base_url_config.get('Name', 'Unknown'),
-                    'Tender ID': 'N/A',
+                    TENDER_ID_KEY: 'N/A',
                     'Title': 'Processing error',
                     'Error': str(e)
                 })
@@ -1153,9 +1243,9 @@ def process_direct_urls(urls, base_dir, *args, **kwargs):
                     log_callback=log_callback,
                     status_callback=status_callback,
                     stop_event=stop_event,
-                    download_more_details=dl_more_details,
-                    download_zip=dl_zip,
-                    download_notice_pdfs=dl_notice_pdfs
+                    dl_more_details=dl_more_details,
+                    dl_zip=dl_zip,
+                    dl_notice_pdfs=dl_notice_pdfs
                 )
 
                 processed += 1
@@ -1189,15 +1279,15 @@ def extract_tender_details(driver, deep_scrape=False):
         # Additional details when deep_scrape is enabled
         if deep_scrape:
             details.update({
-                'Contract Type': safe_extract_text(driver, CONTRACT_TYPE_LOCATOR, "Contract Type"),
+                'Contract Type': safe_extract_text(driver, CONTRACT_TYPE_LOCATOR, "Contract Type", quick_mode=True),
                 'Payment Mode': "Online",  # Usually fixed for e-tenders
-                'Tender Fee': safe_extract_text(driver, TENDER_FEE_LOCATOR, "Tender Fee"),
-                EMD_AMOUNT_KEY: safe_extract_text(driver, EMD_AMOUNT_LOCATOR, EMD_AMOUNT_KEY),
-                'Tender Value': safe_extract_text(driver, TENDER_VALUE_LOCATOR, "Tender Value"),
-                'Work Description': safe_extract_text(driver, WORK_DESCRIPTION_LOCATOR, "Work Description"),
-                'Location': safe_extract_text(driver, WORK_LOCATION_LOCATOR, "Location"),
-                'Inviting Officer': safe_extract_text(driver, INVITING_OFFICER_LOCATOR, "Inviting Officer"),
-                'Inviting Officer Address': safe_extract_text(driver, INVITING_OFFICER_ADDRESS_LOCATOR, "Inviting Officer Address")
+                'Tender Fee': safe_extract_text(driver, TENDER_FEE_LOCATOR, "Tender Fee", quick_mode=True),
+                EMD_AMOUNT_KEY: safe_extract_text(driver, EMD_AMOUNT_LOCATOR, EMD_AMOUNT_KEY, quick_mode=True),
+                'Tender Value': safe_extract_text(driver, TENDER_VALUE_LOCATOR, "Tender Value", quick_mode=True),
+                'Work Description': safe_extract_text(driver, WORK_DESCRIPTION_LOCATOR, "Work Description", quick_mode=True),
+                'Location': safe_extract_text(driver, WORK_LOCATION_LOCATOR, "Location", quick_mode=True),
+                'Inviting Officer': safe_extract_text(driver, INVITING_OFFICER_LOCATOR, "Inviting Officer", quick_mode=True),
+                'Inviting Officer Address': safe_extract_text(driver, INVITING_OFFICER_ADDRESS_LOCATOR, "Inviting Officer Address", quick_mode=True)
             })
             
             # Clean up monetary values

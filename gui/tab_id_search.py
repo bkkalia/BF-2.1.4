@@ -26,33 +26,22 @@ try:
 except ImportError as e:
     print(f"Error importing selenium components: {e}")
     SELENIUM_IMPORTED = False
-    
-    # Define fallback classes to prevent NameError
-    class By:
-        XPATH = "xpath"
-        ID = "id"
-        CSS_SELECTOR = "css selector"
-    
-    class WebDriverWait:
-        def __init__(self, driver, timeout):
-            # Fallback implementation
-            pass
-        def until(self, condition):
-            # Fallback implementation
-            return None
-    
-    class EC:
+
+    # Use fallback classes from config
+    from config import By, WebDriverWait
+    TimeoutException = Exception
+    WebDriver = object
+
+    # Define EC fallback
+    class ECFallback:
         @staticmethod
         def presence_of_element_located(locator):
-            # Fallback implementation
             return None
         @staticmethod
         def element_to_be_clickable(locator):
-            # Fallback implementation
             return None
-    
-    TimeoutException = Exception
-    WebDriver = object
+
+    EC = ECFallback()
 
 # Constants for repeated strings
 TESSERACT_EXE = "tesseract.exe"
@@ -866,9 +855,9 @@ def search_and_download_tenders(tender_ids, base_url_config, download_dir, drive
                                 log_callback=log_callback,
                                 status_callback=status_callback,
                                 stop_event=stop_event,
-                                download_more_details=dl_more_details,
-                                download_zip=dl_zip,
-                                download_notice_pdfs=dl_notice_pdfs
+                                dl_more_details=dl_more_details,
+                                dl_zip=dl_zip,
+                                dl_notice_pdfs=dl_notice_pdfs
                             )
                         except Exception as process_err:
                             log_callback(f"Error processing downloads for {tender_id}: {process_err}")
@@ -944,4 +933,3 @@ def search_and_download_tenders(tender_ids, base_url_config, download_dir, drive
         if status_callback:
             status_callback("Error during search")
         raise
-
