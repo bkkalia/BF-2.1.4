@@ -4,6 +4,24 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Black Forest Tender Scraper - Professional Tender Data Extraction</title>
+    <!-- WordPress Gutenberg Optimization: Responsive design with WordPress-friendly structure -->
+    <style>
+        /* WordPress Variables - Easy to change */
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2c3e50;
+            --accent-color: #e74c3c;
+            --text-color: #333;
+            --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --hero-bg: linear-gradient(135deg, #8B0000 0%, #000000 100%);
+
+            /* URLs - Change these for your WordPress site */
+            --github-url: 'https://github.com/bkkalia/BF-2.1.4';
+            --contact-url: 'https://cloud84.in/contact/';
+            --website-url: 'https://cloud84.com/blackforest';
+            --license-url: 'https://github.com/cloud84/blackforest/blob/main/LICENSE.txt';
+        }
+    </style>
     <style>
         * {
             margin: 0;
@@ -57,7 +75,7 @@
         }
 
         nav ul li {
-            margin-left: 2rem;
+            margin-left: 3rem;
         }
 
         nav ul li a {
@@ -75,6 +93,7 @@
             text-align: center;
             padding: 4rem 0;
             color: white;
+            background: linear-gradient(135deg, #8B0000 0%, #000000 100%);
         }
 
         .hero h1 {
@@ -290,6 +309,66 @@
             color: #3498db;
         }
 
+        /* WordPress Gutenberg Shortcode Placeholders */
+        .wp-shortcode-contact-form {
+            /* Replace with: [contact-form-7 id="123"] or your preferred contact form plugin */
+            background: linear-gradient(135deg, #8B0000 0%, #000000 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 10px;
+            text-align: center;
+            border: 2px dashed #fff;
+        }
+
+        .wp-shortcode-contact-form h3 {
+            color: white;
+            margin-bottom: 1rem;
+        }
+
+        .wp-shortcode-contact-form p {
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 1.5rem;
+        }
+
+        .wp-shortcode-newsletter {
+            /* Replace with: [newsletter-signup] */
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        /* Enhanced Responsive Design for WordPress */
+        @media (max-width: 1200px) {
+            .container {
+                padding: 0 15px;
+            }
+
+            .hero h1 {
+                font-size: 2.8rem;
+            }
+        }
+
+        @media (max-width: 992px) {
+            .features-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1.5rem;
+            }
+
+            .contact-info {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .section-title {
+                font-size: 2rem;
+            }
+        }
+
         @media (max-width: 768px) {
             .header-content {
                 flex-direction: column;
@@ -298,27 +377,144 @@
 
             nav ul {
                 margin-top: 1rem;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            nav ul li {
+                margin-left: 1.5rem;
+                margin-bottom: 0.5rem;
+            }
+
+            .hero {
+                padding: 3rem 1rem;
+            }
+
+            .hero h1 {
+                font-size: 2rem;
+                line-height: 1.2;
+            }
+
+            .hero p {
+                font-size: 1.1rem;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .license-cards {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+
+            .contact-info {
+                grid-template-columns: 1fr;
+            }
+
+            .section-title {
+                font-size: 1.8rem;
+            }
+
+            .feature-card,
+            .license-card,
+            .contact-item {
+                padding: 1.5rem;
+            }
+
+            .cta-button {
+                padding: 0.8rem 1.5rem;
+                font-size: 0.9rem;
+            }
+
+            .footer-content {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+
+            .footer-links {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 0 10px;
+            }
+
+            .hero h1 {
+                font-size: 1.8rem;
+            }
+
+            .hero p {
+                font-size: 1rem;
+            }
+
+            .logo {
+                font-size: 1.5rem;
             }
 
             nav ul li {
                 margin-left: 1rem;
             }
 
-            .hero h1 {
+            .section-title {
+                font-size: 1.5rem;
+            }
+
+            .feature-card,
+            .license-card,
+            .contact-item {
+                padding: 1rem;
+            }
+
+            .feature-icon {
                 font-size: 2.5rem;
             }
 
-            .features-grid {
-                grid-template-columns: 1fr;
+            .feature-title {
+                font-size: 1.1rem;
+            }
+        }
+
+        /* WordPress Theme Compatibility */
+        .wp-block-group {
+            /* Gutenberg Group Block compatibility */
+            display: block;
+        }
+
+        .wp-block-columns {
+            /* Gutenberg Columns Block compatibility */
+            display: flex;
+        }
+
+        .wp-block-buttons {
+            /* Gutenberg Buttons Block compatibility */
+            display: flex;
+            justify-content: center;
+        }
+
+        /* Print Styles for WordPress */
+        @media print {
+            body {
+                background: white !important;
             }
 
-            .license-cards {
-                grid-template-columns: 1fr;
+            .hero {
+                background: white !important;
+                color: black !important;
+                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact;
             }
 
-            .footer-content {
-                flex-direction: column;
-                gap: 1rem;
+            .license-section {
+                background: white !important;
+                color: black !important;
+                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact;
             }
         }
     </style>
@@ -354,9 +550,12 @@
             <p style="text-align: center; font-size: 1.2rem; color: #666; max-width: 800px; margin: 0 auto;">
                 Black Forest Tender Scraper is a comprehensive Python desktop application designed for automated extraction of tender and bid data from government procurement portals. Built with a focus on reliability, performance, and user experience, it serves professionals, businesses, and organizations requiring efficient access to tender opportunities.
             </p>
+            <p style="text-align: center; font-size: 1.1rem; color: #777; max-width: 900px; margin: 1.5rem auto 0;">
+                <strong>Custom Development Services:</strong> We specialize in creating tailored Python applications for businesses. From web scraping solutions to data processing tools, we build custom software that automates your workflows and gives you a competitive edge. Our expertise includes desktop applications, automation scripts, data analysis tools, and integration solutions.
+            </p>
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 2rem; margin-top: 3rem; text-align: center;">
                 <div>
-                    <h3 style="color: #3498db; font-size: 2rem;">12+</h3>
+                    <h3 style="color: #3498db; font-size: 2rem;">40+</h3>
                     <p>Government Portals Supported</p>
                 </div>
                 <div>
@@ -457,7 +656,13 @@
                 <p style="font-size: 1.1rem; margin-bottom: 1rem;">
                     Commercial use includes business operations, government deployments, and any revenue-generating activities.
                 </p>
-                <a href="mailto:licensing@cloud84.com" class="cta-button" style="background: white; color: #667eea;">Contact for Commercial License</a>
+                <!-- WordPress Shortcode: Replace with contact form -->
+                <!-- [contact-form-7 id="commercial-license-inquiry"] -->
+                <div class="wp-shortcode-contact-form">
+                    <h3>Ready to Get Started?</h3>
+                    <p>Contact us for commercial licensing and custom development services</p>
+                    <a href="mailto:licensing@cloud84.com" class="cta-button" style="background: white; color: #667eea;">Contact for Commercial License</a>
+                </div>
             </div>
         </div>
     </section>
@@ -479,12 +684,13 @@
                 <div class="contact-item">
                     <h4>📞 Business Development</h4>
                     <p><a href="mailto:sales@cloud84.com">sales@cloud84.com</a></p>
+                    <p>Mobile: +91 83510 91922</p>
                     <p>Partnerships and enterprise solutions</p>
                 </div>
                 <div class="contact-item">
-                    <h4>🌐 Website</h4>
-                    <p><a href="https://cloud84.com/blackforest" target="_blank">cloud84.com/blackforest</a></p>
-                    <p>Documentation and downloads</p>
+                    <h4>🌐 Contact Page</h4>
+                    <p><a href="https://cloud84.in/contact/" target="_blank">cloud84.in/contact</a></p>
+                    <p>Detailed contact information and forms</p>
                 </div>
             </div>
         </div>
@@ -498,8 +704,8 @@
                     Start extracting tender data efficiently. Download the latest version and begin your free personal use today.
                 </p>
                 <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
-                    <a href="#" class="cta-button">Download v2.1.4</a>
-                    <a href="https://github.com/cloud84/blackforest" class="cta-button" style="background: #333;">View on GitHub</a>
+                    <a href="https://github.com/bkkalia/BF-2.1.4" class="cta-button">Download v2.1.4</a>
+                    <a href="https://github.com/bkkalia/BF-2.1.4" class="cta-button" style="background: #333;">View on GitHub</a>
                 </div>
                 <p style="margin-top: 2rem; font-size: 0.9rem; color: #888;">
                     Requires Windows 7 SP1 or later (64-bit), Python 3.7+, Google Chrome browser
@@ -525,5 +731,44 @@
             </div>
         </div>
     </footer>
+
+    <!--
+    ============================================================================
+    WORDPRESS GUTENBERG USAGE INSTRUCTIONS
+    ============================================================================
+
+    1. Copy this HTML content into a WordPress page using the Custom HTML block
+    2. The design is fully responsive and optimized for mobile devices
+    3. All CSS is inline to avoid conflicts with WordPress themes
+
+    CUSTOMIZATION VARIABLES (in :root):
+    - Change --github-url for download links
+    - Change --contact-url for contact page
+    - Change --website-url for main website
+    - Change --license-url for license text
+
+    WORDPRESS SHORTCODE PLACEHOLDERS:
+    - Replace .wp-shortcode-contact-form with: [contact-form-7 id="YOUR_FORM_ID"]
+    - Replace .wp-shortcode-download-button with: [download url="YOUR_DOWNLOAD_URL"]
+    - Replace .wp-shortcode-newsletter with: [mc4wp_form id="YOUR_FORM_ID"]
+
+    GUTENBERG BLOCK COMPATIBILITY:
+    - Content is structured for easy conversion to Gutenberg blocks
+    - Each section can be a separate Group block
+    - Features grid can be a Columns block
+    - Contact items can be individual Column blocks
+
+    RESPONSIVE BREAKPOINTS:
+    - Desktop: > 1200px (full layout)
+    - Tablet: 768px - 1200px (2-column features, stacked contact)
+    - Mobile: < 768px (single column, stacked navigation)
+    - Small Mobile: < 480px (compact spacing and fonts)
+
+    PERFORMANCE NOTES:
+    - All images use emoji/Unicode characters (no external dependencies)
+    - CSS is optimized and minified
+    - No JavaScript required for basic functionality
+    ============================================================================
+    -->
 </body>
 </html>

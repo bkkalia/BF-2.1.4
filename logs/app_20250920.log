@@ -1584,3 +1584,676 @@ TypeError: can only concatenate str (not "int") to str
 2025-09-20 14:10:09,879 - INFO - [MainThread:<module>] Creating MainWindow instance...
 2025-09-20 14:10:10,060 - INFO - [MainThread:<module>] ✓ Application initialization completed successfully
 2025-09-20 14:10:10,061 - INFO - [MainThread:<module>] 🎯 Starting main event loop...
+2025-09-20 18:17:50,555 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility v2.1.4 Starting ---
+2025-09-20 18:17:50,572 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2025-09-20 18:17:50,573 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2025-09-20 18:17:50,574 - INFO - [MainThread:setup_logging] Script Directory: G:\My Drive\0dev\BF 2.1.4
+2025-09-20 18:17:50,574 - INFO - [MainThread:setup_logging] Working Directory: g:\My Drive\0dev\BF 2.1.4
+2025-09-20 18:17:50,575 - INFO - [MainThread:check_package_versions] ✓ selenium 4.34.2 is available
+2025-09-20 18:17:50,928 - INFO - [MainThread:check_package_versions] ✓ pandas 2.3.1 is available
+2025-09-20 18:17:51,174 - INFO - [MainThread:check_package_versions] ✓ openpyxl 3.1.5 is available
+2025-09-20 18:17:51,419 - INFO - [MainThread:check_package_versions] ✓ requests 2.32.4 is available
+2025-09-20 18:17:51,434 - INFO - [MainThread:check_package_versions] ✓ pytesseract 0.3.13 is available
+2025-09-20 18:17:51,563 - INFO - [MainThread:check_package_versions] ✓ undetected_chromedriver 3.5.5 (optional) is available
+2025-09-20 18:17:51,566 - INFO - [MainThread:check_package_versions] ✓ webdriver_manager 4.0.2 (optional) is available
+2025-09-20 18:17:51,570 - INFO - [MainThread:import_application_components] Importing application components...
+2025-09-20 18:17:52,082 - INFO - [MainThread:import_application_components] Application components imported successfully
+2025-09-20 18:17:52,083 - INFO - [MainThread:<module>] 🚀 Starting GUI application initialization...
+2025-09-20 18:17:52,084 - INFO - [MainThread:load_and_validate_configurations] Loading base URL configurations from G:\My Drive\0dev\BF 2.1.4\base_urls.csv...
+2025-09-20 18:17:52,107 - INFO - [MainThread:load_base_urls] Loaded 12 base URL configurations from base_urls.csv.
+2025-09-20 18:17:52,107 - INFO - [MainThread:load_and_validate_configurations] ✓ Loaded 12 URL configurations
+2025-09-20 18:17:52,108 - INFO - [MainThread:load_and_validate_configurations] Loading application settings...
+2025-09-20 18:17:52,136 - INFO - [MainThread:load_settings] Settings loaded and merged with defaults from G:\My Drive\0dev\BF 2.1.4\settings.json
+2025-09-20 18:17:52,136 - INFO - [MainThread:load_and_validate_configurations] ✓ Settings loaded and validated
+2025-09-20 18:17:52,137 - INFO - [MainThread:<module>] Creating main application window...
+2025-09-20 18:17:52,981 - INFO - [MainThread:<module>] Creating MainWindow instance...
+2025-09-20 18:17:53,314 - INFO - [MainThread:<module>] ✓ Application initialization completed successfully
+2025-09-20 18:17:53,315 - INFO - [MainThread:<module>] 🎯 Starting main event loop...
+2025-09-20 18:17:57,093 - INFO - [MainThread:_start_fetch_departments_thread] Fetch Departments button clicked.
+2025-09-20 18:17:57,101 - INFO - [DeptFetchThread:setup_driver] Setting up Chrome WebDriver...
+2025-09-20 18:17:57,102 - INFO - [DeptFetchThread:setup_driver] Using standard ChromeDriver for better compatibility
+2025-09-20 18:17:57,103 - INFO - [DeptFetchThread:setup_driver] Setting download directory to: g:\My Drive\0dev\BF 2.1.4
+2025-09-20 18:17:57,103 - INFO - [DeptFetchThread:setup_driver] Installing ChromeDriver using webdriver-manager...
+2025-09-20 18:17:57,104 - INFO - [DeptFetchThread:log] ====== WebDriver manager ======
+2025-09-20 18:17:58,307 - INFO - [DeptFetchThread:log] Get LATEST chromedriver version for google-chrome
+2025-09-20 18:17:58,522 - INFO - [DeptFetchThread:log] Get LATEST chromedriver version for google-chrome
+2025-09-20 18:17:58,662 - INFO - [DeptFetchThread:log] Driver [C:\Users\kalia\.wdm\drivers\chromedriver\win64\140.0.7339.185\chromedriver-win32/chromedriver.exe] found in cache
+2025-09-20 18:17:58,663 - INFO - [DeptFetchThread:setup_driver] ChromeDriver installed successfully
+2025-09-20 18:17:58,664 - INFO - [DeptFetchThread:setup_driver] Creating Chrome WebDriver instance...
+2025-09-20 18:18:00,353 - INFO - [DeptFetchThread:setup_driver] Chrome WebDriver setup completed successfully
+2025-09-20 18:18:06,915 - INFO - [DeptFetchThread:safe_quit_driver] Closing WebDriver instance...
+2025-09-20 18:18:09,053 - INFO - [DeptFetchThread:safe_quit_driver] WebDriver quit successfully.
+2025-09-20 18:18:13,095 - INFO - [MainThread:_get_all_valid_departments] Starting scraping for ALL 43 valid departments (filtered from 43 total).
+2025-09-20 18:18:13,097 - INFO - [Department Scrape:setup_driver] Setting up Chrome WebDriver...
+2025-09-20 18:18:13,097 - INFO - [Department Scrape:setup_driver] Using standard ChromeDriver for better compatibility
+2025-09-20 18:18:13,097 - INFO - [Department Scrape:setup_driver] Setting download directory to: C:\Users\kalia\Downloads
+2025-09-20 18:18:13,098 - INFO - [Department Scrape:setup_driver] Installing ChromeDriver using webdriver-manager...
+2025-09-20 18:18:13,099 - INFO - [Department Scrape:log] ====== WebDriver manager ======
+2025-09-20 18:18:14,230 - INFO - [Department Scrape:log] Get LATEST chromedriver version for google-chrome
+2025-09-20 18:18:14,417 - INFO - [Department Scrape:log] Get LATEST chromedriver version for google-chrome
+2025-09-20 18:18:14,578 - INFO - [Department Scrape:log] Driver [C:\Users\kalia\.wdm\drivers\chromedriver\win64\140.0.7339.185\chromedriver-win32/chromedriver.exe] found in cache
+2025-09-20 18:18:14,579 - INFO - [Department Scrape:setup_driver] ChromeDriver installed successfully
+2025-09-20 18:18:14,580 - INFO - [Department Scrape:setup_driver] Creating Chrome WebDriver instance...
+2025-09-20 18:18:15,670 - INFO - [Department Scrape:setup_driver] Chrome WebDriver setup completed successfully
+2025-09-20 18:18:18,704 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Baddi Barotiwala Nal' (SNo:1)'.
+2025-09-20 18:18:24,485 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-20 18:18:28,299 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Chief Project Direct' (SNo:2)'.
+2025-09-20 18:18:33,015 - WARNING - [Department Scrape:_scrape_tender_details] Error tender detail row 4
+Traceback (most recent call last):
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\connectionpool.py", line 787, in urlopen
+    response = self._make_request(
+        conn,
+    ...<10 lines>...
+        **response_kw,
+    )
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\connectionpool.py", line 534, in _make_request
+    response = conn.getresponse()
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\connection.py", line 565, in getresponse
+    httplib_response = super().getresponse()
+  File "c:\Python313\Lib\http\client.py", line 1430, in getresponse
+    response.begin()
+    ~~~~~~~~~~~~~~^^
+  File "c:\Python313\Lib\http\client.py", line 331, in begin
+    version, status, reason = self._read_status()
+                              ~~~~~~~~~~~~~~~~~^^
+  File "c:\Python313\Lib\http\client.py", line 292, in _read_status
+    line = str(self.fp.readline(_MAXLINE + 1), "iso-8859-1")
+               ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "c:\Python313\Lib\socket.py", line 719, in readinto
+    return self._sock.recv_into(b)
+           ~~~~~~~~~~~~~~~~~~~~^^^
+ConnectionResetError: [WinError 10054] An existing connection was forcibly closed by the remote host
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "G:\My Drive\0dev\BF 2.1.4\scraper\logic.py", line 383, in _scrape_tender_details
+    cells = row.find_elements(By.TAG_NAME, "td")
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\remote\webelement.py", line 631, in find_elements
+    return self._execute(Command.FIND_CHILD_ELEMENTS, {"using": by, "value": value})["value"]
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\remote\webelement.py", line 573, in _execute
+    return self._parent.execute(command, params)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\remote\webdriver.py", line 451, in execute
+    response = cast(RemoteConnection, self.command_executor).execute(driver_command, params)
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\remote\remote_connection.py", line 404, in execute
+    return self._request(command_info[0], url, body=data)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\remote\remote_connection.py", line 428, in _request
+    response = self._conn.request(method, url, body=body, headers=headers, timeout=self._client_config.timeout)
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\_request_methods.py", line 143, in request
+    return self.request_encode_body(
+           ~~~~~~~~~~~~~~~~~~~~~~~~^
+        method, url, fields=fields, headers=headers, **urlopen_kw
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\_request_methods.py", line 278, in request_encode_body
+    return self.urlopen(method, url, **extra_kw)
+           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\poolmanager.py", line 459, in urlopen
+    response = conn.urlopen(method, u.request_uri, **kw)
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\connectionpool.py", line 841, in urlopen
+    retries = retries.increment(
+        method, url, error=new_e, _pool=self, _stacktrace=sys.exc_info()[2]
+    )
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\util\retry.py", line 474, in increment
+    raise reraise(type(error), error, _stacktrace)
+          ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\util\util.py", line 38, in reraise
+    raise value.with_traceback(tb)
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\connectionpool.py", line 787, in urlopen
+    response = self._make_request(
+        conn,
+    ...<10 lines>...
+        **response_kw,
+    )
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\connectionpool.py", line 534, in _make_request
+    response = conn.getresponse()
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\connection.py", line 565, in getresponse
+    httplib_response = super().getresponse()
+  File "c:\Python313\Lib\http\client.py", line 1430, in getresponse
+    response.begin()
+    ~~~~~~~~~~~~~~^^
+  File "c:\Python313\Lib\http\client.py", line 331, in begin
+    version, status, reason = self._read_status()
+                              ~~~~~~~~~~~~~~~~~^^
+  File "c:\Python313\Lib\http\client.py", line 292, in _read_status
+    line = str(self.fp.readline(_MAXLINE + 1), "iso-8859-1")
+               ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "c:\Python313\Lib\socket.py", line 719, in readinto
+    return self._sock.recv_into(b)
+           ~~~~~~~~~~~~~~~~~~~~^^^
+urllib3.exceptions.ProtocolError: ('Connection aborted.', ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None))
+2025-09-20 18:18:37,265 - WARNING - [Department Scrape:urlopen] Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000002358213F890>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it')': /session/cfe8839fc9772df0e8d310980f67f383/element/f.1834588E824D742C85068D9F90A1BFD6.d.0604DC31D425810F96E26185B86DC8D4.e.206/elements
+2025-09-20 18:18:41,354 - WARNING - [Department Scrape:urlopen] Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000002358218CB00>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it')': /session/cfe8839fc9772df0e8d310980f67f383/element/f.1834588E824D742C85068D9F90A1BFD6.d.0604DC31D425810F96E26185B86DC8D4.e.206/elements
+2025-09-20 18:18:45,410 - WARNING - [Department Scrape:urlopen] Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x000002358218CC30>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it')': /session/cfe8839fc9772df0e8d310980f67f383/element/f.1834588E824D742C85068D9F90A1BFD6.d.0604DC31D425810F96E26185B86DC8D4.e.206/elements
+2025-09-20 18:18:49,479 - WARNING - [Department Scrape:_scrape_tender_details] Error tender detail row 5
+Traceback (most recent call last):
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\connection.py", line 198, in _new_conn
+    sock = connection.create_connection(
+        (self._dns_host, self.port),
+    ...<2 lines>...
+        socket_options=self.socket_options,
+    )
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\util\connection.py", line 85, in create_connection
+    raise err
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\util\connection.py", line 73, in create_connection
+    sock.connect(sa)
+    ~~~~~~~~~~~~^^^^
+ConnectionRefusedError: [WinError 10061] No connection could be made because the target machine actively refused it
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\connectionpool.py", line 787, in urlopen
+    response = self._make_request(
+        conn,
+    ...<10 lines>...
+        **response_kw,
+    )
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\connectionpool.py", line 493, in _make_request
+    conn.request(
+    ~~~~~~~~~~~~^
+        method,
+        ^^^^^^^
+    ...<6 lines>...
+        enforce_content_length=enforce_content_length,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\connection.py", line 494, in request
+    self.endheaders()
+    ~~~~~~~~~~~~~~~^^
+  File "c:\Python313\Lib\http\client.py", line 1333, in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Python313\Lib\http\client.py", line 1093, in _send_output
+    self.send(msg)
+    ~~~~~~~~~^^^^^
+  File "c:\Python313\Lib\http\client.py", line 1037, in send
+    self.connect()
+    ~~~~~~~~~~~~^^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\connection.py", line 325, in connect
+    self.sock = self._new_conn()
+                ~~~~~~~~~~~~~~^^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\connection.py", line 213, in _new_conn
+    raise NewConnectionError(
+        self, f"Failed to establish a new connection: {e}"
+    ) from e
+urllib3.exceptions.NewConnectionError: <urllib3.connection.HTTPConnection object at 0x00000235820F2690>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "G:\My Drive\0dev\BF 2.1.4\scraper\logic.py", line 383, in _scrape_tender_details
+    cells = row.find_elements(By.TAG_NAME, "td")
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\remote\webelement.py", line 631, in find_elements
+    return self._execute(Command.FIND_CHILD_ELEMENTS, {"using": by, "value": value})["value"]
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\remote\webelement.py", line 573, in _execute
+    return self._parent.execute(command, params)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\remote\webdriver.py", line 451, in execute
+    response = cast(RemoteConnection, self.command_executor).execute(driver_command, params)
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\remote\remote_connection.py", line 404, in execute
+    return self._request(command_info[0], url, body=data)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\remote\remote_connection.py", line 428, in _request
+    response = self._conn.request(method, url, body=body, headers=headers, timeout=self._client_config.timeout)
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\_request_methods.py", line 143, in request
+    return self.request_encode_body(
+           ~~~~~~~~~~~~~~~~~~~~~~~~^
+        method, url, fields=fields, headers=headers, **urlopen_kw
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\_request_methods.py", line 278, in request_encode_body
+    return self.urlopen(method, url, **extra_kw)
+           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\poolmanager.py", line 459, in urlopen
+    response = conn.urlopen(method, u.request_uri, **kw)
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\connectionpool.py", line 871, in urlopen
+    return self.urlopen(
+           ~~~~~~~~~~~~^
+        method,
+        ^^^^^^^
+    ...<13 lines>...
+        **response_kw,
+        ^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\connectionpool.py", line 871, in urlopen
+    return self.urlopen(
+           ~~~~~~~~~~~~^
+        method,
+        ^^^^^^^
+    ...<13 lines>...
+        **response_kw,
+        ^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\connectionpool.py", line 871, in urlopen
+    return self.urlopen(
+           ~~~~~~~~~~~~^
+        method,
+        ^^^^^^^
+    ...<13 lines>...
+        **response_kw,
+        ^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\connectionpool.py", line 841, in urlopen
+    retries = retries.increment(
+        method, url, error=new_e, _pool=self, _stacktrace=sys.exc_info()[2]
+    )
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\util\retry.py", line 519, in increment
+    raise MaxRetryError(_pool, url, reason) from reason  # type: ignore[arg-type]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+urllib3.exceptions.MaxRetryError: HTTPConnectionPool(host='localhost', port=55497): Max retries exceeded with url: /session/cfe8839fc9772df0e8d310980f67f383/element/f.1834588E824D742C85068D9F90A1BFD6.d.0604DC31D425810F96E26185B86DC8D4.e.206/elements (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x00000235820F2690>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it'))
+2025-09-20 18:18:53,568 - WARNING - [Department Scrape:urlopen] Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x0000023582136470>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it')': /session/cfe8839fc9772df0e8d310980f67f383/element/f.1834588E824D742C85068D9F90A1BFD6.d.0604DC31D425810F96E26185B86DC8D4.e.207/elements
+2025-09-20 18:18:57,632 - WARNING - [Department Scrape:urlopen] Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x00000235821368B0>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it')': /session/cfe8839fc9772df0e8d310980f67f383/element/f.1834588E824D742C85068D9F90A1BFD6.d.0604DC31D425810F96E26185B86DC8D4.e.207/elements
+2025-09-20 18:19:01,688 - WARNING - [Department Scrape:urlopen] Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x0000023582136580>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it')': /session/cfe8839fc9772df0e8d310980f67f383/element/f.1834588E824D742C85068D9F90A1BFD6.d.0604DC31D425810F96E26185B86DC8D4.e.207/elements
+2025-09-20 18:19:05,775 - WARNING - [Department Scrape:_scrape_tender_details] Error tender detail row 6
+Traceback (most recent call last):
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\connection.py", line 198, in _new_conn
+    sock = connection.create_connection(
+        (self._dns_host, self.port),
+    ...<2 lines>...
+        socket_options=self.socket_options,
+    )
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\util\connection.py", line 85, in create_connection
+    raise err
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\util\connection.py", line 73, in create_connection
+    sock.connect(sa)
+    ~~~~~~~~~~~~^^^^
+ConnectionRefusedError: [WinError 10061] No connection could be made because the target machine actively refused it
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\connectionpool.py", line 787, in urlopen
+    response = self._make_request(
+        conn,
+    ...<10 lines>...
+        **response_kw,
+    )
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\connectionpool.py", line 493, in _make_request
+    conn.request(
+    ~~~~~~~~~~~~^
+        method,
+        ^^^^^^^
+    ...<6 lines>...
+        enforce_content_length=enforce_content_length,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\connection.py", line 494, in request
+    self.endheaders()
+    ~~~~~~~~~~~~~~~^^
+  File "c:\Python313\Lib\http\client.py", line 1333, in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Python313\Lib\http\client.py", line 1093, in _send_output
+    self.send(msg)
+    ~~~~~~~~~^^^^^
+  File "c:\Python313\Lib\http\client.py", line 1037, in send
+    self.connect()
+    ~~~~~~~~~~~~^^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\connection.py", line 325, in connect
+    self.sock = self._new_conn()
+                ~~~~~~~~~~~~~~^^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\connection.py", line 213, in _new_conn
+    raise NewConnectionError(
+        self, f"Failed to establish a new connection: {e}"
+    ) from e
+urllib3.exceptions.NewConnectionError: <urllib3.connection.HTTPConnection object at 0x0000023582136AD0>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "G:\My Drive\0dev\BF 2.1.4\scraper\logic.py", line 383, in _scrape_tender_details
+    cells = row.find_elements(By.TAG_NAME, "td")
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\remote\webelement.py", line 631, in find_elements
+    return self._execute(Command.FIND_CHILD_ELEMENTS, {"using": by, "value": value})["value"]
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\remote\webelement.py", line 573, in _execute
+    return self._parent.execute(command, params)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\remote\webdriver.py", line 451, in execute
+    response = cast(RemoteConnection, self.command_executor).execute(driver_command, params)
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\remote\remote_connection.py", line 404, in execute
+    return self._request(command_info[0], url, body=data)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\remote\remote_connection.py", line 428, in _request
+    response = self._conn.request(method, url, body=body, headers=headers, timeout=self._client_config.timeout)
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\_request_methods.py", line 143, in request
+    return self.request_encode_body(
+           ~~~~~~~~~~~~~~~~~~~~~~~~^
+        method, url, fields=fields, headers=headers, **urlopen_kw
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\_request_methods.py", line 278, in request_encode_body
+    return self.urlopen(method, url, **extra_kw)
+           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\poolmanager.py", line 459, in urlopen
+    response = conn.urlopen(method, u.request_uri, **kw)
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\connectionpool.py", line 871, in urlopen
+    return self.urlopen(
+           ~~~~~~~~~~~~^
+        method,
+        ^^^^^^^
+    ...<13 lines>...
+        **response_kw,
+        ^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\connectionpool.py", line 871, in urlopen
+    return self.urlopen(
+           ~~~~~~~~~~~~^
+        method,
+        ^^^^^^^
+    ...<13 lines>...
+        **response_kw,
+        ^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\connectionpool.py", line 871, in urlopen
+    return self.urlopen(
+           ~~~~~~~~~~~~^
+        method,
+        ^^^^^^^
+    ...<13 lines>...
+        **response_kw,
+        ^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\connectionpool.py", line 841, in urlopen
+    retries = retries.increment(
+        method, url, error=new_e, _pool=self, _stacktrace=sys.exc_info()[2]
+    )
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\util\retry.py", line 519, in increment
+    raise MaxRetryError(_pool, url, reason) from reason  # type: ignore[arg-type]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+urllib3.exceptions.MaxRetryError: HTTPConnectionPool(host='localhost', port=55497): Max retries exceeded with url: /session/cfe8839fc9772df0e8d310980f67f383/element/f.1834588E824D742C85068D9F90A1BFD6.d.0604DC31D425810F96E26185B86DC8D4.e.207/elements (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x0000023582136AD0>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it'))
+2025-09-20 18:19:09,880 - WARNING - [Department Scrape:urlopen] Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x0000023582136E00>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it')': /session/cfe8839fc9772df0e8d310980f67f383/element/f.1834588E824D742C85068D9F90A1BFD6.d.0604DC31D425810F96E26185B86DC8D4.e.208/elements
+2025-09-20 18:19:13,966 - WARNING - [Department Scrape:urlopen] Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x0000023582137020>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it')': /session/cfe8839fc9772df0e8d310980f67f383/element/f.1834588E824D742C85068D9F90A1BFD6.d.0604DC31D425810F96E26185B86DC8D4.e.208/elements
+2025-09-20 18:19:18,045 - WARNING - [Department Scrape:urlopen] Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x0000023582137460>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it')': /session/cfe8839fc9772df0e8d310980f67f383/element/f.1834588E824D742C85068D9F90A1BFD6.d.0604DC31D425810F96E26185B86DC8D4.e.208/elements
+2025-09-20 18:19:22,137 - WARNING - [Department Scrape:_scrape_tender_details] Error tender detail row 7
+Traceback (most recent call last):
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\connection.py", line 198, in _new_conn
+    sock = connection.create_connection(
+        (self._dns_host, self.port),
+    ...<2 lines>...
+        socket_options=self.socket_options,
+    )
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\util\connection.py", line 85, in create_connection
+    raise err
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\util\connection.py", line 73, in create_connection
+    sock.connect(sa)
+    ~~~~~~~~~~~~^^^^
+ConnectionRefusedError: [WinError 10061] No connection could be made because the target machine actively refused it
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\connectionpool.py", line 787, in urlopen
+    response = self._make_request(
+        conn,
+    ...<10 lines>...
+        **response_kw,
+    )
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\connectionpool.py", line 493, in _make_request
+    conn.request(
+    ~~~~~~~~~~~~^
+        method,
+        ^^^^^^^
+    ...<6 lines>...
+        enforce_content_length=enforce_content_length,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\connection.py", line 494, in request
+    self.endheaders()
+    ~~~~~~~~~~~~~~~^^
+  File "c:\Python313\Lib\http\client.py", line 1333, in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Python313\Lib\http\client.py", line 1093, in _send_output
+    self.send(msg)
+    ~~~~~~~~~^^^^^
+  File "c:\Python313\Lib\http\client.py", line 1037, in send
+    self.connect()
+    ~~~~~~~~~~~~^^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\connection.py", line 325, in connect
+    self.sock = self._new_conn()
+                ~~~~~~~~~~~~~~^^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\connection.py", line 213, in _new_conn
+    raise NewConnectionError(
+        self, f"Failed to establish a new connection: {e}"
+    ) from e
+urllib3.exceptions.NewConnectionError: <urllib3.connection.HTTPConnection object at 0x0000023582137130>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "G:\My Drive\0dev\BF 2.1.4\scraper\logic.py", line 383, in _scrape_tender_details
+    cells = row.find_elements(By.TAG_NAME, "td")
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\remote\webelement.py", line 631, in find_elements
+    return self._execute(Command.FIND_CHILD_ELEMENTS, {"using": by, "value": value})["value"]
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\remote\webelement.py", line 573, in _execute
+    return self._parent.execute(command, params)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\remote\webdriver.py", line 451, in execute
+    response = cast(RemoteConnection, self.command_executor).execute(driver_command, params)
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\remote\remote_connection.py", line 404, in execute
+    return self._request(command_info[0], url, body=data)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\remote\remote_connection.py", line 428, in _request
+    response = self._conn.request(method, url, body=body, headers=headers, timeout=self._client_config.timeout)
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\_request_methods.py", line 143, in request
+    return self.request_encode_body(
+           ~~~~~~~~~~~~~~~~~~~~~~~~^
+        method, url, fields=fields, headers=headers, **urlopen_kw
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\_request_methods.py", line 278, in request_encode_body
+    return self.urlopen(method, url, **extra_kw)
+           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\poolmanager.py", line 459, in urlopen
+    response = conn.urlopen(method, u.request_uri, **kw)
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\connectionpool.py", line 871, in urlopen
+    return self.urlopen(
+           ~~~~~~~~~~~~^
+        method,
+        ^^^^^^^
+    ...<13 lines>...
+        **response_kw,
+        ^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\connectionpool.py", line 871, in urlopen
+    return self.urlopen(
+           ~~~~~~~~~~~~^
+        method,
+        ^^^^^^^
+    ...<13 lines>...
+        **response_kw,
+        ^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\connectionpool.py", line 871, in urlopen
+    return self.urlopen(
+           ~~~~~~~~~~~~^
+        method,
+        ^^^^^^^
+    ...<13 lines>...
+        **response_kw,
+        ^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\connectionpool.py", line 841, in urlopen
+    retries = retries.increment(
+        method, url, error=new_e, _pool=self, _stacktrace=sys.exc_info()[2]
+    )
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\util\retry.py", line 519, in increment
+    raise MaxRetryError(_pool, url, reason) from reason  # type: ignore[arg-type]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+urllib3.exceptions.MaxRetryError: HTTPConnectionPool(host='localhost', port=55497): Max retries exceeded with url: /session/cfe8839fc9772df0e8d310980f67f383/element/f.1834588E824D742C85068D9F90A1BFD6.d.0604DC31D425810F96E26185B86DC8D4.e.208/elements (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x0000023582137130>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it'))
+2025-09-20 18:19:26,212 - WARNING - [Department Scrape:urlopen] Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x0000023582137790>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it')': /session/cfe8839fc9772df0e8d310980f67f383/element/f.1834588E824D742C85068D9F90A1BFD6.d.0604DC31D425810F96E26185B86DC8D4.e.209/elements
+2025-09-20 18:19:30,265 - WARNING - [Department Scrape:urlopen] Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x0000023582137BD0>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it')': /session/cfe8839fc9772df0e8d310980f67f383/element/f.1834588E824D742C85068D9F90A1BFD6.d.0604DC31D425810F96E26185B86DC8D4.e.209/elements
+2025-09-20 18:19:34,331 - WARNING - [Department Scrape:urlopen] Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x00000235821378A0>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it')': /session/cfe8839fc9772df0e8d310980f67f383/element/f.1834588E824D742C85068D9F90A1BFD6.d.0604DC31D425810F96E26185B86DC8D4.e.209/elements
+2025-09-20 18:19:38,407 - WARNING - [Department Scrape:_scrape_tender_details] Error tender detail row 8
+Traceback (most recent call last):
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\connection.py", line 198, in _new_conn
+    sock = connection.create_connection(
+        (self._dns_host, self.port),
+    ...<2 lines>...
+        socket_options=self.socket_options,
+    )
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\util\connection.py", line 85, in create_connection
+    raise err
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\util\connection.py", line 73, in create_connection
+    sock.connect(sa)
+    ~~~~~~~~~~~~^^^^
+ConnectionRefusedError: [WinError 10061] No connection could be made because the target machine actively refused it
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\connectionpool.py", line 787, in urlopen
+    response = self._make_request(
+        conn,
+    ...<10 lines>...
+        **response_kw,
+    )
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\connectionpool.py", line 493, in _make_request
+    conn.request(
+    ~~~~~~~~~~~~^
+        method,
+        ^^^^^^^
+    ...<6 lines>...
+        enforce_content_length=enforce_content_length,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\connection.py", line 494, in request
+    self.endheaders()
+    ~~~~~~~~~~~~~~~^^
+  File "c:\Python313\Lib\http\client.py", line 1333, in endheaders
+    self._send_output(message_body, encode_chunked=encode_chunked)
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "c:\Python313\Lib\http\client.py", line 1093, in _send_output
+    self.send(msg)
+    ~~~~~~~~~^^^^^
+  File "c:\Python313\Lib\http\client.py", line 1037, in send
+    self.connect()
+    ~~~~~~~~~~~~^^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\connection.py", line 325, in connect
+    self.sock = self._new_conn()
+                ~~~~~~~~~~~~~~^^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\connection.py", line 213, in _new_conn
+    raise NewConnectionError(
+        self, f"Failed to establish a new connection: {e}"
+    ) from e
+urllib3.exceptions.NewConnectionError: <urllib3.connection.HTTPConnection object at 0x0000023582137DF0>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "G:\My Drive\0dev\BF 2.1.4\scraper\logic.py", line 383, in _scrape_tender_details
+    cells = row.find_elements(By.TAG_NAME, "td")
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\remote\webelement.py", line 631, in find_elements
+    return self._execute(Command.FIND_CHILD_ELEMENTS, {"using": by, "value": value})["value"]
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\remote\webelement.py", line 573, in _execute
+    return self._parent.execute(command, params)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\remote\webdriver.py", line 451, in execute
+    response = cast(RemoteConnection, self.command_executor).execute(driver_command, params)
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\remote\remote_connection.py", line 404, in execute
+    return self._request(command_info[0], url, body=data)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\remote\remote_connection.py", line 428, in _request
+    response = self._conn.request(method, url, body=body, headers=headers, timeout=self._client_config.timeout)
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\_request_methods.py", line 143, in request
+    return self.request_encode_body(
+           ~~~~~~~~~~~~~~~~~~~~~~~~^
+        method, url, fields=fields, headers=headers, **urlopen_kw
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\_request_methods.py", line 278, in request_encode_body
+    return self.urlopen(method, url, **extra_kw)
+           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\poolmanager.py", line 459, in urlopen
+    response = conn.urlopen(method, u.request_uri, **kw)
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\connectionpool.py", line 871, in urlopen
+    return self.urlopen(
+           ~~~~~~~~~~~~^
+        method,
+        ^^^^^^^
+    ...<13 lines>...
+        **response_kw,
+        ^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\connectionpool.py", line 871, in urlopen
+    return self.urlopen(
+           ~~~~~~~~~~~~^
+        method,
+        ^^^^^^^
+    ...<13 lines>...
+        **response_kw,
+        ^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\connectionpool.py", line 871, in urlopen
+    return self.urlopen(
+           ~~~~~~~~~~~~^
+        method,
+        ^^^^^^^
+    ...<13 lines>...
+        **response_kw,
+        ^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\connectionpool.py", line 841, in urlopen
+    retries = retries.increment(
+        method, url, error=new_e, _pool=self, _stacktrace=sys.exc_info()[2]
+    )
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\urllib3\util\retry.py", line 519, in increment
+    raise MaxRetryError(_pool, url, reason) from reason  # type: ignore[arg-type]
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+urllib3.exceptions.MaxRetryError: HTTPConnectionPool(host='localhost', port=55497): Max retries exceeded with url: /session/cfe8839fc9772df0e8d310980f67f383/element/f.1834588E824D742C85068D9F90A1BFD6.d.0604DC31D425810F96E26185B86DC8D4.e.209/elements (Caused by NewConnectionError('<urllib3.connection.HTTPConnection object at 0x0000023582137DF0>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it'))
+2025-09-20 18:19:42,462 - WARNING - [Department Scrape:urlopen] Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x00000235823B4160>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it')': /session/cfe8839fc9772df0e8d310980f67f383/element/f.1834588E824D742C85068D9F90A1BFD6.d.0604DC31D425810F96E26185B86DC8D4.e.210/elements
+2025-09-20 18:19:46,558 - WARNING - [Department Scrape:urlopen] Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x00000235823B45A0>: Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it')': /session/cfe8839fc9772df0e8d310980f67f383/element/f.1834588E824D742C85068D9F90A1BFD6.d.0604DC31D425810F96E26185B86DC8D4.e.210/elements
+2025-09-20 18:22:20,916 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility v2.1.4 Starting ---
+2025-09-20 18:22:20,919 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2025-09-20 18:22:20,920 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2025-09-20 18:22:20,920 - INFO - [MainThread:setup_logging] Script Directory: G:\My Drive\0dev\BF 2.1.4
+2025-09-20 18:22:20,921 - INFO - [MainThread:setup_logging] Working Directory: g:\My Drive\0dev\BF 2.1.4
+2025-09-20 18:22:20,922 - INFO - [MainThread:check_package_versions] ✓ selenium 4.34.2 is available
+2025-09-20 18:22:24,496 - INFO - [MainThread:check_package_versions] ✓ pandas 2.3.1 is available
+2025-09-20 18:22:24,757 - INFO - [MainThread:check_package_versions] ✓ openpyxl 3.1.5 is available
+2025-09-20 18:22:25,057 - INFO - [MainThread:check_package_versions] ✓ requests 2.32.4 is available
+2025-09-20 18:22:25,069 - INFO - [MainThread:check_package_versions] ✓ pytesseract 0.3.13 is available
+2025-09-20 18:22:25,288 - INFO - [MainThread:check_package_versions] ✓ undetected_chromedriver 3.5.5 (optional) is available
+2025-09-20 18:22:25,293 - INFO - [MainThread:check_package_versions] ✓ webdriver_manager 4.0.2 (optional) is available
+2025-09-20 18:22:25,298 - INFO - [MainThread:import_application_components] Importing application components...
+2025-09-20 18:22:25,942 - INFO - [MainThread:import_application_components] Application components imported successfully
+2025-09-20 18:22:25,943 - INFO - [MainThread:<module>] 🚀 Starting GUI application initialization...
+2025-09-20 18:22:25,944 - INFO - [MainThread:load_and_validate_configurations] Loading base URL configurations from G:\My Drive\0dev\BF 2.1.4\base_urls.csv...
+2025-09-20 18:22:25,966 - INFO - [MainThread:load_base_urls] Loaded 12 base URL configurations from base_urls.csv.
+2025-09-20 18:22:25,967 - INFO - [MainThread:load_and_validate_configurations] ✓ Loaded 12 URL configurations
+2025-09-20 18:22:25,968 - INFO - [MainThread:load_and_validate_configurations] Loading application settings...
+2025-09-20 18:22:25,982 - INFO - [MainThread:load_settings] Settings loaded and merged with defaults from G:\My Drive\0dev\BF 2.1.4\settings.json
+2025-09-20 18:22:25,983 - INFO - [MainThread:load_and_validate_configurations] ✓ Settings loaded and validated
+2025-09-20 18:22:25,983 - INFO - [MainThread:<module>] Creating main application window...
+2025-09-20 18:22:26,979 - INFO - [MainThread:<module>] Creating MainWindow instance...
+2025-09-20 18:22:27,245 - INFO - [MainThread:<module>] ✓ Application initialization completed successfully
+2025-09-20 18:22:27,246 - INFO - [MainThread:<module>] 🎯 Starting main event loop...
