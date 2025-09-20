@@ -173,6 +173,15 @@ HOVER_COLOR = "#00796B"          # teal for hover/active states
 STOP_BUTTON_COLOR = "#C62828"
 STOP_BUTTON_ACTIVE_COLOR = "#E53935"
 
+# --- Sound Defaults (can be overridden via env vars or settings.json) ---
+# Default Windows system sound file paths - these will be used if no custom files are specified
+SOUND_DING_FILE = r"C:\Windows\Media\ding.wav"
+SOUND_SUCCESS_FILE = r"C:\Windows\Media\tada.wav"
+SOUND_ERROR_FILE = r"C:\Windows\Media\Windows Error.wav"
+
+# Allow disabling sounds centrally if needed
+ENABLE_SOUNDS = True
+
 # --- Logging ---
 LOG_FORMAT = '%(asctime)s - %(levelname)s - [%(threadName)s:%(funcName)s] %(message)s'
 LOG_LEVEL = logging.INFO

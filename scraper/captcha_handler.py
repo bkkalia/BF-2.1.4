@@ -15,38 +15,46 @@ import threading
 import time
 import logging
 
-# Third-party imports - with error checking
+# New: cross-platform, simple sound helper (Windows winsound preferred)
+winsound = None
 try:
-    from selenium.webdriver.common.by import By
-    from selenium.webdriver.support.ui import WebDriverWait
-    from selenium.webdriver.support import expected_conditions as EC
-    from selenium.common.exceptions import (
-        NoSuchElementException, TimeoutException, WebDriverException
-    )
+    import winsound
+    _WINSOUND_AVAILABLE = True
+except Exception:
+    _WINSOUND_AVAILABLE = False
+
+# Import selenium exceptions
+try:
+    from selenium.common.exceptions import NoSuchElementException, WebDriverException
     SELENIUM_IMPORTED = True
-except ImportError as e:
-    print(f"Error importing selenium components: {e}")
+except ImportError:
+    NoSuchElementException = Exception
+    WebDriverException = Exception
     SELENIUM_IMPORTED = False
 
-    # Use fallback classes from config
-    from config import By, WebDriverWait
-    NoSuchElementException = Exception
-    TimeoutException = Exception
-    WebDriverException = Exception
+# Sound constants
+SOUND_DING = "ding"
+SOUND_SUCCESS = "success"
+SOUND_ERROR = "error"
 
-    # Define EC as a module-like object to avoid type conflicts
-    class ECFallback:
-        @staticmethod
-        def presence_of_element_located(locator):
-            return None
-        @staticmethod
-        def element_to_be_clickable(locator):
-            return None
-        @staticmethod
-        def visibility_of_element_located(locator):
-            return None
-
-    EC = ECFallback()
+def play_sound(kind: str) -> None:
+    """Play a short sound for UI feedback. Uses winsound on Windows, fallback to ASCII bell."""
+    try:
+        if _WINSOUND_AVAILABLE:
+            if kind == SOUND_DING:
+                winsound.PlaySound("SystemAsterisk", winsound.SND_ALIAS | winsound.SND_ASYNC)  # type: ignore
+            elif kind == SOUND_SUCCESS:
+                winsound.PlaySound("SystemExclamation", winsound.SND_ALIAS | winsound.SND_ASYNC)  # type: ignore
+            elif kind == SOUND_ERROR:
+                winsound.PlaySound("SystemHand", winsound.SND_ALIAS | winsound.SND_ASYNC)  # type: ignore
+            else:
+                winsound.Beep(1000, 120)  # type: ignore
+        else:
+            # Fallback: ASCII bell (may be suppressed by environment)
+            print("\a", end="", flush=True)
+    except Exception:
+        # Best-effort only; do not raise from sound helper
+        pass
 
 logger = logging.getLogger(__name__)
 
@@ -143,49 +151,58 @@ class CaptchaDialog:
         # Create dialog in main thread
         self.dialog = tk.Toplevel()
         self.dialog.title("CAPTCHA Required")
-        self.dialog.geometry("400x250")
         self.dialog.resizable(False, False)
         self.dialog.grab_set()  # Make modal
-        
-        # Center the dialog
-        self.dialog.transient()
+
+        # Keep on top
+        try:
+            self.dialog.attributes("-topmost", True)
+        except Exception:
+            pass
+
+        # Center the dialog and add padding
+        width, height = 520, 220
         self.dialog.update_idletasks()
-        x = (self.dialog.winfo_screenwidth() // 2) - (400 // 2)
-        y = (self.dialog.winfo_screenheight() // 2) - (250 // 2)
-        self.dialog.geometry(f"400x250+{x}+{y}")
-        
+        x = (self.dialog.winfo_screenwidth() // 2) - (width // 2)
+        y = (self.dialog.winfo_screenheight() // 2) - (height // 2)
+        self.dialog.geometry(f"{width}x{height}+{x}+{y}")
+
+        # Outer frame with padding to give nicer spacing
+        outer = tk.Frame(self.dialog, padx=14, pady=10)
+        outer.pack(fill=tk.BOTH, expand=True)
+
         # Dialog content
         tk.Label(
-            self.dialog,
+            outer,
             text="CAPTCHA Detected",
             font=("Arial", 14, "bold")
-        ).pack(pady=10)
-        
+        ).pack(pady=(2, 6))
+
         tk.Label(
-            self.dialog,
-            text=f"Tender: {self.identifier[:50]}...",
-            wraplength=350
-        ).pack(pady=5)
-        
+            outer,
+            text=f"Tender: {self.identifier[:60]}...",
+            wraplength=480
+        ).pack(pady=4)
+
         tk.Label(
-            self.dialog,
+            outer,
             text="Please solve the CAPTCHA in your browser,\nthen choose an option below:",
             justify=tk.CENTER
-        ).pack(pady=10)
-        
+        ).pack(pady=(6, 8))
+
         # Buttons frame
-        button_frame = tk.Frame(self.dialog)
-        button_frame.pack(pady=20)
-        
+        button_frame = tk.Frame(outer)
+        button_frame.pack(pady=6)
+
         tk.Button(
             button_frame,
             text="CAPTCHA Solved - Continue",
             command=lambda: self._set_result("solved"),
             bg="green",
             fg="white",
-            width=20
-        ).pack(side=tk.LEFT, padx=5)
-        
+            width=22
+        ).pack(side=tk.LEFT, padx=6)
+
         tk.Button(
             button_frame,
             text="Skip This Item",
@@ -193,8 +210,8 @@ class CaptchaDialog:
             bg="orange",
             fg="white",
             width=15
-        ).pack(side=tk.LEFT, padx=5)
-        
+        ).pack(side=tk.LEFT, padx=6)
+
         tk.Button(
             button_frame,
             text="Cancel All",
@@ -202,11 +219,20 @@ class CaptchaDialog:
             bg="red",
             fg="white",
             width=15
-        ).pack(side=tk.LEFT, padx=5)
-        
+        ).pack(side=tk.LEFT, padx=6)
+
         # Handle window close
         self.dialog.protocol("WM_DELETE_WINDOW", lambda: self._set_result("cancel"))
-        
+
+        # Ensure focus and play ding
+        try:
+            self.dialog.lift()
+            self.dialog.focus_force()
+            self.dialog.after(50, lambda: self.dialog.focus_set())  # type: ignore
+            play_sound(SOUND_DING)  # Play ding when CAPTCHA dialog appears
+        except Exception:
+            pass
+
         # Wait for user response
         self.dialog.wait_window()
         return self.result
@@ -215,6 +241,10 @@ class CaptchaDialog:
         """Set the result and close dialog."""
         self.result = result
         if result == "cancel":
+            # inform caller to stop work
             self.stop_event.set()
         if self.dialog:
-            self.dialog.destroy()
+            try:
+                self.dialog.destroy()
+            except Exception:
+                pass

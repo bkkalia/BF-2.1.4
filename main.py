@@ -57,7 +57,15 @@ except ImportError as e:
 ABS_LOG_DIR = os.path.join(SCRIPT_DIR, LOG_DIR_NAME)
 ABS_SETTINGS_FILE = os.path.join(SCRIPT_DIR, SETTINGS_FILENAME)
 ABS_BASE_URLS_FILE = os.path.join(SCRIPT_DIR, BASE_URLS_FILENAME)
-ABS_DEFAULT_DOWNLOAD_DIR = os.path.join(SCRIPT_DIR, DEFAULT_DOWNLOAD_DIR_NAME)
+# Default download directory: use user's system Downloads folder by default
+ABS_DEFAULT_DOWNLOAD_DIR = os.path.join(os.path.expanduser("~"), "Downloads", DEFAULT_DOWNLOAD_DIR_NAME)
+# Ensure the default directory exists
+try:
+    os.makedirs(ABS_DEFAULT_DOWNLOAD_DIR, exist_ok=True)
+except Exception:
+    # Fallback to script-local folder if creating in Downloads fails
+    ABS_DEFAULT_DOWNLOAD_DIR = os.path.join(SCRIPT_DIR, DEFAULT_DOWNLOAD_DIR_NAME)
+    os.makedirs(ABS_DEFAULT_DOWNLOAD_DIR, exist_ok=True)
 
 # --- Early Logging Setup (Console Only) ---
 def setup_logging():

@@ -98,7 +98,19 @@ class DepartmentTab(ttk.Frame):
         folder_frame = ttk.Frame(section)
         folder_frame.grid(row=3, column=0, columnspan=2, sticky="ew", padx=5, pady=(5, 10))
         ttk.Label(folder_frame, text="Download Folder:", font=self.main_app.label_font).pack(side=tk.LEFT, padx=(0, 5))
+        # Show current download path (updates automatically via StringVar)
+        ttk.Label(folder_frame, textvariable=self.main_app.download_dir_var, font=self.main_app.label_font).pack(side=tk.LEFT, padx=(0, 10))
         ttk.Button(folder_frame, text="Browse", command=self.main_app.browse_download_dir, width=15).pack(side=tk.LEFT)
+        # Open folder button to quickly view downloaded files
+        def _open_download_folder():
+            download_path = self.main_app.download_dir_var.get()
+            if not download_path:
+                self.log_callback("No download folder configured.")
+                gui_utils.show_message("No Folder", "No download folder configured.", type="warning", parent=self.main_app.root)
+                return
+            gui_utils.open_folder(download_path, self.log_callback)
+
+        ttk.Button(folder_frame, text="Open", command=_open_download_folder, width=10).pack(side=tk.LEFT, padx=(8,0))
 
         # --- Bottom Info Label ---
         self.total_tenders_label = ttk.Label(section, text="Est. Total Tenders: 0", font=self.main_app.label_font)

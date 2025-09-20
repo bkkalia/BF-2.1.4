@@ -19,7 +19,8 @@ from config import (
     CONFIGURABLE_TIMEOUTS, DEFAULT_THEME,
     USE_UNDETECTED_DRIVER_DEFAULT, HEADLESS_MODE_DEFAULT,
     DEEP_SCRAPE_DEPARTMENTS_DEFAULT,
-    AVAILABLE_THEMES, PRIMARY_COLOR, SECONDARY_COLOR, TEXT_COLOR, HOVER_COLOR  # added HOVER_COLOR
+    AVAILABLE_THEMES, PRIMARY_COLOR, SECONDARY_COLOR, TEXT_COLOR, HOVER_COLOR,  # added HOVER_COLOR
+    LOG_DIR_NAME, BASE_URLS_FILENAME
 )
 from app_settings import FALLBACK_URL_CONFIG, save_settings, DEFAULT_SETTINGS_STRUCTURE
 from gui.tab_department import DepartmentTab
@@ -155,6 +156,16 @@ class MainWindow:
         if not initial_url_name or initial_url_name not in valid_url_names:
             initial_url_name = valid_url_names[0] if valid_url_names else FALLBACK_URL_CONFIG["Name"]
         self.selected_url_name_var = StringVar(value=initial_url_name)
+
+        # Sound settings variables
+        self.enable_sounds_var = BooleanVar(value=self.settings.get("enable_sounds", True))
+        self.sound_ding_var = StringVar(value=self.settings.get("sound_ding_file", ""))
+        self.sound_success_var = StringVar(value=self.settings.get("sound_success_file", ""))
+        self.sound_error_var = StringVar(value=self.settings.get("sound_error_file", ""))
+
+        # Additional paths needed for settings tab
+        self.abs_log_dir = os.path.join(os.path.dirname(self.settings_filepath), LOG_DIR_NAME)
+        self.abs_base_urls_file = os.path.join(os.path.dirname(self.settings_filepath), BASE_URLS_FILENAME)
 
     def _configure_window(self):
         """Configure main window properties."""
@@ -561,6 +572,12 @@ class MainWindow:
         self.settings["use_undetected_driver"] = self.use_undetected_driver_var.get()
         self.settings["headless_mode"] = self.headless_mode_var.get()
 
+        # Sound settings
+        self.settings["enable_sounds"] = self.enable_sounds_var.get()
+        self.settings["sound_ding_file"] = self.sound_ding_var.get()
+        self.settings["sound_success_file"] = self.sound_success_var.get()
+        self.settings["sound_error_file"] = self.sound_error_var.get()
+
         # Handle timeout values - properly preserve float values
         for key, var in self.timeout_vars.items():
             try:
@@ -576,7 +593,7 @@ class MainWindow:
             if self.root.winfo_exists():
                 self.settings["window_geometry"] = self.root.geometry()
         except tk.TclError:
-            logger.warning("Could not get window geometry, possibly already closed.")
+            logger.warning("Could not get window geometry, possibly already be closed.")
 
         save_settings(self.settings, self.settings_filepath)
         self.update_log("Settings saved.")

@@ -113,6 +113,15 @@ except Exception as import_err:
     GUI_UTILS_IMPORTED = False
     logger.error(f"Unexpected error importing gui_utils: {import_err}", exc_info=True) # logger is now defined
 
+# New: import sound helper (safe fallback)
+try:
+    from scraper.sound_helper import play_sound, SOUND_SUCCESS, SOUND_ERROR, SOUND_DING  # type: ignore
+except Exception:
+    def play_sound(kind): pass
+    SOUND_SUCCESS = "success"
+    SOUND_ERROR = "error"
+    SOUND_DING = "ding"
+
 # ==============================================================================
 # ==                           UTILITY FUNCTIONS                              ==
 # ==============================================================================
@@ -147,6 +156,8 @@ def find_element_with_fallbacks(driver, locators, description="element", timeout
 # ==============================================================================
 # ==                           DEPARTMENT SCRAPING                           ==
 # ==============================================================================
+
+
 
 def fetch_department_list_from_site(target_url, log_callback):
     """Fetches department list and estimates total tenders from the org list page."""
@@ -682,12 +693,23 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
         status_callback(status_msg)
         timer_callback(start_time)
 
+        # Play success sound only if not cancelled
+        try:
+            if not (stop_event and stop_event.is_set()):
+                play_sound(SOUND_SUCCESS)
+        except Exception:
+            pass
+
     except Exception as e:
         log_callback(f"Error in run_scraping_logic: {e}")
         logger.error(f"Error in run_scraping_logic: {e}", exc_info=True)
         status_callback("Error during scraping")
         timer_callback(start_time)
-
+        # Play error sound
+        try:
+            play_sound(SOUND_ERROR)
+        except Exception:
+            pass
 
 def process_department(dept_info, base_url_config, download_dir, driver,
                       log_callback=None, progress_callback=None, stop_event=None):
@@ -1257,9 +1279,21 @@ def process_direct_urls(urls, base_dir, *args, **kwargs):
                 continue
 
         log_callback(f"\nCompleted processing {processed} of {total_urls} URLs")
-        
+
+        # Success sound when completed (not cancelled)
+        try:
+            if not (stop_event and stop_event.is_set()):
+                play_sound(SOUND_SUCCESS)
+        except Exception:
+            pass
+
     except Exception as e:
         log_callback(f"Error in direct URL processing: {e}")
+        # Play error sound
+        try:
+            play_sound(SOUND_ERROR)
+        except Exception:
+            pass
         raise
 
 
