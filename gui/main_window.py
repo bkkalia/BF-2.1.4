@@ -19,7 +19,7 @@ from config import (
     CONFIGURABLE_TIMEOUTS, DEFAULT_THEME,
     USE_UNDETECTED_DRIVER_DEFAULT, HEADLESS_MODE_DEFAULT,
     DEEP_SCRAPE_DEPARTMENTS_DEFAULT,
-    AVAILABLE_THEMES  # Add this import
+    AVAILABLE_THEMES, PRIMARY_COLOR, SECONDARY_COLOR, TEXT_COLOR, HOVER_COLOR  # added HOVER_COLOR
 )
 from app_settings import FALLBACK_URL_CONFIG, save_settings, DEFAULT_SETTINGS_STRUCTURE
 from gui.tab_department import DepartmentTab
@@ -183,15 +183,15 @@ class MainWindow:
             if current_theme in ['clam', 'alt']:
                 bg_color = "#f5f7fa"
                 button_bg = "#37474F"
-                accent_bg = "#1976D2"
+                accent_bg = SECONDARY_COLOR   # use config secondary
             elif current_theme in ['default', 'classic']:
                 bg_color = "#e1e1e1"
                 button_bg = "#4a4a4a"
-                accent_bg = "#0D47A1"
+                accent_bg = PRIMARY_COLOR     # use config primary
             else:  # vista, xpnative, etc.
                 bg_color = style.lookup('TFrame', 'background')
                 button_bg = style.lookup('TButton', 'background')
-                accent_bg = "#1976D2"
+                accent_bg = SECONDARY_COLOR
 
             # Apply theme colors
             self.root.configure(bg=bg_color)
@@ -207,29 +207,27 @@ class MainWindow:
 
         # Sidebar style
         style.configure('Sidebar.TFrame', background="#263238")
-        style.configure('Sidebar.TButton', font=self.button_font, foreground="#FFFFFF", background="#37474F", padding=10, width=15, anchor='w')
+        style.configure('Sidebar.TButton', font=self.button_font, foreground=TEXT_COLOR, background="#37474F", padding=10, width=15, anchor='w')
         style.map('Sidebar.TButton',
-                  background=[('active', '#455A64'), ('pressed', '#1976D2'), ('disabled', '#37474F')],
+                  background=[('active', HOVER_COLOR), ('pressed', PRIMARY_COLOR), ('disabled', '#37474F')],
                   foreground=[('disabled', '#78909C')])
 
-        # Header style
-        style.configure('Header.TFrame', background="#1976D2")
-        style.configure('Header.TLabel', background="#1976D2", foreground="#FFFFFF", font=self.heading_font)
-        style.configure('Version.Header.TLabel', background="#1976D2", foreground="#FFFFFF", font=self.status_font)  # Specific style for version
+        # Header style — use PRIMARY_COLOR for header background
+        style.configure('Header.TFrame', background=PRIMARY_COLOR)
+        style.configure('Header.TLabel', background=PRIMARY_COLOR, foreground=TEXT_COLOR, font=self.heading_font)
+        style.configure('Version.Header.TLabel', background=PRIMARY_COLOR, foreground=TEXT_COLOR, font=self.status_font)
 
         # Section Labelframe style
         style.configure('Section.TLabelframe', background="#f5f7fa", borderwidth=1, relief="groove")
-        style.configure('Section.TLabelframe.Label', font=self.subheading_font, foreground="#1976D2", background="#f5f7fa")
+        style.configure('Section.TLabelframe.Label', font=self.subheading_font, foreground=PRIMARY_COLOR, background="#f5f7fa")
 
-        # Standard Button style
-        style.configure('TButton', font=self.button_font, padding=6)
-
-        # Accent Button style (e.g., Start, Fetch)
-        style.configure('Accent.TButton', foreground="#FFFFFF", background="#1976D2", font=self.button_font)
-        style.map('Accent.TButton', background=[("active", "#0D47A1"), ('disabled', '#B0BEC5')])
+        # Accent Button style (e.g., Start, Fetch) — use SECONDARY_COLOR
+        style.configure('Accent.TButton', foreground=TEXT_COLOR, background=SECONDARY_COLOR, font=self.button_font)
+        style.map('Accent.TButton', background=[("active", HOVER_COLOR), ('disabled', '#B0BEC5')])
 
         # Stop Button style
-        style.configure("Danger.TButton", foreground="#FFFFFF", background="#C62828", font=self.button_font)
+        self.stop_button_font = tkFont.Font(family="Segoe UI", size=9, weight="bold")
+        style.configure("Danger.TButton", foreground="#FFFFFF", background="#C62828", font=self.stop_button_font)
         style.map("Danger.TButton", background=[("active", "#E53935"), ('disabled', '#EF9A9A')])
 
         # Progress bar and status area style
@@ -318,7 +316,7 @@ class MainWindow:
         global_panel_height = self.global_panel.winfo_reqheight() + 5
         # Calculate status bar height after it's created
         # --- Status Bar ---
-        status_frame = ttk.Frame(self.root, style='Status.TFrame', height=40)
+        status_frame = ttk.Frame(self.root, style='Status.TFrame', height=44)  # Increased by 10% from 40 to 44
         status_frame.pack(side=tk.BOTTOM, fill=tk.X)
         status_frame.pack_propagate(False)  # Prevent shrinking
 
@@ -332,12 +330,12 @@ class MainWindow:
         self.timer_label.pack(side=tk.LEFT, padx=5, pady=8)
         self.stop_button = ttk.Button(
             status_frame,
-            text="STOP",
+            text="EMERGENCY STOP",
             command=self.request_stop_scraping,
             style="Danger.TButton",
-            width=8
+            width=15
         )
-        self.stop_button.pack(side=tk.RIGHT, padx=(10, 18), pady=8)
+        self.stop_button.pack(side=tk.RIGHT, padx=(2, 5), pady=4)
 
         self.content_frame.update_idletasks()
         status_bar_height = status_frame.winfo_reqheight()
@@ -486,12 +484,12 @@ class MainWindow:
                     'fg': "#000000",
                     'button_bg': "#37474F",
                     'button_fg': "#FFFFFF",
-                    'accent_bg': "#1976D2",
-                    'accent_fg': "#FFFFFF",
-                    'header_bg': "#1976D2",
-                    'header_fg': "#FFFFFF",
+                    'accent_bg': SECONDARY_COLOR,   # use config
+                    'accent_fg': TEXT_COLOR,
+                    'header_bg': PRIMARY_COLOR,     # use config
+                    'header_fg': TEXT_COLOR,
                     'sidebar_bg': "#263238",
-                    'sidebar_fg': "#FFFFFF"
+                    'sidebar_fg': TEXT_COLOR
                 }
             else:  # default, classic, vista, xpnative
                 colors = {
@@ -499,12 +497,12 @@ class MainWindow:
                     'fg': "#000000",
                     'button_bg': "#4a4a4a",
                     'button_fg': "#FFFFFF",
-                    'accent_bg': "#0D47A1",
-                    'accent_fg': "#FFFFFF",
-                    'header_bg': "#1976D2",
-                    'header_fg': "#FFFFFF",
+                    'accent_bg': PRIMARY_COLOR,
+                    'accent_fg': TEXT_COLOR,
+                    'header_bg': PRIMARY_COLOR,
+                    'header_fg': TEXT_COLOR,
                     'sidebar_bg': "#263238",
-                    'sidebar_fg': "#FFFFFF"
+                    'sidebar_fg': TEXT_COLOR
                 }
 
             # Apply colors to all widgets
@@ -894,6 +892,9 @@ class MainWindow:
             if hasattr(tab_instance, "reset_progress"):
                 tab_instance.reset_progress()
         self.timer_label.config(text="00:00:00")
+        self.processed_count = 0
+        self.total_count = 0
+        self.start_time = None
         self.processed_count = 0
         self.total_count = 0
         self.start_time = None

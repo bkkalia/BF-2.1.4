@@ -31,61 +31,82 @@ HEADLESS_MODE = False # Default: run with browser window visible
 def setup_driver(initial_download_dir=None):
     """Setup and return a configured ChromeDriver instance."""
     try:
-        # Check if undetected_chromedriver is available
-        if not UNDETECTED_AVAILABLE:
-            logger.warning("Using standard ChromeDriver - undetected_chromedriver not available")
-            options = ChromeOptions()
-            # Common options setup
-            options.add_argument('--disable-popup-blocking')
-            options.add_argument('--disable-notifications')
-            if initial_download_dir:
-                prefs = {
-                    "download.default_directory": initial_download_dir,
-                    "download.prompt_for_download": False,
-                    "download.directory_upgrade": True,
-                    "safebrowsing.enabled": True
-                }
-                options.add_experimental_option("prefs", prefs)
-        else:
-            if uc is not None:
-                options = uc.ChromeOptions()
-                # Common options setup
-                options.add_argument('--disable-popup-blocking')
-                options.add_argument('--disable-notifications')
-                if initial_download_dir:
-                    prefs = {
-                        "download.default_directory": initial_download_dir,
-                        "download.prompt_for_download": False,
-                        "download.directory_upgrade": True,
-                        "safebrowsing.enabled": True
-                    }
-                    options.add_experimental_option("prefs", prefs)
-            else:
-                raise ImportError("undetected-chromedriver is not available, cannot use uc.ChromeOptions()")
-        
-        # Create driver instance based on availability
-        if UNDETECTED_AVAILABLE and uc is not None:
-            driver_instance = uc.Chrome(options=options)
-        else:
-            if WDM_AVAILABLE:
-                from webdriver_manager.chrome import ChromeDriverManager  # Ensure it's imported here
+        logger.info("Setting up Chrome WebDriver...")
+
+        # Force use of standard ChromeDriver for better compatibility
+        logger.info("Using standard ChromeDriver for better compatibility")
+        options = ChromeOptions()
+
+        # Essential Chrome options to prevent conflicts
+        options.add_argument('--no-sandbox')
+        options.add_argument('--disable-dev-shm-usage')
+        options.add_argument('--disable-gpu')
+        options.add_argument('--disable-extensions')
+        options.add_argument('--disable-background-timer-throttling')
+        options.add_argument('--disable-backgrounding-occluded-windows')
+        options.add_argument('--disable-renderer-backgrounding')
+        options.add_argument('--disable-features=TranslateUI')
+        options.add_argument('--disable-ipc-flooding-protection')
+        options.add_argument('--disable-popup-blocking')
+        options.add_argument('--disable-notifications')
+        options.add_argument('--disable-web-security')
+        options.add_argument('--allow-running-insecure-content')
+        options.add_argument('--ignore-certificate-errors')
+        options.add_argument('--ignore-ssl-errors')
+        options.add_argument('--ignore-certificate-errors-spki-list')
+        options.add_argument('--ignore-ssl-errors-ignore-untrusted')
+
+        # Set window size
+        options.add_argument('--window-size=1920,1080')
+
+        # Set user agent to avoid detection
+        options.add_argument('--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
+
+        # Download preferences
+        if initial_download_dir:
+            logger.info(f"Setting download directory to: {initial_download_dir}")
+            prefs = {
+                "download.default_directory": initial_download_dir,
+                "download.prompt_for_download": False,
+                "download.directory_upgrade": True,
+                "safebrowsing.enabled": True,
+                "profile.default_content_settings.popups": 0,
+                "profile.default_content_setting_values.automatic_downloads": 1
+            }
+            options.add_experimental_option("prefs", prefs)
+
+        # Additional experimental options
+        options.add_experimental_option("excludeSwitches", ["enable-automation"])
+        options.add_experimental_option('useAutomationExtension', False)
+
+        # Create service with compatible ChromeDriver version
+        if WDM_AVAILABLE:
+            logger.info("Installing ChromeDriver using webdriver-manager...")
+            from webdriver_manager.chrome import ChromeDriverManager
+            try:
                 service = Service(ChromeDriverManager().install())
-            else:
+                logger.info("ChromeDriver installed successfully")
+            except Exception as version_error:
+                logger.warning(f"Could not install ChromeDriver: {version_error}")
                 service = Service()
-            # Always pass ChromeOptions to webdriver.Chrome
-            # Ensure options is always ChromeOptions for webdriver.Chrome
-            if not isinstance(options, ChromeOptions):
-                chrome_options = ChromeOptions()
-                # Copy arguments and experimental options from options (uc.ChromeOptions) if needed
-                for arg in getattr(options, 'arguments', []):
-                    chrome_options.add_argument(arg)
-                for key, value in getattr(options, 'experimental_options', {}).items():
-                    chrome_options.add_experimental_option(key, value)
-                options = chrome_options
-            driver_instance = webdriver.Chrome(service=service, options=options)
-        
+        else:
+            logger.warning("webdriver-manager not available, using default service")
+            service = Service()
+
+        logger.info("Creating Chrome WebDriver instance...")
+        driver_instance = webdriver.Chrome(service=service, options=options)
+
+        # Execute script to remove webdriver property
+        driver_instance.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+
+        logger.info("Chrome WebDriver setup completed successfully")
         return driver_instance
-        
+
+    except SessionNotCreatedException as snce:
+        logger.error(f"Session creation failed: {snce}")
+        logger.error("This usually means ChromeDriver version doesn't match Chrome version")
+        logger.error("Please check Chrome version and ensure ChromeDriver is compatible")
+        raise
     except Exception as e:
         logger.error(f"Failed driver setup: {e}", exc_info=True)
         raise

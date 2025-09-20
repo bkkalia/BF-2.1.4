@@ -184,9 +184,10 @@ CAPTCHA_PROMPT_LOCATOR = (By.XPATH, '//*[contains(text(), "captcha")]')
 SESSION_TIMEOUT_RESTART_LINK_LOCATOR = (By.CSS_SELECTOR, "a#restart") # Assuming 'a' tag with id 'restart'
 
 # --- UI Styling ---
-PRIMARY_COLOR = "#0D47A1"
-SECONDARY_COLOR = "#1976D2"
+PRIMARY_COLOR = "#800000"        # changed to maroon
+SECONDARY_COLOR = "#A00000"      # slightly lighter maroon for accents
 TEXT_COLOR = "#FFFFFF"
+HOVER_COLOR = "#00796B"          # teal for hover/active states
 STOP_BUTTON_COLOR = "#C62828"
 STOP_BUTTON_ACTIVE_COLOR = "#E53935"
 

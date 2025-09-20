@@ -98,15 +98,7 @@ class DepartmentTab(ttk.Frame):
         folder_frame = ttk.Frame(section)
         folder_frame.grid(row=3, column=0, columnspan=2, sticky="ew", padx=5, pady=(5, 10))
         ttk.Label(folder_frame, text="Download Folder:", font=self.main_app.label_font).pack(side=tk.LEFT, padx=(0, 5))
-        self.folder_dropdown = ttk.Combobox(
-            folder_frame,
-            textvariable=self.main_app.download_dir_var,
-            values=[config.get("Name", "Unknown") for config in self.main_app.base_urls_data],  # Populate from CSV
-            state="readonly",
-            width=40
-        )
-        self.folder_dropdown.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
-        ttk.Button(folder_frame, text="Browse", command=self.main_app.browse_download_dir, width=10).pack(side=tk.LEFT)
+        ttk.Button(folder_frame, text="Browse", command=self.main_app.browse_download_dir, width=15).pack(side=tk.LEFT)
 
         # --- Bottom Info Label ---
         self.total_tenders_label = ttk.Label(section, text="Est. Total Tenders: 0", font=self.main_app.label_font)

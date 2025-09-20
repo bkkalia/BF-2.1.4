@@ -2,14 +2,15 @@
 
 ## Overview
 
-The Black Forest Tender Scraper now supports command-line interface (CLI) mode for automated scraping operations. This is particularly useful for:
+The Black Forest Tender Scraper supports both **GUI** and **CLI** modes for maximum flexibility. The CLI mode is perfect for:
 
 - **Scheduled tasks** (Windows Task Scheduler, cron jobs)
 - **Batch processing** of multiple operations
 - **Integration** with other scripts and automation tools
 - **Headless environments** (servers, containers)
+- **Automated workflows**
 
-## Quick Start
+## 🚀 Quick Start
 
 ### Most Common Use Case (90% of users)
 ```bash
@@ -32,6 +33,15 @@ python main.py urls
 python main.py --url "etenders" department --all
 python main.py --url "MP Tenders" department --all
 python main.py --url "iocletenders" department --all
+```
+
+### Distribution Package (Recommended)
+```bash
+# After installing the distribution package
+cd "C:\Program Files\Black Forest Tender Scraper"
+BlackForest.exe department --all
+BlackForest.exe urls
+BlackForest.exe --url "etenders" department --all
 ```
 
 ### Windows Task Scheduler
@@ -277,14 +287,26 @@ python main.py help scheduling
 python main.py help examples
 ```
 
+### Documentation Files
+- **CLI_HELP.md**: Complete CLI documentation (included in distribution)
+- **GUI_HELP.md**: Comprehensive GUI usage guide (included in distribution)
+- **README.md**: Installation and setup instructions
+
 ### Log Analysis
 - Check `logs/` directory for detailed execution logs
 - Look for ERROR or WARNING messages
 - Monitor file sizes and processing times
 - Review generated Excel files for data completeness
 
+### GUI Mode
+For interactive usage with visual interface:
+- Launch the GUI: `BlackForest.exe` (from distribution) or `python main.py`
+- Access Help tab for built-in assistance
+- See `GUI_HELP.md` for detailed GUI instructions
+
 ---
 
 **Last Updated**: January 15, 2025
 **Version**: 2.1.4
-**Contact**: For issues, check the logs and ensure all dependencies are installed
+**CLI Mode**: Automated tender scraping with command-line interface
+**GUI Mode**: Interactive tender scraping with visual progress monitoring

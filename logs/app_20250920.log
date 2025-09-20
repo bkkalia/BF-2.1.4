@@ -1,0 +1,1042 @@
+2025-09-20 08:53:25,322 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility v2.1.4 Starting ---
+2025-09-20 08:53:25,326 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2025-09-20 08:53:25,326 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2025-09-20 08:53:25,327 - INFO - [MainThread:setup_logging] Script Directory: G:\My Drive\0dev\BF 2.1.4
+2025-09-20 08:53:25,327 - INFO - [MainThread:setup_logging] Working Directory: G:\My Drive\0dev\BF 2.1.4
+2025-09-20 08:53:25,328 - INFO - [MainThread:check_package_versions] ✓ selenium 4.34.2 is available
+2025-09-20 08:53:28,468 - INFO - [MainThread:check_package_versions] ✓ pandas 2.3.1 is available
+2025-09-20 08:53:28,838 - INFO - [MainThread:check_package_versions] ✓ openpyxl 3.1.5 is available
+2025-09-20 08:53:29,129 - INFO - [MainThread:check_package_versions] ✓ requests 2.32.4 is available
+2025-09-20 08:53:29,143 - INFO - [MainThread:check_package_versions] ✓ pytesseract 0.3.13 is available
+2025-09-20 08:53:29,415 - INFO - [MainThread:check_package_versions] ✓ undetected_chromedriver 3.5.5 (optional) is available
+2025-09-20 08:53:29,417 - INFO - [MainThread:check_package_versions] ✓ webdriver_manager 4.0.2 (optional) is available
+2025-09-20 08:53:29,419 - INFO - [MainThread:import_application_components] Importing application components...
+2025-09-20 08:53:29,828 - INFO - [MainThread:import_application_components] Application components imported successfully
+2025-09-20 08:53:29,829 - INFO - [MainThread:<module>] 🚀 Starting GUI application initialization...
+2025-09-20 08:53:29,829 - INFO - [MainThread:load_and_validate_configurations] Loading base URL configurations from G:\My Drive\0dev\BF 2.1.4\base_urls.csv...
+2025-09-20 08:53:29,849 - INFO - [MainThread:load_base_urls] Loaded 12 base URL configurations from base_urls.csv.
+2025-09-20 08:53:29,850 - INFO - [MainThread:load_and_validate_configurations] ✓ Loaded 12 URL configurations
+2025-09-20 08:53:29,852 - INFO - [MainThread:load_and_validate_configurations] Loading application settings...
+2025-09-20 08:53:29,885 - INFO - [MainThread:load_settings] Settings loaded and merged with defaults from G:\My Drive\0dev\BF 2.1.4\settings.json
+2025-09-20 08:53:29,887 - INFO - [MainThread:load_and_validate_configurations] ✓ Settings loaded and validated
+2025-09-20 08:53:29,891 - INFO - [MainThread:<module>] Creating main application window...
+2025-09-20 08:53:30,243 - INFO - [MainThread:<module>] Creating MainWindow instance...
+2025-09-20 08:53:30,327 - INFO - [MainThread:<module>] ✓ Application initialization completed successfully
+2025-09-20 08:53:30,338 - INFO - [MainThread:<module>] 🎯 Starting main event loop...
+2025-09-20 09:17:08,681 - INFO - [MainThread:on_closing] Close requested.
+2025-09-20 09:17:08,681 - INFO - [MainThread:_save_current_settings_and_show_message] Saving current settings...
+2025-09-20 09:17:08,682 - ERROR - [MainThread:on_closing] Failed to save settings on exit: invalid literal for int() with base 10: '10.0'
+2025-09-20 09:17:08,755 - INFO - [MainThread:on_closing] Tkinter root window destroyed.
+2025-09-20 09:17:08,755 - INFO - [MainThread:on_closing] --- Application Shutdown Sequence Complete ---
+2025-09-20 09:17:08,756 - INFO - [MainThread:<module>] Main event loop ended normally
+2025-09-20 09:17:08,756 - INFO - [MainThread:<module>] 🛑 Application shutdown initiated...
+2025-09-20 09:17:08,757 - INFO - [MainThread:_save_current_settings] Saving current settings...
+2025-09-20 09:17:08,758 - WARNING - [MainThread:_save_current_settings] Could not get window geometry, possibly already closed.
+2025-09-20 09:17:08,778 - INFO - [MainThread:save_settings] Settings saved successfully to G:\My Drive\0dev\BF 2.1.4\settings.json
+2025-09-20 09:17:08,779 - INFO - [MainThread:<module>] ✅ Application shutdown completed successfully
+2025-09-20 09:33:14,213 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility v2.1.4 Starting ---
+2025-09-20 09:33:14,227 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2025-09-20 09:33:14,228 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2025-09-20 09:33:14,229 - INFO - [MainThread:setup_logging] Script Directory: G:\My Drive\0dev\BF 2.1.4
+2025-09-20 09:33:14,229 - INFO - [MainThread:setup_logging] Working Directory: G:\My Drive\0dev\BF 2.1.4
+2025-09-20 09:33:14,231 - INFO - [MainThread:check_package_versions] ✓ selenium 4.34.2 is available
+2025-09-20 09:33:14,625 - INFO - [MainThread:check_package_versions] ✓ pandas 2.3.1 is available
+2025-09-20 09:33:14,815 - INFO - [MainThread:check_package_versions] ✓ openpyxl 3.1.5 is available
+2025-09-20 09:33:15,086 - INFO - [MainThread:check_package_versions] ✓ requests 2.32.4 is available
+2025-09-20 09:33:15,105 - INFO - [MainThread:check_package_versions] ✓ pytesseract 0.3.13 is available
+2025-09-20 09:33:15,270 - INFO - [MainThread:check_package_versions] ✓ undetected_chromedriver 3.5.5 (optional) is available
+2025-09-20 09:33:15,273 - INFO - [MainThread:check_package_versions] ✓ webdriver_manager 4.0.2 (optional) is available
+2025-09-20 09:33:15,277 - INFO - [MainThread:import_application_components] Importing application components...
+2025-09-20 09:33:15,737 - INFO - [MainThread:import_application_components] Application components imported successfully
+2025-09-20 09:33:15,738 - INFO - [MainThread:<module>] 🚀 Starting GUI application initialization...
+2025-09-20 09:33:15,739 - INFO - [MainThread:load_and_validate_configurations] Loading base URL configurations from G:\My Drive\0dev\BF 2.1.4\base_urls.csv...
+2025-09-20 09:33:15,752 - INFO - [MainThread:load_base_urls] Loaded 12 base URL configurations from base_urls.csv.
+2025-09-20 09:33:15,753 - INFO - [MainThread:load_and_validate_configurations] ✓ Loaded 12 URL configurations
+2025-09-20 09:33:15,754 - INFO - [MainThread:load_and_validate_configurations] Loading application settings...
+2025-09-20 09:33:15,767 - INFO - [MainThread:load_settings] Settings loaded and merged with defaults from G:\My Drive\0dev\BF 2.1.4\settings.json
+2025-09-20 09:33:15,768 - INFO - [MainThread:load_and_validate_configurations] ✓ Settings loaded and validated
+2025-09-20 09:33:15,769 - INFO - [MainThread:<module>] Creating main application window...
+2025-09-20 09:33:15,815 - INFO - [MainThread:<module>] Creating MainWindow instance...
+2025-09-20 09:33:15,903 - INFO - [MainThread:<module>] ✓ Application initialization completed successfully
+2025-09-20 09:33:15,903 - INFO - [MainThread:<module>] 🎯 Starting main event loop...
+2025-09-20 09:35:16,900 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility v2.1.4 Starting ---
+2025-09-20 09:35:16,905 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2025-09-20 09:35:16,906 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2025-09-20 09:35:16,906 - INFO - [MainThread:setup_logging] Script Directory: G:\My Drive\0dev\BF 2.1.4
+2025-09-20 09:35:16,907 - INFO - [MainThread:setup_logging] Working Directory: G:\My Drive\0dev\BF 2.1.4
+2025-09-20 09:35:16,908 - INFO - [MainThread:check_package_versions] ✓ selenium 4.34.2 is available
+2025-09-20 09:35:17,283 - INFO - [MainThread:check_package_versions] ✓ pandas 2.3.1 is available
+2025-09-20 09:35:17,453 - INFO - [MainThread:check_package_versions] ✓ openpyxl 3.1.5 is available
+2025-09-20 09:35:17,713 - INFO - [MainThread:check_package_versions] ✓ requests 2.32.4 is available
+2025-09-20 09:35:17,727 - INFO - [MainThread:check_package_versions] ✓ pytesseract 0.3.13 is available
+2025-09-20 09:35:17,870 - INFO - [MainThread:check_package_versions] ✓ undetected_chromedriver 3.5.5 (optional) is available
+2025-09-20 09:35:17,873 - INFO - [MainThread:check_package_versions] ✓ webdriver_manager 4.0.2 (optional) is available
+2025-09-20 09:35:17,878 - INFO - [MainThread:import_application_components] Importing application components...
+2025-09-20 09:35:18,281 - INFO - [MainThread:import_application_components] Application components imported successfully
+2025-09-20 09:35:18,281 - INFO - [MainThread:<module>] 🚀 Starting GUI application initialization...
+2025-09-20 09:35:18,282 - INFO - [MainThread:load_and_validate_configurations] Loading base URL configurations from G:\My Drive\0dev\BF 2.1.4\base_urls.csv...
+2025-09-20 09:35:18,294 - INFO - [MainThread:load_base_urls] Loaded 12 base URL configurations from base_urls.csv.
+2025-09-20 09:35:18,295 - INFO - [MainThread:load_and_validate_configurations] ✓ Loaded 12 URL configurations
+2025-09-20 09:35:18,296 - INFO - [MainThread:load_and_validate_configurations] Loading application settings...
+2025-09-20 09:35:18,307 - INFO - [MainThread:load_settings] Settings loaded and merged with defaults from G:\My Drive\0dev\BF 2.1.4\settings.json
+2025-09-20 09:35:18,307 - INFO - [MainThread:load_and_validate_configurations] ✓ Settings loaded and validated
+2025-09-20 09:35:18,308 - INFO - [MainThread:<module>] Creating main application window...
+2025-09-20 09:35:18,345 - INFO - [MainThread:<module>] Creating MainWindow instance...
+2025-09-20 09:35:18,347 - ERROR - [MainThread:__init__] MainWindow initialization failed: name 'HOVER_COLOR' is not defined
+Traceback (most recent call last):
+  File "G:\My Drive\0dev\BF 2.1.4\gui\main_window.py", line 81, in __init__
+    self._configure_styles_and_fonts()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "G:\My Drive\0dev\BF 2.1.4\gui\main_window.py", line 212, in _configure_styles_and_fonts
+    background=[('active', HOVER_COLOR), ('pressed', PRIMARY_COLOR), ('disabled', '#37474F')],
+                           ^^^^^^^^^^^
+NameError: name 'HOVER_COLOR' is not defined
+2025-09-20 09:35:18,358 - ERROR - [MainThread:<module>] 🔥 Fatal error in main execution
+Traceback (most recent call last):
+  File "G:\My Drive\0dev\BF 2.1.4\main.py", line 415, in <module>
+    app = MainWindow(
+        root=root,
+    ...<3 lines>...
+        abs_default_download_dir=ABS_DEFAULT_DOWNLOAD_DIR
+    )
+  File "G:\My Drive\0dev\BF 2.1.4\gui\main_window.py", line 81, in __init__
+    self._configure_styles_and_fonts()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "G:\My Drive\0dev\BF 2.1.4\gui\main_window.py", line 212, in _configure_styles_and_fonts
+    background=[('active', HOVER_COLOR), ('pressed', PRIMARY_COLOR), ('disabled', '#37474F')],
+                           ^^^^^^^^^^^
+NameError: name 'HOVER_COLOR' is not defined
+2025-09-20 09:35:32,831 - INFO - [MainThread:<module>] 🛑 Application shutdown initiated...
+2025-09-20 09:35:32,840 - INFO - [MainThread:<module>] ✅ Application shutdown completed successfully
+2025-09-20 09:36:42,717 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility v2.1.4 Starting ---
+2025-09-20 09:36:42,727 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2025-09-20 09:36:42,728 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2025-09-20 09:36:42,729 - INFO - [MainThread:setup_logging] Script Directory: G:\My Drive\0dev\BF 2.1.4
+2025-09-20 09:36:42,729 - INFO - [MainThread:setup_logging] Working Directory: G:\My Drive\0dev\BF 2.1.4
+2025-09-20 09:36:42,730 - INFO - [MainThread:check_package_versions] ✓ selenium 4.34.2 is available
+2025-09-20 09:36:43,259 - INFO - [MainThread:check_package_versions] ✓ pandas 2.3.1 is available
+2025-09-20 09:36:43,508 - INFO - [MainThread:check_package_versions] ✓ openpyxl 3.1.5 is available
+2025-09-20 09:36:43,856 - INFO - [MainThread:check_package_versions] ✓ requests 2.32.4 is available
+2025-09-20 09:36:43,872 - INFO - [MainThread:check_package_versions] ✓ pytesseract 0.3.13 is available
+2025-09-20 09:36:44,093 - INFO - [MainThread:check_package_versions] ✓ undetected_chromedriver 3.5.5 (optional) is available
+2025-09-20 09:36:44,096 - INFO - [MainThread:check_package_versions] ✓ webdriver_manager 4.0.2 (optional) is available
+2025-09-20 09:36:44,101 - INFO - [MainThread:import_application_components] Importing application components...
+2025-09-20 09:36:44,487 - INFO - [MainThread:import_application_components] Application components imported successfully
+2025-09-20 09:36:44,488 - INFO - [MainThread:<module>] 🚀 Starting GUI application initialization...
+2025-09-20 09:36:44,489 - INFO - [MainThread:load_and_validate_configurations] Loading base URL configurations from G:\My Drive\0dev\BF 2.1.4\base_urls.csv...
+2025-09-20 09:36:44,500 - INFO - [MainThread:load_base_urls] Loaded 12 base URL configurations from base_urls.csv.
+2025-09-20 09:36:44,501 - INFO - [MainThread:load_and_validate_configurations] ✓ Loaded 12 URL configurations
+2025-09-20 09:36:44,501 - INFO - [MainThread:load_and_validate_configurations] Loading application settings...
+2025-09-20 09:36:44,513 - INFO - [MainThread:load_settings] Settings loaded and merged with defaults from G:\My Drive\0dev\BF 2.1.4\settings.json
+2025-09-20 09:36:44,513 - INFO - [MainThread:load_and_validate_configurations] ✓ Settings loaded and validated
+2025-09-20 09:36:44,514 - INFO - [MainThread:<module>] Creating main application window...
+2025-09-20 09:36:44,549 - INFO - [MainThread:<module>] Creating MainWindow instance...
+2025-09-20 09:36:44,622 - INFO - [MainThread:<module>] ✓ Application initialization completed successfully
+2025-09-20 09:36:44,622 - INFO - [MainThread:<module>] 🎯 Starting main event loop...
+2025-09-20 10:24:17,120 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility v2.1.4 Starting ---
+2025-09-20 10:24:17,126 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2025-09-20 10:24:17,127 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2025-09-20 10:24:17,127 - INFO - [MainThread:setup_logging] Script Directory: G:\My Drive\0dev\BF 2.1.4
+2025-09-20 10:24:17,128 - INFO - [MainThread:setup_logging] Working Directory: G:\My Drive\0dev\BF 2.1.4
+2025-09-20 10:24:17,128 - INFO - [MainThread:check_package_versions] ✓ selenium 4.34.2 is available
+2025-09-20 10:24:17,511 - INFO - [MainThread:check_package_versions] ✓ pandas 2.3.1 is available
+2025-09-20 10:24:17,681 - INFO - [MainThread:check_package_versions] ✓ openpyxl 3.1.5 is available
+2025-09-20 10:24:17,912 - INFO - [MainThread:check_package_versions] ✓ requests 2.32.4 is available
+2025-09-20 10:24:17,921 - INFO - [MainThread:check_package_versions] ✓ pytesseract 0.3.13 is available
+2025-09-20 10:24:18,026 - INFO - [MainThread:check_package_versions] ✓ undetected_chromedriver 3.5.5 (optional) is available
+2025-09-20 10:24:18,027 - INFO - [MainThread:check_package_versions] ✓ webdriver_manager 4.0.2 (optional) is available
+2025-09-20 10:24:18,029 - INFO - [MainThread:import_application_components] Importing application components...
+2025-09-20 10:24:18,304 - INFO - [MainThread:import_application_components] Application components imported successfully
+2025-09-20 10:24:18,304 - INFO - [MainThread:<module>] 🚀 Starting GUI application initialization...
+2025-09-20 10:24:18,304 - INFO - [MainThread:load_and_validate_configurations] Loading base URL configurations from G:\My Drive\0dev\BF 2.1.4\base_urls.csv...
+2025-09-20 10:24:18,309 - INFO - [MainThread:load_base_urls] Loaded 12 base URL configurations from base_urls.csv.
+2025-09-20 10:24:18,310 - INFO - [MainThread:load_and_validate_configurations] ✓ Loaded 12 URL configurations
+2025-09-20 10:24:18,310 - INFO - [MainThread:load_and_validate_configurations] Loading application settings...
+2025-09-20 10:24:18,317 - INFO - [MainThread:load_settings] Settings loaded and merged with defaults from G:\My Drive\0dev\BF 2.1.4\settings.json
+2025-09-20 10:24:18,317 - INFO - [MainThread:load_and_validate_configurations] ✓ Settings loaded and validated
+2025-09-20 10:24:18,318 - INFO - [MainThread:<module>] Creating main application window...
+2025-09-20 10:24:18,354 - INFO - [MainThread:<module>] Creating MainWindow instance...
+2025-09-20 10:24:18,437 - INFO - [MainThread:<module>] ✓ Application initialization completed successfully
+2025-09-20 10:24:18,439 - INFO - [MainThread:<module>] 🎯 Starting main event loop...
+2025-09-20 10:27:47,351 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility v2.1.4 Starting ---
+2025-09-20 10:27:47,359 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2025-09-20 10:27:47,360 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2025-09-20 10:27:47,361 - INFO - [MainThread:setup_logging] Script Directory: G:\My Drive\0dev\BF 2.1.4
+2025-09-20 10:27:47,361 - INFO - [MainThread:setup_logging] Working Directory: G:\My Drive\0dev\BF 2.1.4
+2025-09-20 10:27:47,362 - INFO - [MainThread:check_package_versions] ✓ selenium 4.34.2 is available
+2025-09-20 10:27:47,727 - INFO - [MainThread:check_package_versions] ✓ pandas 2.3.1 is available
+2025-09-20 10:27:47,888 - INFO - [MainThread:check_package_versions] ✓ openpyxl 3.1.5 is available
+2025-09-20 10:27:48,126 - INFO - [MainThread:check_package_versions] ✓ requests 2.32.4 is available
+2025-09-20 10:27:48,136 - INFO - [MainThread:check_package_versions] ✓ pytesseract 0.3.13 is available
+2025-09-20 10:27:48,253 - INFO - [MainThread:check_package_versions] ✓ undetected_chromedriver 3.5.5 (optional) is available
+2025-09-20 10:27:48,256 - INFO - [MainThread:check_package_versions] ✓ webdriver_manager 4.0.2 (optional) is available
+2025-09-20 10:27:48,261 - INFO - [MainThread:import_application_components] Importing application components...
+2025-09-20 10:27:48,586 - INFO - [MainThread:import_application_components] Application components imported successfully
+2025-09-20 10:27:48,587 - INFO - [MainThread:<module>] 🚀 Starting GUI application initialization...
+2025-09-20 10:27:48,588 - INFO - [MainThread:load_and_validate_configurations] Loading base URL configurations from G:\My Drive\0dev\BF 2.1.4\base_urls.csv...
+2025-09-20 10:27:48,601 - INFO - [MainThread:load_base_urls] Loaded 12 base URL configurations from base_urls.csv.
+2025-09-20 10:27:48,602 - INFO - [MainThread:load_and_validate_configurations] ✓ Loaded 12 URL configurations
+2025-09-20 10:27:48,602 - INFO - [MainThread:load_and_validate_configurations] Loading application settings...
+2025-09-20 10:27:48,616 - INFO - [MainThread:load_settings] Settings loaded and merged with defaults from G:\My Drive\0dev\BF 2.1.4\settings.json
+2025-09-20 10:27:48,617 - INFO - [MainThread:load_and_validate_configurations] ✓ Settings loaded and validated
+2025-09-20 10:27:48,617 - INFO - [MainThread:<module>] Creating main application window...
+2025-09-20 10:27:48,656 - INFO - [MainThread:<module>] Creating MainWindow instance...
+2025-09-20 10:27:48,747 - INFO - [MainThread:<module>] ✓ Application initialization completed successfully
+2025-09-20 10:27:48,748 - INFO - [MainThread:<module>] 🎯 Starting main event loop...
+2025-09-20 11:07:27,298 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility v2.1.4 Starting ---
+2025-09-20 11:07:27,300 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2025-09-20 11:07:27,300 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2025-09-20 11:07:27,300 - INFO - [MainThread:setup_logging] Script Directory: g:\My Drive\0dev\BF 2.1.4
+2025-09-20 11:07:27,300 - INFO - [MainThread:setup_logging] Working Directory: g:\My Drive\0dev\BF 2.1.4
+2025-09-20 11:07:27,301 - INFO - [MainThread:check_package_versions] ✓ selenium 4.34.2 is available
+2025-09-20 11:07:27,688 - INFO - [MainThread:check_package_versions] ✓ pandas 2.3.1 is available
+2025-09-20 11:07:27,851 - INFO - [MainThread:check_package_versions] ✓ openpyxl 3.1.5 is available
+2025-09-20 11:07:28,092 - INFO - [MainThread:check_package_versions] ✓ requests 2.32.4 is available
+2025-09-20 11:07:28,101 - INFO - [MainThread:check_package_versions] ✓ pytesseract 0.3.13 is available
+2025-09-20 11:07:28,277 - INFO - [MainThread:check_package_versions] ✓ undetected_chromedriver 3.5.5 (optional) is available
+2025-09-20 11:07:28,280 - INFO - [MainThread:check_package_versions] ✓ webdriver_manager 4.0.2 (optional) is available
+2025-09-20 11:07:28,283 - INFO - [MainThread:import_application_components] Importing application components...
+2025-09-20 11:07:28,722 - INFO - [MainThread:import_application_components] Application components imported successfully
+2025-09-20 11:07:28,722 - INFO - [MainThread:<module>] 🚀 Starting GUI application initialization...
+2025-09-20 11:07:28,723 - INFO - [MainThread:load_and_validate_configurations] Loading base URL configurations from g:\My Drive\0dev\BF 2.1.4\base_urls.csv...
+2025-09-20 11:07:28,728 - INFO - [MainThread:load_base_urls] Loaded 12 base URL configurations from base_urls.csv.
+2025-09-20 11:07:28,728 - INFO - [MainThread:load_and_validate_configurations] ✓ Loaded 12 URL configurations
+2025-09-20 11:07:28,728 - INFO - [MainThread:load_and_validate_configurations] Loading application settings...
+2025-09-20 11:07:28,736 - INFO - [MainThread:load_settings] Settings loaded and merged with defaults from g:\My Drive\0dev\BF 2.1.4\settings.json
+2025-09-20 11:07:28,736 - INFO - [MainThread:load_and_validate_configurations] ✓ Settings loaded and validated
+2025-09-20 11:07:28,736 - INFO - [MainThread:<module>] Creating main application window...
+2025-09-20 11:07:28,782 - INFO - [MainThread:<module>] Creating MainWindow instance...
+2025-09-20 11:07:28,873 - INFO - [MainThread:<module>] ✓ Application initialization completed successfully
+2025-09-20 11:07:28,873 - INFO - [MainThread:<module>] 🎯 Starting main event loop...
+2025-09-20 11:10:23,677 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility v2.1.4 Starting ---
+2025-09-20 11:10:23,679 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2025-09-20 11:10:23,679 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2025-09-20 11:10:23,679 - INFO - [MainThread:setup_logging] Script Directory: g:\My Drive\0dev\BF 2.1.4
+2025-09-20 11:10:23,679 - INFO - [MainThread:setup_logging] Working Directory: g:\My Drive\0dev\BF 2.1.4
+2025-09-20 11:10:23,680 - INFO - [MainThread:check_package_versions] ✓ selenium 4.34.2 is available
+2025-09-20 11:10:24,094 - INFO - [MainThread:check_package_versions] ✓ pandas 2.3.1 is available
+2025-09-20 11:10:24,262 - INFO - [MainThread:check_package_versions] ✓ openpyxl 3.1.5 is available
+2025-09-20 11:10:24,503 - INFO - [MainThread:check_package_versions] ✓ requests 2.32.4 is available
+2025-09-20 11:10:24,511 - INFO - [MainThread:check_package_versions] ✓ pytesseract 0.3.13 is available
+2025-09-20 11:10:24,620 - INFO - [MainThread:check_package_versions] ✓ undetected_chromedriver 3.5.5 (optional) is available
+2025-09-20 11:10:24,622 - INFO - [MainThread:check_package_versions] ✓ webdriver_manager 4.0.2 (optional) is available
+2025-09-20 11:10:24,624 - INFO - [MainThread:import_application_components] Importing application components...
+2025-09-20 11:10:24,926 - INFO - [MainThread:import_application_components] Application components imported successfully
+2025-09-20 11:10:24,926 - INFO - [MainThread:<module>] 🚀 Starting GUI application initialization...
+2025-09-20 11:10:24,926 - INFO - [MainThread:load_and_validate_configurations] Loading base URL configurations from g:\My Drive\0dev\BF 2.1.4\base_urls.csv...
+2025-09-20 11:10:24,931 - INFO - [MainThread:load_base_urls] Loaded 12 base URL configurations from base_urls.csv.
+2025-09-20 11:10:24,932 - INFO - [MainThread:load_and_validate_configurations] ✓ Loaded 12 URL configurations
+2025-09-20 11:10:24,932 - INFO - [MainThread:load_and_validate_configurations] Loading application settings...
+2025-09-20 11:10:24,939 - INFO - [MainThread:load_settings] Settings loaded and merged with defaults from g:\My Drive\0dev\BF 2.1.4\settings.json
+2025-09-20 11:10:24,939 - INFO - [MainThread:load_and_validate_configurations] ✓ Settings loaded and validated
+2025-09-20 11:10:24,939 - INFO - [MainThread:<module>] Creating main application window...
+2025-09-20 11:10:24,978 - INFO - [MainThread:<module>] Creating MainWindow instance...
+2025-09-20 11:10:25,073 - INFO - [MainThread:<module>] ✓ Application initialization completed successfully
+2025-09-20 11:10:25,074 - INFO - [MainThread:<module>] 🎯 Starting main event loop...
+2025-09-20 11:10:37,629 - INFO - [MainThread:_start_fetch_departments_thread] Fetch Departments button clicked.
+2025-09-20 11:10:44,917 - INFO - [DeptFetchThread:patch_exe] patching driver executable C:\Users\kalia\appdata\roaming\undetected_chromedriver\undetected_chromedriver.exe
+2025-09-20 11:11:05,472 - INFO - [MainThread:browse_download_dir] Download directory set to: C:\Users\kalia\Downloads
+2025-09-20 11:11:07,799 - INFO - [MainThread:_start_fetch_departments_thread] Fetch Departments button clicked.
+2025-09-20 11:11:45,898 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility v2.1.4 Starting ---
+2025-09-20 11:11:45,901 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2025-09-20 11:11:45,902 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2025-09-20 11:11:45,902 - INFO - [MainThread:setup_logging] Script Directory: G:\My Drive\0dev\BF 2.1.4
+2025-09-20 11:11:45,903 - INFO - [MainThread:setup_logging] Working Directory: G:\My Drive\0dev\BF 2.1.4
+2025-09-20 11:11:45,903 - INFO - [MainThread:check_package_versions] ✓ selenium 4.34.2 is available
+2025-09-20 11:11:46,282 - INFO - [MainThread:check_package_versions] ✓ pandas 2.3.1 is available
+2025-09-20 11:11:46,447 - INFO - [MainThread:check_package_versions] ✓ openpyxl 3.1.5 is available
+2025-09-20 11:11:46,683 - INFO - [MainThread:check_package_versions] ✓ requests 2.32.4 is available
+2025-09-20 11:11:46,719 - INFO - [MainThread:check_package_versions] ✓ pytesseract 0.3.13 is available
+2025-09-20 11:11:46,849 - INFO - [MainThread:check_package_versions] ✓ undetected_chromedriver 3.5.5 (optional) is available
+2025-09-20 11:11:46,851 - INFO - [MainThread:check_package_versions] ✓ webdriver_manager 4.0.2 (optional) is available
+2025-09-20 11:11:46,853 - INFO - [MainThread:import_application_components] Importing application components...
+2025-09-20 11:11:47,248 - INFO - [MainThread:import_application_components] Application components imported successfully
+2025-09-20 11:11:47,250 - INFO - [MainThread:<module>] 🚀 Starting GUI application initialization...
+2025-09-20 11:11:47,252 - INFO - [MainThread:load_and_validate_configurations] Loading base URL configurations from G:\My Drive\0dev\BF 2.1.4\base_urls.csv...
+2025-09-20 11:11:47,268 - INFO - [MainThread:load_base_urls] Loaded 12 base URL configurations from base_urls.csv.
+2025-09-20 11:11:47,269 - INFO - [MainThread:load_and_validate_configurations] ✓ Loaded 12 URL configurations
+2025-09-20 11:11:47,270 - INFO - [MainThread:load_and_validate_configurations] Loading application settings...
+2025-09-20 11:11:47,283 - INFO - [MainThread:load_settings] Settings loaded and merged with defaults from G:\My Drive\0dev\BF 2.1.4\settings.json
+2025-09-20 11:11:47,283 - INFO - [MainThread:load_and_validate_configurations] ✓ Settings loaded and validated
+2025-09-20 11:11:47,284 - INFO - [MainThread:<module>] Creating main application window...
+2025-09-20 11:11:47,321 - INFO - [MainThread:<module>] Creating MainWindow instance...
+2025-09-20 11:11:47,430 - INFO - [MainThread:<module>] ✓ Application initialization completed successfully
+2025-09-20 11:11:47,430 - INFO - [MainThread:<module>] 🎯 Starting main event loop...
+2025-09-20 11:11:50,391 - ERROR - [DeptFetchThread:setup_driver] Failed driver setup: Message: session not created: cannot connect to chrome at 127.0.0.1:54908
+from chrome not reachable; For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#sessionnotcreatedexception
+Stacktrace:
+	GetHandleVerifier [0x0xdb0c13+66051]
+	GetHandleVerifier [0x0xdb0c54+66116]
+	(No symbol) [0x0xb8d980]
+	(No symbol) [0x0xb814fa]
+	(No symbol) [0x0xbc7a36]
+	(No symbol) [0x0xbbddcf]
+	(No symbol) [0x0xbbdbf6]
+	(No symbol) [0x0xc05c54]
+	(No symbol) [0x0xc0555a]
+	(No symbol) [0x0xbf9d86]
+	(No symbol) [0x0xbcb53e]
+	(No symbol) [0x0xbcc414]
+	GetHandleVerifier [0x0xff8a13+2457603]
+	GetHandleVerifier [0x0xff39d2+2437058]
+	GetHandleVerifier [0x0xdd97f2+232930]
+	GetHandleVerifier [0x0xdc9a18+167944]
+	GetHandleVerifier [0x0xdd092d+196381]
+	GetHandleVerifier [0x0xdb8ee8+99544]
+	GetHandleVerifier [0x0xdb9082+99954]
+	GetHandleVerifier [0x0xda322a+10266]
+	BaseThreadInitThunk [0x0x76f15d49+25]
+	RtlInitializeExceptionChain [0x0x77e8d1ab+107]
+	RtlGetAppContainerNamedObjectPath [0x0x77e8d131+561]
+Traceback (most recent call last):
+  File "g:\My Drive\0dev\BF 2.1.4\scraper\driver_manager.py", line 68, in setup_driver
+    driver_instance = uc.Chrome(options=options)
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\undetected_chromedriver\__init__.py", line 466, in __init__
+    super(Chrome, self).__init__(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        service=service,
+        ^^^^^^^^^^^^^^^^
+        options=options,
+        ^^^^^^^^^^^^^^^^
+        keep_alive=keep_alive,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\chrome\webdriver.py", line 47, in __init__
+    super().__init__(
+    ~~~~~~~~~~~~~~~~^
+        browser_name=DesiredCapabilities.CHROME["browserName"],
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+        keep_alive=keep_alive,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\chromium\webdriver.py", line 69, in __init__
+    super().__init__(command_executor=executor, options=options)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\remote\webdriver.py", line 261, in __init__
+    self.start_session(capabilities)
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\undetected_chromedriver\__init__.py", line 724, in start_session
+    super(selenium.webdriver.chrome.webdriver.WebDriver, self).start_session(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        capabilities
+        ^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\remote\webdriver.py", line 362, in start_session
+    response = self.execute(Command.NEW_SESSION, caps)["value"]
+               ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\remote\webdriver.py", line 454, in execute
+    self.error_handler.check_response(response)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\remote\errorhandler.py", line 232, in check_response
+    raise exception_class(message, screen, stacktrace)
+selenium.common.exceptions.SessionNotCreatedException: Message: session not created: cannot connect to chrome at 127.0.0.1:54908
+from chrome not reachable; For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#sessionnotcreatedexception
+Stacktrace:
+	GetHandleVerifier [0x0xdb0c13+66051]
+	GetHandleVerifier [0x0xdb0c54+66116]
+	(No symbol) [0x0xb8d980]
+	(No symbol) [0x0xb814fa]
+	(No symbol) [0x0xbc7a36]
+	(No symbol) [0x0xbbddcf]
+	(No symbol) [0x0xbbdbf6]
+	(No symbol) [0x0xc05c54]
+	(No symbol) [0x0xc0555a]
+	(No symbol) [0x0xbf9d86]
+	(No symbol) [0x0xbcb53e]
+	(No symbol) [0x0xbcc414]
+	GetHandleVerifier [0x0xff8a13+2457603]
+	GetHandleVerifier [0x0xff39d2+2437058]
+	GetHandleVerifier [0x0xdd97f2+232930]
+	GetHandleVerifier [0x0xdc9a18+167944]
+	GetHandleVerifier [0x0xdd092d+196381]
+	GetHandleVerifier [0x0xdb8ee8+99544]
+	GetHandleVerifier [0x0xdb9082+99954]
+	GetHandleVerifier [0x0xda322a+10266]
+	BaseThreadInitThunk [0x0x76f15d49+25]
+	RtlInitializeExceptionChain [0x0x77e8d1ab+107]
+	RtlGetAppContainerNamedObjectPath [0x0x77e8d131+561]
+
+2025-09-20 11:11:50,441 - CRITICAL - [DeptFetchThread:fetch_department_list_from_site] WebDriverException fetch_dept_list
+Traceback (most recent call last):
+  File "g:\My Drive\0dev\BF 2.1.4\scraper\logic.py", line 158, in fetch_department_list_from_site
+    driver = setup_driver(initial_download_dir=os.getcwd())
+  File "g:\My Drive\0dev\BF 2.1.4\scraper\driver_manager.py", line 68, in setup_driver
+    driver_instance = uc.Chrome(options=options)
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\undetected_chromedriver\__init__.py", line 466, in __init__
+    super(Chrome, self).__init__(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        service=service,
+        ^^^^^^^^^^^^^^^^
+        options=options,
+        ^^^^^^^^^^^^^^^^
+        keep_alive=keep_alive,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\chrome\webdriver.py", line 47, in __init__
+    super().__init__(
+    ~~~~~~~~~~~~~~~~^
+        browser_name=DesiredCapabilities.CHROME["browserName"],
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+        keep_alive=keep_alive,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\chromium\webdriver.py", line 69, in __init__
+    super().__init__(command_executor=executor, options=options)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\remote\webdriver.py", line 261, in __init__
+    self.start_session(capabilities)
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\undetected_chromedriver\__init__.py", line 724, in start_session
+    super(selenium.webdriver.chrome.webdriver.WebDriver, self).start_session(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        capabilities
+        ^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\remote\webdriver.py", line 362, in start_session
+    response = self.execute(Command.NEW_SESSION, caps)["value"]
+               ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\remote\webdriver.py", line 454, in execute
+    self.error_handler.check_response(response)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\remote\errorhandler.py", line 232, in check_response
+    raise exception_class(message, screen, stacktrace)
+selenium.common.exceptions.SessionNotCreatedException: Message: session not created: cannot connect to chrome at 127.0.0.1:54908
+from chrome not reachable; For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#sessionnotcreatedexception
+Stacktrace:
+	GetHandleVerifier [0x0xdb0c13+66051]
+	GetHandleVerifier [0x0xdb0c54+66116]
+	(No symbol) [0x0xb8d980]
+	(No symbol) [0x0xb814fa]
+	(No symbol) [0x0xbc7a36]
+	(No symbol) [0x0xbbddcf]
+	(No symbol) [0x0xbbdbf6]
+	(No symbol) [0x0xc05c54]
+	(No symbol) [0x0xc0555a]
+	(No symbol) [0x0xbf9d86]
+	(No symbol) [0x0xbcb53e]
+	(No symbol) [0x0xbcc414]
+	GetHandleVerifier [0x0xff8a13+2457603]
+	GetHandleVerifier [0x0xff39d2+2437058]
+	GetHandleVerifier [0x0xdd97f2+232930]
+	GetHandleVerifier [0x0xdc9a18+167944]
+	GetHandleVerifier [0x0xdd092d+196381]
+	GetHandleVerifier [0x0xdb8ee8+99544]
+	GetHandleVerifier [0x0xdb9082+99954]
+	GetHandleVerifier [0x0xda322a+10266]
+	BaseThreadInitThunk [0x0x76f15d49+25]
+	RtlInitializeExceptionChain [0x0x77e8d1ab+107]
+	RtlGetAppContainerNamedObjectPath [0x0x77e8d131+561]
+
+2025-09-20 11:11:56,935 - INFO - [MainThread:browse_download_dir] Download directory set to: C:\Users\kalia\Downloads
+2025-09-20 11:12:12,155 - ERROR - [DeptFetchThread:setup_driver] Failed driver setup: Message: session not created: cannot connect to chrome at 127.0.0.1:54964
+from chrome not reachable; For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#sessionnotcreatedexception
+Stacktrace:
+	GetHandleVerifier [0x0xdb0c13+66051]
+	GetHandleVerifier [0x0xdb0c54+66116]
+	(No symbol) [0x0xb8d980]
+	(No symbol) [0x0xb814fa]
+	(No symbol) [0x0xbc7a36]
+	(No symbol) [0x0xbbddcf]
+	(No symbol) [0x0xbbdbf6]
+	(No symbol) [0x0xc05c54]
+	(No symbol) [0x0xc0555a]
+	(No symbol) [0x0xbf9d86]
+	(No symbol) [0x0xbcb53e]
+	(No symbol) [0x0xbcc414]
+	GetHandleVerifier [0x0xff8a13+2457603]
+	GetHandleVerifier [0x0xff39d2+2437058]
+	GetHandleVerifier [0x0xdd97f2+232930]
+	GetHandleVerifier [0x0xdc9a18+167944]
+	GetHandleVerifier [0x0xdd092d+196381]
+	GetHandleVerifier [0x0xdb8ee8+99544]
+	GetHandleVerifier [0x0xdb9082+99954]
+	GetHandleVerifier [0x0xda322a+10266]
+	BaseThreadInitThunk [0x0x76f15d49+25]
+	RtlInitializeExceptionChain [0x0x77e8d1ab+107]
+	RtlGetAppContainerNamedObjectPath [0x0x77e8d131+561]
+Traceback (most recent call last):
+  File "g:\My Drive\0dev\BF 2.1.4\scraper\driver_manager.py", line 68, in setup_driver
+    driver_instance = uc.Chrome(options=options)
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\undetected_chromedriver\__init__.py", line 466, in __init__
+    super(Chrome, self).__init__(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        service=service,
+        ^^^^^^^^^^^^^^^^
+        options=options,
+        ^^^^^^^^^^^^^^^^
+        keep_alive=keep_alive,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\chrome\webdriver.py", line 47, in __init__
+    super().__init__(
+    ~~~~~~~~~~~~~~~~^
+        browser_name=DesiredCapabilities.CHROME["browserName"],
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+        keep_alive=keep_alive,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\chromium\webdriver.py", line 69, in __init__
+    super().__init__(command_executor=executor, options=options)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\remote\webdriver.py", line 261, in __init__
+    self.start_session(capabilities)
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\undetected_chromedriver\__init__.py", line 724, in start_session
+    super(selenium.webdriver.chrome.webdriver.WebDriver, self).start_session(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        capabilities
+        ^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\remote\webdriver.py", line 362, in start_session
+    response = self.execute(Command.NEW_SESSION, caps)["value"]
+               ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\remote\webdriver.py", line 454, in execute
+    self.error_handler.check_response(response)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\remote\errorhandler.py", line 232, in check_response
+    raise exception_class(message, screen, stacktrace)
+selenium.common.exceptions.SessionNotCreatedException: Message: session not created: cannot connect to chrome at 127.0.0.1:54964
+from chrome not reachable; For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#sessionnotcreatedexception
+Stacktrace:
+	GetHandleVerifier [0x0xdb0c13+66051]
+	GetHandleVerifier [0x0xdb0c54+66116]
+	(No symbol) [0x0xb8d980]
+	(No symbol) [0x0xb814fa]
+	(No symbol) [0x0xbc7a36]
+	(No symbol) [0x0xbbddcf]
+	(No symbol) [0x0xbbdbf6]
+	(No symbol) [0x0xc05c54]
+	(No symbol) [0x0xc0555a]
+	(No symbol) [0x0xbf9d86]
+	(No symbol) [0x0xbcb53e]
+	(No symbol) [0x0xbcc414]
+	GetHandleVerifier [0x0xff8a13+2457603]
+	GetHandleVerifier [0x0xff39d2+2437058]
+	GetHandleVerifier [0x0xdd97f2+232930]
+	GetHandleVerifier [0x0xdc9a18+167944]
+	GetHandleVerifier [0x0xdd092d+196381]
+	GetHandleVerifier [0x0xdb8ee8+99544]
+	GetHandleVerifier [0x0xdb9082+99954]
+	GetHandleVerifier [0x0xda322a+10266]
+	BaseThreadInitThunk [0x0x76f15d49+25]
+	RtlInitializeExceptionChain [0x0x77e8d1ab+107]
+	RtlGetAppContainerNamedObjectPath [0x0x77e8d131+561]
+
+2025-09-20 11:12:12,163 - CRITICAL - [DeptFetchThread:fetch_department_list_from_site] WebDriverException fetch_dept_list
+Traceback (most recent call last):
+  File "g:\My Drive\0dev\BF 2.1.4\scraper\logic.py", line 158, in fetch_department_list_from_site
+    driver = setup_driver(initial_download_dir=os.getcwd())
+  File "g:\My Drive\0dev\BF 2.1.4\scraper\driver_manager.py", line 68, in setup_driver
+    driver_instance = uc.Chrome(options=options)
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\undetected_chromedriver\__init__.py", line 466, in __init__
+    super(Chrome, self).__init__(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        service=service,
+        ^^^^^^^^^^^^^^^^
+        options=options,
+        ^^^^^^^^^^^^^^^^
+        keep_alive=keep_alive,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\chrome\webdriver.py", line 47, in __init__
+    super().__init__(
+    ~~~~~~~~~~~~~~~~^
+        browser_name=DesiredCapabilities.CHROME["browserName"],
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+        keep_alive=keep_alive,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\chromium\webdriver.py", line 69, in __init__
+    super().__init__(command_executor=executor, options=options)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\remote\webdriver.py", line 261, in __init__
+    self.start_session(capabilities)
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\undetected_chromedriver\__init__.py", line 724, in start_session
+    super(selenium.webdriver.chrome.webdriver.WebDriver, self).start_session(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        capabilities
+        ^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\remote\webdriver.py", line 362, in start_session
+    response = self.execute(Command.NEW_SESSION, caps)["value"]
+               ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\remote\webdriver.py", line 454, in execute
+    self.error_handler.check_response(response)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\remote\errorhandler.py", line 232, in check_response
+    raise exception_class(message, screen, stacktrace)
+selenium.common.exceptions.SessionNotCreatedException: Message: session not created: cannot connect to chrome at 127.0.0.1:54964
+from chrome not reachable; For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#sessionnotcreatedexception
+Stacktrace:
+	GetHandleVerifier [0x0xdb0c13+66051]
+	GetHandleVerifier [0x0xdb0c54+66116]
+	(No symbol) [0x0xb8d980]
+	(No symbol) [0x0xb814fa]
+	(No symbol) [0x0xbc7a36]
+	(No symbol) [0x0xbbddcf]
+	(No symbol) [0x0xbbdbf6]
+	(No symbol) [0x0xc05c54]
+	(No symbol) [0x0xc0555a]
+	(No symbol) [0x0xbf9d86]
+	(No symbol) [0x0xbcb53e]
+	(No symbol) [0x0xbcc414]
+	GetHandleVerifier [0x0xff8a13+2457603]
+	GetHandleVerifier [0x0xff39d2+2437058]
+	GetHandleVerifier [0x0xdd97f2+232930]
+	GetHandleVerifier [0x0xdc9a18+167944]
+	GetHandleVerifier [0x0xdd092d+196381]
+	GetHandleVerifier [0x0xdb8ee8+99544]
+	GetHandleVerifier [0x0xdb9082+99954]
+	GetHandleVerifier [0x0xda322a+10266]
+	BaseThreadInitThunk [0x0x76f15d49+25]
+	RtlInitializeExceptionChain [0x0x77e8d1ab+107]
+	RtlGetAppContainerNamedObjectPath [0x0x77e8d131+561]
+
+2025-09-20 11:12:13,326 - INFO - [MainThread:_start_fetch_departments_thread] Fetch Departments button clicked.
+2025-09-20 11:12:26,552 - INFO - [MainThread:_start_fetch_departments_thread] Fetch Departments button clicked.
+2025-09-20 11:12:43,144 - INFO - [DeptFetchThread:patch_exe] patching driver executable C:\Users\kalia\appdata\roaming\undetected_chromedriver\undetected_chromedriver.exe
+2025-09-20 11:12:50,691 - INFO - [MainThread:on_closing] Close requested.
+2025-09-20 11:12:50,692 - INFO - [MainThread:_save_current_settings_and_show_message] Saving current settings...
+2025-09-20 11:12:50,693 - ERROR - [MainThread:on_closing] Failed to save settings on exit: invalid literal for int() with base 10: '10.0'
+2025-09-20 11:12:50,754 - INFO - [MainThread:on_closing] Tkinter root window destroyed.
+2025-09-20 11:12:50,755 - INFO - [MainThread:on_closing] --- Application Shutdown Sequence Complete ---
+2025-09-20 11:12:50,756 - INFO - [MainThread:<module>] Main event loop ended normally
+2025-09-20 11:12:50,757 - INFO - [MainThread:<module>] 🛑 Application shutdown initiated...
+2025-09-20 11:12:50,758 - INFO - [MainThread:_save_current_settings] Saving current settings...
+2025-09-20 11:12:50,759 - WARNING - [MainThread:_save_current_settings] Could not get window geometry, possibly already closed.
+2025-09-20 11:12:50,848 - INFO - [MainThread:save_settings] Settings saved successfully to g:\My Drive\0dev\BF 2.1.4\settings.json
+2025-09-20 11:12:50,849 - INFO - [MainThread:<module>] ✅ Application shutdown completed successfully
+2025-09-20 11:12:57,058 - INFO - [MainThread:on_closing] Close requested.
+2025-09-20 11:12:57,059 - INFO - [MainThread:_save_current_settings_and_show_message] Saving current settings...
+2025-09-20 11:12:57,061 - ERROR - [MainThread:on_closing] Failed to save settings on exit: invalid literal for int() with base 10: '10.0'
+2025-09-20 11:12:57,131 - INFO - [MainThread:on_closing] Tkinter root window destroyed.
+2025-09-20 11:12:57,132 - INFO - [MainThread:on_closing] --- Application Shutdown Sequence Complete ---
+2025-09-20 11:12:57,132 - INFO - [MainThread:<module>] Main event loop ended normally
+2025-09-20 11:12:57,133 - INFO - [MainThread:<module>] 🛑 Application shutdown initiated...
+2025-09-20 11:12:57,134 - INFO - [MainThread:_save_current_settings] Saving current settings...
+2025-09-20 11:12:57,135 - WARNING - [MainThread:_save_current_settings] Could not get window geometry, possibly already closed.
+2025-09-20 11:12:57,156 - INFO - [MainThread:save_settings] Settings saved successfully to g:\My Drive\0dev\BF 2.1.4\settings.json
+2025-09-20 11:12:57,157 - INFO - [MainThread:<module>] ✅ Application shutdown completed successfully
+2025-09-20 11:12:57,157 - INFO - [MainThread:_ensure_close] ensuring close
+2025-09-20 11:12:57,158 - INFO - [MainThread:_ensure_close] ensuring close
+2025-09-20 11:13:02,878 - INFO - [MainThread:on_closing] Close requested.
+2025-09-20 11:13:02,880 - INFO - [MainThread:_save_current_settings_and_show_message] Saving current settings...
+2025-09-20 11:13:02,880 - ERROR - [MainThread:on_closing] Failed to save settings on exit: invalid literal for int() with base 10: '10.0'
+2025-09-20 11:13:02,903 - ERROR - [DeptFetchThread:setup_driver] Failed driver setup: [WinError 183] Cannot create a file when that file already exists: 'C:\\Users\\kalia\\appdata\\roaming\\undetected_chromedriver\\undetected\\chromedriver-win32\\chromedriver.exe' -> 'C:\\Users\\kalia\\appdata\\roaming\\undetected_chromedriver\\undetected_chromedriver.exe'
+Traceback (most recent call last):
+  File "G:\My Drive\0dev\BF 2.1.4\scraper\driver_manager.py", line 68, in setup_driver
+    driver_instance = uc.Chrome(options=options)
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\undetected_chromedriver\__init__.py", line 258, in __init__
+    self.patcher.auto()
+    ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\undetected_chromedriver\patcher.py", line 178, in auto
+    self.unzip_package(self.fetch_package())
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\undetected_chromedriver\patcher.py", line 310, in unzip_package
+    os.rename(os.path.join(self.zip_path, exe_path), self.executable_path)
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileExistsError: [WinError 183] Cannot create a file when that file already exists: 'C:\\Users\\kalia\\appdata\\roaming\\undetected_chromedriver\\undetected\\chromedriver-win32\\chromedriver.exe' -> 'C:\\Users\\kalia\\appdata\\roaming\\undetected_chromedriver\\undetected_chromedriver.exe'
+2025-09-20 11:13:02,928 - CRITICAL - [DeptFetchThread:fetch_department_list_from_site] Unexpected error fetch_dept_list
+Traceback (most recent call last):
+  File "G:\My Drive\0dev\BF 2.1.4\scraper\logic.py", line 158, in fetch_department_list_from_site
+    driver = setup_driver(initial_download_dir=os.getcwd())
+  File "G:\My Drive\0dev\BF 2.1.4\scraper\driver_manager.py", line 68, in setup_driver
+    driver_instance = uc.Chrome(options=options)
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\undetected_chromedriver\__init__.py", line 258, in __init__
+    self.patcher.auto()
+    ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\undetected_chromedriver\patcher.py", line 178, in auto
+    self.unzip_package(self.fetch_package())
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\undetected_chromedriver\patcher.py", line 310, in unzip_package
+    os.rename(os.path.join(self.zip_path, exe_path), self.executable_path)
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileExistsError: [WinError 183] Cannot create a file when that file already exists: 'C:\\Users\\kalia\\appdata\\roaming\\undetected_chromedriver\\undetected\\chromedriver-win32\\chromedriver.exe' -> 'C:\\Users\\kalia\\appdata\\roaming\\undetected_chromedriver\\undetected_chromedriver.exe'
+2025-09-20 11:13:02,958 - INFO - [MainThread:on_closing] Tkinter root window destroyed.
+2025-09-20 11:13:02,958 - INFO - [MainThread:on_closing] --- Application Shutdown Sequence Complete ---
+2025-09-20 11:13:02,959 - INFO - [MainThread:<module>] Main event loop ended normally
+2025-09-20 11:13:02,960 - INFO - [MainThread:<module>] 🛑 Application shutdown initiated...
+2025-09-20 11:13:02,961 - INFO - [MainThread:_save_current_settings] Saving current settings...
+2025-09-20 11:13:02,961 - WARNING - [MainThread:_save_current_settings] Could not get window geometry, possibly already closed.
+2025-09-20 11:13:02,985 - INFO - [MainThread:save_settings] Settings saved successfully to G:\My Drive\0dev\BF 2.1.4\settings.json
+2025-09-20 11:13:02,986 - INFO - [MainThread:<module>] ✅ Application shutdown completed successfully
+2025-09-20 11:13:03,815 - INFO - [MainThread:_ensure_close] ensuring close
+2025-09-20 11:13:03,815 - INFO - [MainThread:_ensure_close] ensuring close
+2025-09-20 11:13:35,470 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility v2.1.4 Starting ---
+2025-09-20 11:13:35,476 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2025-09-20 11:13:35,477 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2025-09-20 11:13:35,479 - INFO - [MainThread:setup_logging] Script Directory: G:\My Drive\0dev\BF 2.1.4
+2025-09-20 11:13:35,480 - INFO - [MainThread:setup_logging] Working Directory: g:\My Drive\0dev\BF 2.1.4
+2025-09-20 11:13:35,481 - INFO - [MainThread:check_package_versions] ✓ selenium 4.34.2 is available
+2025-09-20 11:13:35,846 - INFO - [MainThread:check_package_versions] ✓ pandas 2.3.1 is available
+2025-09-20 11:13:36,007 - INFO - [MainThread:check_package_versions] ✓ openpyxl 3.1.5 is available
+2025-09-20 11:13:36,245 - INFO - [MainThread:check_package_versions] ✓ requests 2.32.4 is available
+2025-09-20 11:13:36,296 - INFO - [MainThread:check_package_versions] ✓ pytesseract 0.3.13 is available
+2025-09-20 11:13:36,477 - INFO - [MainThread:check_package_versions] ✓ undetected_chromedriver 3.5.5 (optional) is available
+2025-09-20 11:13:36,484 - INFO - [MainThread:check_package_versions] ✓ webdriver_manager 4.0.2 (optional) is available
+2025-09-20 11:13:36,502 - INFO - [MainThread:import_application_components] Importing application components...
+2025-09-20 11:13:37,018 - INFO - [MainThread:import_application_components] Application components imported successfully
+2025-09-20 11:13:37,019 - INFO - [MainThread:<module>] 🚀 Starting GUI application initialization...
+2025-09-20 11:13:37,022 - INFO - [MainThread:load_and_validate_configurations] Loading base URL configurations from G:\My Drive\0dev\BF 2.1.4\base_urls.csv...
+2025-09-20 11:13:37,045 - INFO - [MainThread:load_base_urls] Loaded 12 base URL configurations from base_urls.csv.
+2025-09-20 11:13:37,047 - INFO - [MainThread:load_and_validate_configurations] ✓ Loaded 12 URL configurations
+2025-09-20 11:13:37,048 - INFO - [MainThread:load_and_validate_configurations] Loading application settings...
+2025-09-20 11:13:37,062 - INFO - [MainThread:load_settings] Settings loaded and merged with defaults from G:\My Drive\0dev\BF 2.1.4\settings.json
+2025-09-20 11:13:37,063 - INFO - [MainThread:load_and_validate_configurations] ✓ Settings loaded and validated
+2025-09-20 11:13:37,065 - INFO - [MainThread:<module>] Creating main application window...
+2025-09-20 11:13:37,119 - INFO - [MainThread:<module>] Creating MainWindow instance...
+2025-09-20 11:13:37,270 - INFO - [MainThread:<module>] ✓ Application initialization completed successfully
+2025-09-20 11:13:37,271 - INFO - [MainThread:<module>] 🎯 Starting main event loop...
+2025-09-20 11:13:44,326 - INFO - [MainThread:browse_download_dir] Download directory set to: C:\Users\kalia\Downloads
+2025-09-20 11:13:50,362 - INFO - [MainThread:_start_fetch_departments_thread] Fetch Departments button clicked.
+2025-09-20 11:13:52,562 - INFO - [DeptFetchThread:patch_exe] patching driver executable C:\Users\kalia\appdata\roaming\undetected_chromedriver\undetected_chromedriver.exe
+2025-09-20 11:14:57,605 - ERROR - [DeptFetchThread:setup_driver] Failed driver setup: Message: session not created: cannot connect to chrome at 127.0.0.1:65047
+from chrome not reachable; For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#sessionnotcreatedexception
+Stacktrace:
+	GetHandleVerifier [0x0xa20c13+66051]
+	GetHandleVerifier [0x0xa20c54+66116]
+	(No symbol) [0x0x7fd980]
+	(No symbol) [0x0x7f14fa]
+	(No symbol) [0x0x837a36]
+	(No symbol) [0x0x82ddcf]
+	(No symbol) [0x0x82dbf6]
+	(No symbol) [0x0x875c54]
+	(No symbol) [0x0x87555a]
+	(No symbol) [0x0x869d86]
+	(No symbol) [0x0x83b53e]
+	(No symbol) [0x0x83c414]
+	GetHandleVerifier [0x0xc68a13+2457603]
+	GetHandleVerifier [0x0xc639d2+2437058]
+	GetHandleVerifier [0x0xa497f2+232930]
+	GetHandleVerifier [0x0xa39a18+167944]
+	GetHandleVerifier [0x0xa4092d+196381]
+	GetHandleVerifier [0x0xa28ee8+99544]
+	GetHandleVerifier [0x0xa29082+99954]
+	GetHandleVerifier [0x0xa1322a+10266]
+	BaseThreadInitThunk [0x0x76f15d49+25]
+	RtlInitializeExceptionChain [0x0x77e8d1ab+107]
+	RtlGetAppContainerNamedObjectPath [0x0x77e8d131+561]
+Traceback (most recent call last):
+  File "G:\My Drive\0dev\BF 2.1.4\scraper\driver_manager.py", line 68, in setup_driver
+    driver_instance = uc.Chrome(options=options)
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\undetected_chromedriver\__init__.py", line 466, in __init__
+    super(Chrome, self).__init__(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        service=service,
+        ^^^^^^^^^^^^^^^^
+        options=options,
+        ^^^^^^^^^^^^^^^^
+        keep_alive=keep_alive,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\chrome\webdriver.py", line 47, in __init__
+    super().__init__(
+    ~~~~~~~~~~~~~~~~^
+        browser_name=DesiredCapabilities.CHROME["browserName"],
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+        keep_alive=keep_alive,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\chromium\webdriver.py", line 69, in __init__
+    super().__init__(command_executor=executor, options=options)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\remote\webdriver.py", line 261, in __init__
+    self.start_session(capabilities)
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\undetected_chromedriver\__init__.py", line 724, in start_session
+    super(selenium.webdriver.chrome.webdriver.WebDriver, self).start_session(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        capabilities
+        ^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\remote\webdriver.py", line 362, in start_session
+    response = self.execute(Command.NEW_SESSION, caps)["value"]
+               ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\remote\webdriver.py", line 454, in execute
+    self.error_handler.check_response(response)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\remote\errorhandler.py", line 232, in check_response
+    raise exception_class(message, screen, stacktrace)
+selenium.common.exceptions.SessionNotCreatedException: Message: session not created: cannot connect to chrome at 127.0.0.1:65047
+from chrome not reachable; For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#sessionnotcreatedexception
+Stacktrace:
+	GetHandleVerifier [0x0xa20c13+66051]
+	GetHandleVerifier [0x0xa20c54+66116]
+	(No symbol) [0x0x7fd980]
+	(No symbol) [0x0x7f14fa]
+	(No symbol) [0x0x837a36]
+	(No symbol) [0x0x82ddcf]
+	(No symbol) [0x0x82dbf6]
+	(No symbol) [0x0x875c54]
+	(No symbol) [0x0x87555a]
+	(No symbol) [0x0x869d86]
+	(No symbol) [0x0x83b53e]
+	(No symbol) [0x0x83c414]
+	GetHandleVerifier [0x0xc68a13+2457603]
+	GetHandleVerifier [0x0xc639d2+2437058]
+	GetHandleVerifier [0x0xa497f2+232930]
+	GetHandleVerifier [0x0xa39a18+167944]
+	GetHandleVerifier [0x0xa4092d+196381]
+	GetHandleVerifier [0x0xa28ee8+99544]
+	GetHandleVerifier [0x0xa29082+99954]
+	GetHandleVerifier [0x0xa1322a+10266]
+	BaseThreadInitThunk [0x0x76f15d49+25]
+	RtlInitializeExceptionChain [0x0x77e8d1ab+107]
+	RtlGetAppContainerNamedObjectPath [0x0x77e8d131+561]
+
+2025-09-20 11:14:57,618 - CRITICAL - [DeptFetchThread:fetch_department_list_from_site] WebDriverException fetch_dept_list
+Traceback (most recent call last):
+  File "G:\My Drive\0dev\BF 2.1.4\scraper\logic.py", line 158, in fetch_department_list_from_site
+    driver = setup_driver(initial_download_dir=os.getcwd())
+  File "G:\My Drive\0dev\BF 2.1.4\scraper\driver_manager.py", line 68, in setup_driver
+    driver_instance = uc.Chrome(options=options)
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\undetected_chromedriver\__init__.py", line 466, in __init__
+    super(Chrome, self).__init__(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        service=service,
+        ^^^^^^^^^^^^^^^^
+        options=options,
+        ^^^^^^^^^^^^^^^^
+        keep_alive=keep_alive,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\chrome\webdriver.py", line 47, in __init__
+    super().__init__(
+    ~~~~~~~~~~~~~~~~^
+        browser_name=DesiredCapabilities.CHROME["browserName"],
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+        keep_alive=keep_alive,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\chromium\webdriver.py", line 69, in __init__
+    super().__init__(command_executor=executor, options=options)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\remote\webdriver.py", line 261, in __init__
+    self.start_session(capabilities)
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\undetected_chromedriver\__init__.py", line 724, in start_session
+    super(selenium.webdriver.chrome.webdriver.WebDriver, self).start_session(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        capabilities
+        ^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\remote\webdriver.py", line 362, in start_session
+    response = self.execute(Command.NEW_SESSION, caps)["value"]
+               ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\remote\webdriver.py", line 454, in execute
+    self.error_handler.check_response(response)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\remote\errorhandler.py", line 232, in check_response
+    raise exception_class(message, screen, stacktrace)
+selenium.common.exceptions.SessionNotCreatedException: Message: session not created: cannot connect to chrome at 127.0.0.1:65047
+from chrome not reachable; For documentation on this error, please visit: https://www.selenium.dev/documentation/webdriver/troubleshooting/errors#sessionnotcreatedexception
+Stacktrace:
+	GetHandleVerifier [0x0xa20c13+66051]
+	GetHandleVerifier [0x0xa20c54+66116]
+	(No symbol) [0x0x7fd980]
+	(No symbol) [0x0x7f14fa]
+	(No symbol) [0x0x837a36]
+	(No symbol) [0x0x82ddcf]
+	(No symbol) [0x0x82dbf6]
+	(No symbol) [0x0x875c54]
+	(No symbol) [0x0x87555a]
+	(No symbol) [0x0x869d86]
+	(No symbol) [0x0x83b53e]
+	(No symbol) [0x0x83c414]
+	GetHandleVerifier [0x0xc68a13+2457603]
+	GetHandleVerifier [0x0xc639d2+2437058]
+	GetHandleVerifier [0x0xa497f2+232930]
+	GetHandleVerifier [0x0xa39a18+167944]
+	GetHandleVerifier [0x0xa4092d+196381]
+	GetHandleVerifier [0x0xa28ee8+99544]
+	GetHandleVerifier [0x0xa29082+99954]
+	GetHandleVerifier [0x0xa1322a+10266]
+	BaseThreadInitThunk [0x0x76f15d49+25]
+	RtlInitializeExceptionChain [0x0x77e8d1ab+107]
+	RtlGetAppContainerNamedObjectPath [0x0x77e8d131+561]
+
+2025-09-20 11:35:33,362 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility v2.1.4 Starting ---
+2025-09-20 11:35:33,369 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2025-09-20 11:35:33,370 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2025-09-20 11:35:33,371 - INFO - [MainThread:setup_logging] Script Directory: g:\My Drive\0dev\BF 2.1.4
+2025-09-20 11:35:33,372 - INFO - [MainThread:setup_logging] Working Directory: g:\My Drive\0dev\BF 2.1.4
+2025-09-20 11:35:33,374 - INFO - [MainThread:check_package_versions] ✓ selenium 4.34.2 is available
+2025-09-20 11:35:33,762 - INFO - [MainThread:check_package_versions] ✓ pandas 2.3.1 is available
+2025-09-20 11:35:33,936 - INFO - [MainThread:check_package_versions] ✓ openpyxl 3.1.5 is available
+2025-09-20 11:35:34,172 - INFO - [MainThread:check_package_versions] ✓ requests 2.32.4 is available
+2025-09-20 11:35:34,181 - INFO - [MainThread:check_package_versions] ✓ pytesseract 0.3.13 is available
+2025-09-20 11:35:34,293 - INFO - [MainThread:check_package_versions] ✓ undetected_chromedriver 3.5.5 (optional) is available
+2025-09-20 11:35:34,295 - INFO - [MainThread:check_package_versions] ✓ webdriver_manager 4.0.2 (optional) is available
+2025-09-20 11:35:34,297 - INFO - [MainThread:import_application_components] Importing application components...
+2025-09-20 11:35:34,677 - INFO - [MainThread:import_application_components] Application components imported successfully
+2025-09-20 11:35:34,678 - INFO - [MainThread:<module>] 🚀 Starting GUI application initialization...
+2025-09-20 11:35:34,678 - INFO - [MainThread:load_and_validate_configurations] Loading base URL configurations from g:\My Drive\0dev\BF 2.1.4\base_urls.csv...
+2025-09-20 11:35:34,685 - INFO - [MainThread:load_base_urls] Loaded 12 base URL configurations from base_urls.csv.
+2025-09-20 11:35:34,685 - INFO - [MainThread:load_and_validate_configurations] ✓ Loaded 12 URL configurations
+2025-09-20 11:35:34,685 - INFO - [MainThread:load_and_validate_configurations] Loading application settings...
+2025-09-20 11:35:34,689 - INFO - [MainThread:load_settings] Settings loaded and merged with defaults from g:\My Drive\0dev\BF 2.1.4\settings.json
+2025-09-20 11:35:34,690 - INFO - [MainThread:load_and_validate_configurations] ✓ Settings loaded and validated
+2025-09-20 11:35:34,690 - INFO - [MainThread:<module>] Creating main application window...
+2025-09-20 11:35:34,728 - INFO - [MainThread:<module>] Creating MainWindow instance...
+2025-09-20 11:35:34,812 - INFO - [MainThread:<module>] ✓ Application initialization completed successfully
+2025-09-20 11:35:34,813 - INFO - [MainThread:<module>] 🎯 Starting main event loop...
+2025-09-20 11:37:52,568 - INFO - [MainThread:_start_fetch_departments_thread] Fetch Departments button clicked.
+2025-09-20 11:37:52,579 - INFO - [DeptFetchThread:setup_driver] Setting up Chrome WebDriver...
+2025-09-20 11:37:52,580 - INFO - [DeptFetchThread:setup_driver] Using standard ChromeDriver for better compatibility
+2025-09-20 11:37:52,581 - INFO - [DeptFetchThread:setup_driver] Setting download directory to: g:\My Drive\0dev\BF 2.1.4
+2025-09-20 11:37:52,582 - INFO - [DeptFetchThread:setup_driver] Installing ChromeDriver using webdriver-manager...
+2025-09-20 11:37:52,583 - INFO - [DeptFetchThread:log] ====== WebDriver manager ======
+2025-09-20 11:37:53,712 - INFO - [DeptFetchThread:log] Get LATEST chromedriver version for google-chrome
+2025-09-20 11:37:53,894 - INFO - [DeptFetchThread:log] Get LATEST chromedriver version for google-chrome
+2025-09-20 11:37:54,037 - INFO - [DeptFetchThread:log] There is no [win64] chromedriver "140.0.7339.185" for browser google-chrome "140.0.7339" in cache
+2025-09-20 11:37:54,038 - INFO - [DeptFetchThread:log] Get LATEST chromedriver version for google-chrome
+2025-09-20 11:37:54,455 - INFO - [DeptFetchThread:log] WebDriver version 140.0.7339.185 selected
+2025-09-20 11:37:54,458 - INFO - [DeptFetchThread:log] Modern chrome version https://storage.googleapis.com/chrome-for-testing-public/140.0.7339.185/win32/chromedriver-win32.zip
+2025-09-20 11:37:54,459 - INFO - [DeptFetchThread:log] About to download new driver from https://storage.googleapis.com/chrome-for-testing-public/140.0.7339.185/win32/chromedriver-win32.zip
+2025-09-20 11:37:54,560 - INFO - [DeptFetchThread:log] Driver downloading response is 200
+2025-09-20 11:37:55,710 - INFO - [DeptFetchThread:log] Get LATEST chromedriver version for google-chrome
+2025-09-20 11:37:57,158 - INFO - [DeptFetchThread:log] Driver has been saved in cache [C:\Users\kalia\.wdm\drivers\chromedriver\win64\140.0.7339.185]
+2025-09-20 11:37:57,164 - INFO - [DeptFetchThread:setup_driver] ChromeDriver installed successfully
+2025-09-20 11:37:57,165 - INFO - [DeptFetchThread:setup_driver] Creating Chrome WebDriver instance...
+2025-09-20 11:37:58,795 - INFO - [DeptFetchThread:setup_driver] Chrome WebDriver setup completed successfully
+2025-09-20 11:38:05,124 - INFO - [DeptFetchThread:safe_quit_driver] Closing WebDriver instance...
+2025-09-20 11:38:07,280 - INFO - [DeptFetchThread:safe_quit_driver] WebDriver quit successfully.
+2025-09-20 11:38:24,710 - INFO - [MainThread:_start_fetch_departments_thread] Fetch Departments button clicked.
+2025-09-20 11:38:24,722 - INFO - [DeptFetchThread:setup_driver] Setting up Chrome WebDriver...
+2025-09-20 11:38:24,723 - INFO - [DeptFetchThread:setup_driver] Using standard ChromeDriver for better compatibility
+2025-09-20 11:38:24,723 - INFO - [DeptFetchThread:setup_driver] Setting download directory to: g:\My Drive\0dev\BF 2.1.4
+2025-09-20 11:38:24,724 - INFO - [DeptFetchThread:setup_driver] Installing ChromeDriver using webdriver-manager...
+2025-09-20 11:38:24,724 - INFO - [DeptFetchThread:log] ====== WebDriver manager ======
+2025-09-20 11:38:25,795 - INFO - [DeptFetchThread:log] Get LATEST chromedriver version for google-chrome
+2025-09-20 11:38:25,965 - INFO - [DeptFetchThread:log] Get LATEST chromedriver version for google-chrome
+2025-09-20 11:38:26,120 - INFO - [DeptFetchThread:log] Driver [C:\Users\kalia\.wdm\drivers\chromedriver\win64\140.0.7339.185\chromedriver-win32/chromedriver.exe] found in cache
+2025-09-20 11:38:26,121 - INFO - [DeptFetchThread:setup_driver] ChromeDriver installed successfully
+2025-09-20 11:38:26,122 - INFO - [DeptFetchThread:setup_driver] Creating Chrome WebDriver instance...
+2025-09-20 11:38:27,171 - INFO - [DeptFetchThread:setup_driver] Chrome WebDriver setup completed successfully
+2025-09-20 11:38:34,199 - INFO - [DeptFetchThread:safe_quit_driver] Closing WebDriver instance...
+2025-09-20 11:38:36,349 - INFO - [DeptFetchThread:safe_quit_driver] WebDriver quit successfully.
+2025-09-20 11:39:36,607 - INFO - [MainThread:_get_all_valid_departments] Starting scraping for ALL 43 valid departments (filtered from 43 total).
+2025-09-20 11:39:36,610 - INFO - [Department Scrape:setup_driver] Setting up Chrome WebDriver...
+2025-09-20 11:39:36,612 - INFO - [Department Scrape:setup_driver] Using standard ChromeDriver for better compatibility
+2025-09-20 11:39:36,613 - INFO - [Department Scrape:setup_driver] Setting download directory to: C:\Users\kalia\Downloads
+2025-09-20 11:39:36,615 - INFO - [Department Scrape:setup_driver] Installing ChromeDriver using webdriver-manager...
+2025-09-20 11:39:36,615 - INFO - [Department Scrape:log] ====== WebDriver manager ======
+2025-09-20 11:39:37,725 - INFO - [Department Scrape:log] Get LATEST chromedriver version for google-chrome
+2025-09-20 11:39:37,928 - INFO - [Department Scrape:log] Get LATEST chromedriver version for google-chrome
+2025-09-20 11:39:38,084 - INFO - [Department Scrape:log] Driver [C:\Users\kalia\.wdm\drivers\chromedriver\win64\140.0.7339.185\chromedriver-win32/chromedriver.exe] found in cache
+2025-09-20 11:39:38,086 - INFO - [Department Scrape:setup_driver] ChromeDriver installed successfully
+2025-09-20 11:39:38,089 - INFO - [Department Scrape:setup_driver] Creating Chrome WebDriver instance...
+2025-09-20 11:39:39,158 - INFO - [Department Scrape:setup_driver] Chrome WebDriver setup completed successfully
+2025-09-20 11:39:42,393 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Baddi Barotiwala Nal' (SNo:1)'.
+2025-09-20 11:39:47,968 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-20 11:39:51,915 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Chief Project Direct' (SNo:2)'.
+2025-09-20 11:39:57,855 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-20 11:40:01,610 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'DC Office Kullu' (SNo:3)'.
+2025-09-20 11:40:06,984 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-20 11:40:10,687 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Department of Health' (SNo:4)'.
+2025-09-20 11:40:16,376 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-20 11:40:20,062 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Department of Inform' (SNo:5)'.
+2025-09-20 11:40:25,352 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-20 11:40:29,133 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Directorate Animal H' (SNo:6)'.
+2025-09-20 11:40:34,596 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-20 11:40:39,692 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Directorate of Food ' (SNo:7)'.
+2025-09-20 11:40:45,073 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-20 11:40:48,756 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Directorate of Foren' (SNo:8)'.
+2025-09-20 11:40:54,441 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-20 11:40:58,178 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Directorate of Horti' (SNo:9)'.
+2025-09-20 11:41:03,647 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-20 11:41:07,356 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Directorate of Medic' (SNo:10)'.
+2025-09-20 11:41:13,060 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-20 11:41:16,809 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Directorate of Techn' (SNo:11)'.
+2025-09-20 11:41:22,147 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-20 11:41:25,874 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Directorate of Urban' (SNo:12)'.
+2025-09-20 11:41:32,336 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-20 11:41:36,196 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Directorate Rural De' (SNo:13)'.
+2025-09-20 11:41:41,599 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-20 11:41:45,366 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Director of Agricult' (SNo:14)'.
+2025-09-20 11:41:50,674 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-20 11:41:54,446 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Disaster Management ' (SNo:15)'.
+2025-09-20 11:42:00,287 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-20 11:42:04,162 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Dr. Yashwant Singh P' (SNo:16)'.
+2025-09-20 11:42:09,745 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-20 11:42:13,571 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Eco-Tourism Society ' (SNo:17)'.
+2025-09-20 11:42:20,058 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-20 11:42:23,942 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Himachal Pradesh Agr' (SNo:18)'.
+2025-09-20 11:42:29,627 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-20 11:42:33,648 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Himachal Pradesh Boa' (SNo:19)'.
+2025-09-20 11:42:38,872 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-20 11:42:42,673 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Himachal Pradesh Med' (SNo:20)'.
+2025-09-20 11:42:47,966 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-20 11:42:51,918 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Himachal Pradesh Sch' (SNo:21)'.
+2025-09-20 11:42:57,207 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-20 11:43:01,091 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Himachal Pradesh Tou' (SNo:22)'.
+2025-09-20 11:43:06,821 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-20 11:43:10,681 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Himachal Pradesh Uni' (SNo:23)'.
+2025-09-20 11:43:16,409 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-20 11:43:20,291 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Himachal Urban Devel' (SNo:24)'.
+2025-09-20 11:43:25,720 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-20 11:43:29,654 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'HP Aquaculture Fishe' (SNo:25)'.
+2025-09-20 11:43:35,057 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-20 11:43:38,926 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'HP Cooperative Marke' (SNo:26)'.
+2025-09-20 11:43:44,222 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-20 11:43:48,147 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'HP General Industrie' (SNo:27)'.
+2025-09-20 11:43:53,816 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-20 11:43:58,053 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'HP-HRTC-Manging Dire' (SNo:28)'.
+2025-09-20 11:44:03,756 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-20 11:44:07,849 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'HP Irrigation and Pu' (SNo:29)'.
+2025-09-20 11:44:20,564 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-20 11:44:24,535 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'HP Krishi Vishva Vid' (SNo:30)'.
+2025-09-20 11:44:29,949 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-20 11:44:34,100 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'HP Power Transmissio' (SNo:31)'.
+2025-09-20 11:44:40,265 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-20 11:44:44,229 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'HPSEBL' (SNo:32)'.
+2025-09-20 11:44:55,025 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-20 11:44:58,952 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'HP SIDC Limited' (SNo:33)'.
+2025-09-20 11:45:04,854 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-20 11:45:08,835 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'HP State Civil Suppl' (SNo:34)'.
+2025-09-20 11:45:14,168 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-20 11:45:18,152 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'HP State Forest Deve' (SNo:35)'.
+2025-09-20 11:45:23,477 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-20 11:45:27,694 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Industries Departmen' (SNo:36)'.
+2025-09-20 11:45:33,267 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-20 11:45:37,296 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Municipal Corporatio' (SNo:37)'.
+2025-09-20 11:45:43,095 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-20 11:45:47,050 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Non Conventional Ene' (SNo:38)'.
+2025-09-20 11:45:52,354 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-20 11:45:56,300 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Printing and Station' (SNo:39)'.
+2025-09-20 11:46:01,616 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-20 11:46:06,003 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'PWD' (SNo:40)'.
+2025-09-20 11:46:39,443 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-20 11:46:43,510 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Ropeway and Rapid Tr' (SNo:41)'.
+2025-09-20 11:46:48,965 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-20 11:46:53,005 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Shimla Jal Prabandha' (SNo:42)'.
+2025-09-20 11:46:58,744 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-20 11:47:02,895 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Wool Fedration' (SNo:43)'.
+2025-09-20 11:47:08,215 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-20 11:47:11,620 - INFO - [Department Scrape:safe_quit_driver] Closing WebDriver instance...
+2025-09-20 11:47:13,878 - INFO - [Department Scrape:safe_quit_driver] WebDriver quit successfully.

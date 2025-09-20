@@ -1,11 +1,10 @@
 # -*- mode: python ; coding: utf-8 -*-
 
-
 a = Analysis(
     ['main.py'],
     pathex=[],
     binaries=[],
-    datas=[('base_urls.csv', '.')],
+    datas=[('base_urls.csv', '.'), ('resources\\app_icon.ico', 'resources')],
     hiddenimports=['PIL._tkinter_finder', 'selenium', 'undetected_chromedriver', 'PyPDF2', 'pandas', 'pytesseract'],
     hookspath=[],
     hooksconfig={},
@@ -36,4 +35,5 @@ exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
     icon=['resources\\app_icon.ico'],
+    version='version_info.txt'
 )
