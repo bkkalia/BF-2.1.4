@@ -147,7 +147,7 @@ class SettingsTab(ttk.Frame):
         downloads = os.path.join(os.path.expanduser("~"), "Downloads")
         dt_str = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
         default_dir = os.path.join(downloads, f"{DEFAULT_DOWNLOAD_DIR_NAME}_{dt_str}")
-        self.download_dir_var.set(default_dir)
+        self.main_app.download_dir_var.set(default_dir)
 
     def _browse_download_dir(self):
         folder = filedialog.askdirectory(

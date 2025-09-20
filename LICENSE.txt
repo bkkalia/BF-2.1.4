@@ -1,21 +1,69 @@
-MIT License
+# Black Forest Tender Scraper Commercial License
 
 Copyright (c) 2025 Cloud84
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+## Personal/Non-Commercial Use License
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+Permission is hereby granted, free of charge, to any individual person obtaining a copy of this software and associated documentation files (the "Software"), to use the Software for personal, educational, or non-commercial purposes, subject to the following conditions:
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+1. **Personal Use Only**: The Software may only be used for personal, educational, or non-commercial purposes. Commercial use is strictly prohibited without a commercial license.
+
+2. **No Redistribution**: You may not redistribute, sell, lease, or sublicense the Software or any derivative works without explicit written permission from Cloud84.
+
+3. **Attribution**: You must include the following attribution in any use of the Software: "Powered by Black Forest Tender Scraper - Cloud84"
+
+4. **No Warranty**: THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+
+## Commercial Use License
+
+For commercial use, including but not limited to:
+- Business operations
+- Government or enterprise deployments
+- Integration into commercial products or services
+- Any use that generates revenue or provides business value
+
+A commercial license must be obtained from Cloud84. Commercial licenses include:
+- Unlimited commercial use
+- Priority support
+- Custom modifications
+- Professional services
+
+Contact: info@cloud84.com for commercial licensing inquiries.
+
+## Definitions
+
+**Commercial Use** includes but is not limited to:
+- Use in a business environment
+- Use by government agencies or enterprises
+- Use in products or services offered for sale
+- Use that generates direct or indirect revenue
+- Use by organizations with annual revenue exceeding $100,000
+
+**Personal Use** includes:
+- Individual use for personal projects
+- Educational use in academic institutions
+- Non-profit organization use
+- Research and development (non-commercial)
+
+## License Fees
+
+Commercial licenses start at $499/year for small businesses, with enterprise pricing available. Volume discounts apply for multiple licenses.
+
+## Termination
+
+This license terminates automatically if you violate any of its terms. Upon termination, you must immediately cease all use of the Software and destroy all copies.
+
+## Governing Law
+
+This license shall be governed by and construed in accordance with the laws of India, without regard to its conflict of law provisions.
+
+## Contact Information
+
+For licensing inquiries: licensing info@cloud84.com
+For technical support: support@cloud84.com
+Website: https://cloud84.com/blackforest
+
+---
+
+**Last Updated**: September 20, 2025
+**Version**: 2.1.4

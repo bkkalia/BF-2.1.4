@@ -20,19 +20,78 @@ This is a **Python desktop application** for web scraping tender/bid data from g
 
 ## PROJECT STRUCTURE
 ```
-h:\My Drive\0dev\BF 2.1.4\
-├── main.py                    # Application entry point
-├── config.py                  # Configuration constants
-├── app_settings.py            # Settings management
-├── gui/
-│   ├── main_window.py         # Main GUI window with tabs
-│   ├── tab_search.py          # Search dashboard (PRIMARY FOCUS)
-│   └── tab_url_process.py     # URL processing tab
-├── scraper/
-│   └── logic.py               # Web scraping logic
-├── logs/                      # Application logs
-├── settings.json              # User settings
-└── base_urls.csv              # Portal configurations
+g:\My Drive\0dev\BF 2.1.4\
+├── main.py                           # Application entry point
+├── config.py                         # Configuration constants
+├── app_settings.py                   # Settings management
+├── cli_parser.py                     # Command-line interface parser
+├── cli_runner.py                     # CLI execution logic
+├── utils.py                          # Utility functions
+├── test.py                           # Test scripts
+├── build_exe.py                      # Executable build script
+├── blackforest_launcher.py           # Launcher script
+├── rebuild_installer.bat             # Installer rebuild script
+├── run_hp_tenders.bat                # HP tenders batch script
+├── requirements.txt                  # Python dependencies
+├── settings.json                     # User settings
+├── base_urls.csv                     # Portal configurations
+├── search_folders.json               # Search folder configurations
+├── version_info.txt                  # Version information for builds
+├── AI_INSTRUCTIONS.md                # AI assistant guidelines
+├── CHANGELOG.md                      # Version changelog
+├── CLI_HELP.md                       # CLI help documentation
+├── GUI_HELP.md                       # GUI help documentation
+├── PROJECT_CONTEXT.md                # This file - project overview
+├── ROADMAP.md                        # Development roadmap
+├── LICENSE.txt                       # License information
+├── INSTRUCTIONS.md                   # General instructions
+├── GPT_Analysis.md                   # GPT analysis notes
+├── Cline Style AI Coding Assistant Instructions.md  # AI coding guidelines
+├── New Structure.txt                 # Structure documentation
+├── search Himachal Pradesh.pdf       # Sample search document
+├── BlackForest.spec                  # PyInstaller spec file
+├── BlackForest_Launcher.spec         # Launcher PyInstaller spec
+├── setup.iss                         # Inno Setup script
+├── setup_simple.iss                  # Simplified installer script
+├── BF 2.1.4.code-workspace           # VSCode workspace file
+├── build/                            # Build artifacts
+│   └── build/BlackForest_Launcher/
+├── gui/                              # GUI components
+│   ├── __init__.py
+│   ├── main_window.py                # Main GUI window with tabs
+│   ├── tab_department.py             # Department-based scraping tab
+│   ├── tab_help.py                   # Help and documentation tab
+│   ├── tab_id_search.py              # ID-based search tab
+│   ├── tab_settings.py               # Application settings tab
+│   ├── tab_url_process.py            # URL processing tab
+│   ├── global_panel.py               # Global control panel
+│   └── gui_utils.py                  # GUI utility functions
+├── installer_output/                 # Generated installers
+│   └── BlackForest_Tender_Scraper_2.1.4_Portable.zip
+├── logs/                             # Application logs
+│   ├── app_20250914.log
+│   ├── app_20250915.log
+│   ├── app_20250917.log
+│   ├── app_20250918.log
+│   ├── app_20250919.log
+│   └── app_20250920.log
+├── resources/                        # Application resources
+│   └── app_icon.ico                  # Application icon
+├── sample Excels/                    # Sample Excel files
+│   └── hptenders_gov_in_tenders_20250524_163439.xlsx
+├── scraper/                          # Core scraping logic
+│   ├── __init__.py
+│   ├── logic.py                      # Main scraping logic
+│   ├── actions.py                    # Selenium action wrappers
+│   ├── captcha_handler.py            # CAPTCHA handling
+│   ├── driver_manager.py             # WebDriver management
+│   ├── ocr_helper.py                 # OCR functionality
+│   ├── sound_helper.py               # Sound notification system
+│   └── webdriver_manager.py          # WebDriver setup
+├── Tender_Downloads/                 # Downloaded tender files
+│   └── hptenders_gov_in_tenders_20250919_182152.xlsx
+└── tools/                            # Development tools
+    └── generate_changelog.py         # Changelog generation tool
 ```
 
 ## PRIMARY FOCUS AREAS

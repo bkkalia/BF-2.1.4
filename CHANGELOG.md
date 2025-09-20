@@ -9,7 +9,7 @@ Run the helper tool (from project root) to infer and update version dates:
 The tool makes a backup of CHANGELOG.md (CHANGELOG.md.bak.TIMESTAMP) before editing.
 -->
 
-## Version 2.1.4 (January 15, 2025)
+## Version 2.1.4 (September 18, 2025)
 
 ### 🚀 Major Features
 - **Hybrid Distribution**: New launcher system reducing EXE size from 150MB to 10MB
