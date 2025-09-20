@@ -657,7 +657,7 @@ class IdSearchTab(ttk.Frame):
                 return
 
             # Start background task with only the required positional arguments
-            self.main_app.start_background_task(
+            self.main_app.start_background_task(  # type: ignore
                 self._search_worker,
                 args=(tender_ids, url_config, download_dir),
                 task_name="Tender ID Search"
@@ -668,7 +668,10 @@ class IdSearchTab(ttk.Frame):
             self.main_app.update_log(f"Error starting search: {e}")
             gui_utils.show_message("Error", f"Failed to start search:\n\n{e}", type="error", parent=self.main_app.root)
 
-    def _search_worker(self, tender_ids, base_url_config, download_dir, **kwargs):
+    def _search_worker(self, tender_ids, base_url_config, download_dir, driver=None,
+                      log_callback=None, progress_callback=None, timer_callback=None,
+                      status_callback=None, stop_event=None, deep_scrape=False,
+                      dl_more_details=True, dl_zip=True, dl_notice_pdfs=True):
         """Worker function to process tender ID search."""
         try:
             from scraper.logic import search_and_download_tenders
@@ -676,7 +679,16 @@ class IdSearchTab(ttk.Frame):
                 tender_ids=tender_ids,
                 base_url_config=base_url_config,
                 download_dir=download_dir,
-                **kwargs
+                driver=driver,
+                log_callback=log_callback,
+                progress_callback=progress_callback,
+                timer_callback=timer_callback,
+                status_callback=status_callback,
+                stop_event=stop_event,
+                deep_scrape=deep_scrape,
+                dl_more_details=dl_more_details,
+                dl_zip=dl_zip,
+                dl_notice_pdfs=dl_notice_pdfs
             )
         except Exception as e:
             logger.error(f"Error in tender ID search worker: {e}", exc_info=True)
@@ -721,215 +733,3 @@ class IdSearchTab(ttk.Frame):
                 f"Could not save IDs.\nError: {e}",
                 parent=self.main_app.root
             )
-
-# Constants for search processing
-SEARCH_ID_KEY = 'Search ID'
-SEARCH_INDEX_KEY = 'Search Index'  
-TENDER_ID_KEY = 'Tender ID'
-
-def search_and_download_tenders(tender_ids, base_url_config, download_dir, driver: WebDriver,
-                              log_callback=None, progress_callback=None, timer_callback=None, 
-                              status_callback=None, stop_event=None, deep_scrape=False,
-                              dl_more_details=True, dl_zip=True, dl_notice_pdfs=True):
-    """Search and download tender details for given IDs."""
-    all_tender_details = []  # List to store all tender details
-    
-    if not driver:
-        raise ValueError("WebDriver instance must be provided")
-
-    # Create no-op callbacks if None provided
-    log_callback = log_callback or (lambda x: None)
-    progress_callback = progress_callback or (lambda *args: None)
-    timer_callback = timer_callback or (lambda x: None)
-    status_callback = status_callback or (lambda x: None)
-    
-    start_time = datetime.now()
-
-    try:
-        total_tenders = len(tender_ids)
-        log_callback(f"Processing {total_tenders} tender IDs...")
-        
-        # Import the actual search function from scraper.logic
-        from scraper.logic import (
-            BASE_PAGE_TENDER_ID_INPUT_LOCATOR, BASE_PAGE_SEARCH_BUTTON_LOCATOR,
-            SEARCH_RESULTS_TABLE_LOCATOR, SEARCH_RESULT_TITLE_LINK_XPATH,
-            extract_tender_details, _perform_tender_processing,
-            STABILIZE_WAIT, ELEMENT_WAIT_TIMEOUT
-        )
-        
-        success_count = 0
-
-        for idx, tender_id in enumerate(tender_ids, 1):
-            if stop_event and stop_event.is_set():
-                log_callback("Search stopped by user")
-                break
-
-            try:
-                log_callback(f"Searching for tender ID: {tender_id} ({idx}/{total_tenders})")
-                status_callback(f"Searching: {tender_id}")
-                
-                # Check driver session
-                try:
-                    current_url = driver.current_url
-                    log_callback(f"Current URL: {current_url}")
-                except Exception as session_err:
-                    log_callback(f"Driver session lost for {tender_id}: {session_err}")
-                    continue
-
-                # Navigate to base URL
-                driver.get(base_url_config['BaseURL'])
-                import time
-                time.sleep(STABILIZE_WAIT)
-
-                # Find and fill tender ID input
-                try:
-                    if hasattr(driver, 'find_element') and SELENIUM_IMPORTED:
-                        id_input = WebDriverWait(driver, ELEMENT_WAIT_TIMEOUT).until(
-                            EC.presence_of_element_located(BASE_PAGE_TENDER_ID_INPUT_LOCATOR)
-                        )
-                        if id_input:
-                            id_input.clear()
-                            id_input.send_keys(tender_id)
-                            log_callback(f"Entered tender ID: {tender_id}")
-                except Exception as input_err:
-                    log_callback(f"Error finding/filling input for {tender_id}: {input_err}")
-                    continue
-
-                # Click search button
-                try:
-                    if hasattr(driver, 'find_element') and SELENIUM_IMPORTED:
-                        search_button = WebDriverWait(driver, ELEMENT_WAIT_TIMEOUT).until(
-                            EC.element_to_be_clickable(BASE_PAGE_SEARCH_BUTTON_LOCATOR)
-                        )
-                        if search_button:
-                            search_button.click()
-                            time.sleep(STABILIZE_WAIT * 2)
-                            log_callback(f"Clicked search button for: {tender_id}")
-                except Exception as search_err:
-                    log_callback(f"Error clicking search button for {tender_id}: {search_err}")
-                    continue
-
-                # Handle search results
-                try:
-                    if hasattr(driver, 'find_element') and SELENIUM_IMPORTED:
-                        results_table = WebDriverWait(driver, ELEMENT_WAIT_TIMEOUT).until(
-                            EC.presence_of_element_located(SEARCH_RESULTS_TABLE_LOCATOR)
-                        )
-                        if results_table:
-                            log_callback(f"Found search results table for: {tender_id}")
-                            
-                            # Find and click tender link
-                            tender_link = results_table.find_element(By.XPATH, SEARCH_RESULT_TITLE_LINK_XPATH)
-                            if tender_link:
-                                tender_link.click()
-                                time.sleep(STABILIZE_WAIT * 2)
-                                log_callback(f"Clicked tender link for: {tender_id}")
-
-                        # Extract tender details for Excel
-                        try:
-                            details = extract_tender_details(driver, deep_scrape=deep_scrape)
-                            details[SEARCH_ID_KEY] = tender_id  # Add search ID to details
-                            details[SEARCH_INDEX_KEY] = idx
-                            details['Portal'] = base_url_config.get('Name', 'Unknown')
-                            all_tender_details.append(details)
-                            log_callback(f"Extracted details for: {tender_id}")
-                        except Exception as extract_err:
-                            log_callback(f"Error extracting details for {tender_id}: {extract_err}")
-                            # Add minimal details even if extraction fails
-                            all_tender_details.append({
-                                SEARCH_ID_KEY: tender_id,
-                                SEARCH_INDEX_KEY: idx,
-                                'Portal': base_url_config.get('Name', 'Unknown'),
-                                TENDER_ID_KEY: 'N/A',
-                                'Title': 'Error during extraction',
-                                'Error': str(extract_err)
-                            })
-
-                    # Process the tender for downloads if enabled
-                    if dl_more_details or dl_zip or dl_notice_pdfs:
-                        try:
-                            _perform_tender_processing(
-                                driver=driver,
-                                identifier=tender_id,
-                                base_download_dir=download_dir,
-                                log_callback=log_callback,
-                                status_callback=status_callback,
-                                stop_event=stop_event,
-                                dl_more_details=dl_more_details,
-                                dl_zip=dl_zip,
-                                dl_notice_pdfs=dl_notice_pdfs
-                            )
-                        except Exception as process_err:
-                            log_callback(f"Error processing downloads for {tender_id}: {process_err}")
-
-                    success_count += 1
-
-                except TimeoutException:
-                    log_callback(f"No results found for tender ID: {tender_id}")
-                    # Add "not found" entry to Excel
-                    all_tender_details.append({
-                        SEARCH_ID_KEY: tender_id,
-                        SEARCH_INDEX_KEY: idx,
-                        'Portal': base_url_config.get('Name', 'Unknown'),
-                        TENDER_ID_KEY: 'N/A',
-                        'Title': 'No results found',
-                        'Status': 'Not Found'
-                    })
-                    continue
-
-                # Update progress
-                if progress_callback:
-                    progress_callback(success_count, idx, total_tenders, None)
-
-            except Exception as e:
-                log_callback(f"Error processing tender ID {tender_id}: {e}")
-                # Add error entry to Excel
-                all_tender_details.append({
-                    SEARCH_ID_KEY: tender_id,
-                    SEARCH_INDEX_KEY: idx,
-                    'Portal': base_url_config.get('Name', 'Unknown'),
-                    TENDER_ID_KEY: 'N/A',
-                    'Title': 'Processing error',
-                    'Error': str(e)
-                })
-                continue
-
-        # Generate Excel file after all tenders are processed
-        if all_tender_details:
-            try:
-                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                website_keyword = get_website_keyword_from_url(base_url_config['BaseURL'])
-                excel_filename = f"{website_keyword}_tender_ids_{timestamp}.xlsx"
-                excel_path = os.path.join(download_dir, excel_filename)
-                
-                # Convert details to DataFrame and save
-                df = pd.DataFrame(all_tender_details)
-                # Sort by search index to maintain order
-                df = df.sort_values(SEARCH_INDEX_KEY)
-                df.to_excel(excel_path, index=False, engine='openpyxl')
-                
-                log_callback(f"Saved tender search results to Excel: {excel_filename}")
-                log_callback(f"Excel contains {len(all_tender_details)} entries ({success_count} successful)")
-                
-            except Exception as excel_err:
-                log_callback(f"Error saving Excel file: {excel_err}")
-        else:
-            log_callback("No tender details collected to save to Excel.")
-
-        # Log completion statistics
-        end_time = datetime.now()
-        duration = end_time - start_time
-        log_callback(f"Search completed in {duration.total_seconds():.1f} seconds")
-        log_callback(f"Processed: {success_count}/{total_tenders} tender IDs")
-        
-        if timer_callback:
-            timer_callback(start_time)
-            
-        if status_callback:
-            status_callback(f"Search completed - {success_count}/{total_tenders} processed")
-
-    except Exception as e:
-        log_callback(f"Error in search and download process: {e}")
-        if status_callback:
-            status_callback("Error during search")
-        raise

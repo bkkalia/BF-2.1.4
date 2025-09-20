@@ -26,7 +26,7 @@ except ImportError:
     WebDriverWait = object
 
 # Define our own By class that works with type annotations
-class By:
+class By(SeleniumBy):
     """Custom By class for consistent type annotations."""
     if SELENIUM_AVAILABLE:
         # Use the actual Selenium By constants

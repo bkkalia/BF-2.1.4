@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""
+r"""
 Generate/update CHANGELOG.md dates from local git history and file mentions.
 
 Usage:
