@@ -1007,22 +1007,43 @@ class MainWindow:
         import sys
         import os
         try:
-            # Get the project directory (where main.py is located)
-            project_dir = os.path.dirname(os.path.dirname(__file__))  # Go up from gui/ to project root
+            # Check if running as packaged application (has _MEIPASS attribute)
+            if getattr(sys, 'frozen', False):
+                # Running as packaged EXE - use the launcher directly
+                launcher_dir = os.path.dirname(sys.executable)
+                exe_path = os.path.join(launcher_dir, 'BlackForest.exe')
 
-            # Use cmd.exe to open console in project directory with custom title
-            cmd = [
-                'cmd.exe', '/k',
-                f'title "BlackForest CLI v{self.app_version}" && python main.py'
-            ]
+                if os.path.exists(exe_path):
+                    # Launch the EXE directly
+                    cmd = [exe_path]
+                    cwd = launcher_dir
+                else:
+                    # Fallback to python with main.py if EXE not found
+                    main_py = os.path.join(launcher_dir, 'main.py')
+                    if os.path.exists(main_py):
+                        cmd = ['python', main_py]
+                        cwd = launcher_dir
+                    else:
+                        raise FileNotFoundError(f"Neither BlackForest.exe nor main.py found in {launcher_dir}")
+            else:
+                # Running from source code
+                project_dir = os.path.dirname(os.path.dirname(__file__))  # Go up from gui/ to project root
+                cmd = ['cmd.exe', '/k', f'title "BlackForest CLI v{self.app_version}" && python main.py']
+                cwd = project_dir
 
             # Set environment variable to indicate interactive CLI mode
             env = os.environ.copy()
             env['BLACKFOREST_CLI_MODE'] = 'interactive'
 
-            # Launch in new console window on Windows, starting in project directory
-            subprocess.Popen(cmd, cwd=project_dir, creationflags=subprocess.CREATE_NEW_CONSOLE, env=env)
-            self.update_log("CLI mode launched in project directory with ASCII banner - type commands in the console window")
+            # Launch in new console window on Windows
+            if getattr(sys, 'frozen', False):
+                # For packaged app, use CREATE_NEW_CONSOLE
+                subprocess.Popen(cmd, cwd=cwd, creationflags=subprocess.CREATE_NEW_CONSOLE, env=env)
+            else:
+                # For source code, use the cmd.exe approach
+                subprocess.Popen(cmd, cwd=cwd, creationflags=subprocess.CREATE_NEW_CONSOLE, env=env)
+
+            self.update_log("CLI mode launched with ASCII banner - type commands in the console window")
         except Exception as e:
             self.update_log(f"Failed to launch CLI: {e}")
             logger.error(f"CLI launch error: {e}")

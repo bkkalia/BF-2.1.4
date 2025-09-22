@@ -72,7 +72,7 @@
  [],
  False,
  False,
- 1758538755,
+ 1758555767,
  [('runw.exe',
    'C:\\Users\\kalia\\AppData\\Roaming\\Python\\Python313\\site-packages\\PyInstaller\\bootloader\\Windows-64bit-intel\\runw.exe',
    'EXECUTABLE')],

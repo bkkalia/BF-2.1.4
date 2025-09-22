@@ -175,6 +175,7 @@ def build_hybrid():
 
         # Documentation
         'CLI_HELP.md',
+        'GUI_HELP.md',
         'README.md',
         'requirements.txt',
 

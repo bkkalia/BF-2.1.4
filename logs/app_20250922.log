@@ -1960,3 +1960,44 @@ Saved 87 tender details to: hptenders_gov_in_tenders_20250922_145907.xlsx
 2025-09-22 19:22:25,279 - INFO - [MainThread:import_application_components] Importing application components...
 2025-09-22 19:22:25,352 - INFO - [MainThread:import_application_components] Application components imported successfully
 2025-09-22 19:22:25,352 - INFO - [MainThread:run_cli_mode] 🔧 Starting CLI mode...
+2025-09-22 21:08:41,018 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility v2.1.4 Starting ---
+2025-09-22 21:08:41,018 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2025-09-22 21:08:41,018 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2025-09-22 21:08:41,019 - INFO - [MainThread:setup_logging] Script Directory: D:\Dev84\BF 2.1.4
+2025-09-22 21:08:41,019 - INFO - [MainThread:setup_logging] Working Directory: D:\Dev84\BF 2.1.4
+2025-09-22 21:08:41,019 - INFO - [MainThread:check_package_versions] ✓ selenium 4.34.2 is available
+2025-09-22 21:08:41,596 - INFO - [MainThread:check_package_versions] ✓ pandas 2.3.1 is available
+2025-09-22 21:08:41,721 - INFO - [MainThread:check_package_versions] ✓ openpyxl 3.1.5 is available
+2025-09-22 21:08:41,955 - INFO - [MainThread:check_package_versions] ✓ requests 2.32.4 is available
+2025-09-22 21:08:41,960 - INFO - [MainThread:check_package_versions] ✓ pytesseract 0.3.13 is available
+2025-09-22 21:08:42,027 - INFO - [MainThread:check_package_versions] ✓ undetected_chromedriver 3.5.5 (optional) is available
+2025-09-22 21:08:42,028 - INFO - [MainThread:check_package_versions] ✓ webdriver_manager 4.0.2 (optional) is available
+2025-09-22 21:08:42,028 - INFO - [MainThread:import_application_components] Importing application components...
+2025-09-22 21:08:42,086 - INFO - [MainThread:import_application_components] Application components imported successfully
+2025-09-22 21:08:42,087 - INFO - [MainThread:<module>] 🚀 Starting GUI application initialization...
+2025-09-22 21:08:42,087 - INFO - [MainThread:load_and_validate_configurations] Loading base URL configurations from D:\Dev84\BF 2.1.4\base_urls.csv...
+2025-09-22 21:08:42,087 - INFO - [MainThread:load_base_urls] Loaded 12 base URL configurations from base_urls.csv.
+2025-09-22 21:08:42,087 - INFO - [MainThread:load_and_validate_configurations] ✓ Loaded 12 URL configurations
+2025-09-22 21:08:42,087 - INFO - [MainThread:load_and_validate_configurations] Loading application settings...
+2025-09-22 21:08:42,088 - INFO - [MainThread:load_settings] Settings loaded and merged with defaults from D:\Dev84\BF 2.1.4\settings.json
+2025-09-22 21:08:42,088 - INFO - [MainThread:load_and_validate_configurations] ✓ Settings loaded and validated
+2025-09-22 21:08:42,088 - INFO - [MainThread:<module>] Creating main application window...
+2025-09-22 21:08:42,125 - INFO - [MainThread:<module>] Creating MainWindow instance...
+2025-09-22 21:08:42,126 - WARNING - [MainThread:_configure_styles_and_fonts] Star Wars font file found but tkinter cannot load TTF files directly
+2025-09-22 21:08:42,279 - INFO - [MainThread:<module>] ✓ Application initialization completed successfully
+2025-09-22 21:08:42,280 - INFO - [MainThread:<module>] 🎯 Starting main event loop...
+2025-09-22 21:08:44,912 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility v2.1.4 Starting ---
+2025-09-22 21:08:44,913 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2025-09-22 21:08:44,913 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2025-09-22 21:08:44,913 - INFO - [MainThread:setup_logging] Script Directory: D:\Dev84\BF 2.1.4
+2025-09-22 21:08:44,913 - INFO - [MainThread:setup_logging] Working Directory: D:\Dev84\BF 2.1.4
+2025-09-22 21:08:44,913 - INFO - [MainThread:check_package_versions] ✓ selenium 4.34.2 is available
+2025-09-22 21:08:45,147 - INFO - [MainThread:check_package_versions] ✓ pandas 2.3.1 is available
+2025-09-22 21:08:45,265 - INFO - [MainThread:check_package_versions] ✓ openpyxl 3.1.5 is available
+2025-09-22 21:08:45,477 - INFO - [MainThread:check_package_versions] ✓ requests 2.32.4 is available
+2025-09-22 21:08:45,482 - INFO - [MainThread:check_package_versions] ✓ pytesseract 0.3.13 is available
+2025-09-22 21:08:45,543 - INFO - [MainThread:check_package_versions] ✓ undetected_chromedriver 3.5.5 (optional) is available
+2025-09-22 21:08:45,544 - INFO - [MainThread:check_package_versions] ✓ webdriver_manager 4.0.2 (optional) is available
+2025-09-22 21:08:45,544 - INFO - [MainThread:import_application_components] Importing application components...
+2025-09-22 21:08:45,597 - INFO - [MainThread:import_application_components] Application components imported successfully
+2025-09-22 21:08:45,597 - INFO - [MainThread:run_cli_mode] 🔧 Starting CLI mode...

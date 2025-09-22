@@ -590,3 +590,39 @@ RuntimeError: lost sys.stdin
 2025-09-22 17:21:51,437 - INFO - [MainThread:<module>] Creating MainWindow instance...
 2025-09-22 17:21:51,537 - INFO - [MainThread:<module>] ✓ Application initialization completed successfully
 2025-09-22 17:21:51,539 - INFO - [MainThread:<module>] 🎯 Starting main event loop...
+2025-09-22 21:07:54,228 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility v2.1.4 Starting ---
+2025-09-22 21:07:54,228 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2025-09-22 21:07:54,228 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2025-09-22 21:07:54,228 - INFO - [MainThread:setup_logging] Script Directory: D:\Dev84\BF 2.1.4\dist
+2025-09-22 21:07:54,228 - INFO - [MainThread:setup_logging] Working Directory: D:\Dev84\BF 2.1.4\dist
+2025-09-22 21:07:54,228 - INFO - [MainThread:check_package_versions] ✓ selenium 4.34.2 is available
+2025-09-22 21:07:54,475 - INFO - [MainThread:check_package_versions] ✓ pandas 2.3.1 is available
+2025-09-22 21:07:54,592 - INFO - [MainThread:check_package_versions] ✓ openpyxl 3.1.5 is available
+2025-09-22 21:07:54,813 - INFO - [MainThread:check_package_versions] ✓ requests 2.32.4 is available
+2025-09-22 21:07:54,818 - INFO - [MainThread:check_package_versions] ✓ pytesseract 0.3.13 is available
+2025-09-22 21:07:54,883 - INFO - [MainThread:check_package_versions] ✓ undetected_chromedriver 3.5.5 (optional) is available
+2025-09-22 21:07:54,883 - INFO - [MainThread:check_package_versions] ✓ webdriver_manager 4.0.2 (optional) is available
+2025-09-22 21:07:54,884 - INFO - [MainThread:import_application_components] Importing application components...
+2025-09-22 21:07:54,956 - INFO - [MainThread:import_application_components] Application components imported successfully
+2025-09-22 21:07:54,956 - INFO - [MainThread:<module>] 🚀 Starting GUI application initialization...
+2025-09-22 21:07:54,956 - INFO - [MainThread:load_and_validate_configurations] Loading base URL configurations from D:\Dev84\BF 2.1.4\dist\base_urls.csv...
+2025-09-22 21:07:54,957 - INFO - [MainThread:load_base_urls] Loaded 12 base URL configurations from base_urls.csv.
+2025-09-22 21:07:54,957 - INFO - [MainThread:load_and_validate_configurations] ✓ Loaded 12 URL configurations
+2025-09-22 21:07:54,957 - INFO - [MainThread:load_and_validate_configurations] Loading application settings...
+2025-09-22 21:07:54,957 - INFO - [MainThread:load_settings] Settings loaded and merged with defaults from D:\Dev84\BF 2.1.4\dist\settings.json
+2025-09-22 21:07:54,957 - INFO - [MainThread:load_and_validate_configurations] ✓ Settings loaded and validated
+2025-09-22 21:07:54,958 - INFO - [MainThread:<module>] Creating main application window...
+2025-09-22 21:07:54,999 - INFO - [MainThread:<module>] Creating MainWindow instance...
+2025-09-22 21:07:55,136 - INFO - [MainThread:<module>] ✓ Application initialization completed successfully
+2025-09-22 21:07:55,137 - INFO - [MainThread:<module>] 🎯 Starting main event loop...
+2025-09-22 21:08:19,644 - INFO - [MainThread:on_closing] Close requested.
+2025-09-22 21:08:19,644 - INFO - [MainThread:_save_current_settings_and_show_message] Saving current settings...
+2025-09-22 21:08:19,644 - ERROR - [MainThread:on_closing] Failed to save settings on exit: invalid literal for int() with base 10: '10.0'
+2025-09-22 21:08:19,720 - INFO - [MainThread:on_closing] Tkinter root window destroyed.
+2025-09-22 21:08:19,721 - INFO - [MainThread:on_closing] --- Application Shutdown Sequence Complete ---
+2025-09-22 21:08:19,721 - INFO - [MainThread:<module>] Main event loop ended normally
+2025-09-22 21:08:19,721 - INFO - [MainThread:<module>] 🛑 Application shutdown initiated...
+2025-09-22 21:08:19,721 - INFO - [MainThread:_save_current_settings] Saving current settings...
+2025-09-22 21:08:19,721 - WARNING - [MainThread:_save_current_settings] Could not get window geometry, possibly already be closed.
+2025-09-22 21:08:19,724 - INFO - [MainThread:save_settings] Settings saved successfully to D:\Dev84\BF 2.1.4\dist\settings.json
+2025-09-22 21:08:19,724 - INFO - [MainThread:<module>] ✅ Application shutdown completed successfully
