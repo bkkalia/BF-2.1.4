@@ -10,6 +10,9 @@ import shutil
 import sys
 from pathlib import Path
 
+# Set encoding to handle Unicode
+os.environ['PYTHONIOENCODING'] = 'utf-8'
+
 def create_launcher():
     """Create the launcher script that will be converted to EXE"""
     launcher_code = '''#!/usr/bin/env python3
@@ -40,19 +43,14 @@ def main():
         # Check if main.py exists
         main_script = launcher_dir / 'main.py'
         if not main_script.exists():
-            print(f"ERROR: main.py not found in {launcher_dir}")
+            print("ERROR: main.py not found in " + str(launcher_dir))
             print("Please ensure all files are in the same directory as the launcher.")
             input("Press Enter to exit...")
             sys.exit(1)
 
         # Prepare command to run main.py
-        python_exe = sys.executable  # Use same Python that launched this script
+        python_exe = 'python'  # Use Python interpreter
         cmd = [python_exe, str(main_script)] + sys.argv[1:]
-
-print("Black Forest Tender Scraper")
-print(f"Launcher directory: {launcher_dir}")
-        print(f"Command: {' '.join(cmd)}")
-        print("-" * 50)
 
         # Run the main application
         result = subprocess.run(cmd)
@@ -116,14 +114,10 @@ def build_hybrid():
     ]
 
     try:
-        result = subprocess.run(pyinstaller_cmd, check=True, capture_output=True, text=True)
+        subprocess.run(pyinstaller_cmd, check=True)
         print("Launcher EXE built successfully")
-        if result.stdout:
-            print(f"Build output: {result.stdout}")
     except subprocess.CalledProcessError as e:
         print(f"Error building launcher: {e}")
-        print(f"STDOUT: {e.stdout}")
-        print(f"STDERR: {e.stderr}")
         return False
 
     # Step 3: Copy launcher to dist

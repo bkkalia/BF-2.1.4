@@ -219,3 +219,58 @@
 2025-09-22 11:40:58,977 - INFO - [DeptFetchThread:setup_driver] Chrome WebDriver setup completed successfully
 2025-09-22 11:41:05,501 - INFO - [DeptFetchThread:safe_quit_driver] Closing WebDriver instance...
 2025-09-22 11:41:07,652 - INFO - [DeptFetchThread:safe_quit_driver] WebDriver quit successfully.
+2025-09-22 12:47:33,572 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility v2.1.4 Starting ---
+2025-09-22 12:47:33,575 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2025-09-22 12:47:33,576 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2025-09-22 12:47:33,577 - INFO - [MainThread:setup_logging] Script Directory: G:\My Drive\0dev\BF 2.1.4
+2025-09-22 12:47:33,577 - INFO - [MainThread:setup_logging] Working Directory: G:\My Drive\0dev\BF 2.1.4
+2025-09-22 12:47:33,578 - INFO - [MainThread:check_package_versions] ✓ selenium 4.34.2 is available
+2025-09-22 12:47:33,950 - INFO - [MainThread:check_package_versions] ✓ pandas 2.3.1 is available
+2025-09-22 12:47:34,114 - INFO - [MainThread:check_package_versions] ✓ openpyxl 3.1.5 is available
+2025-09-22 12:47:34,355 - INFO - [MainThread:check_package_versions] ✓ requests 2.32.4 is available
+2025-09-22 12:47:34,376 - INFO - [MainThread:check_package_versions] ✓ pytesseract 0.3.13 is available
+2025-09-22 12:47:34,508 - INFO - [MainThread:check_package_versions] ✓ undetected_chromedriver 3.5.5 (optional) is available
+2025-09-22 12:47:34,512 - INFO - [MainThread:check_package_versions] ✓ webdriver_manager 4.0.2 (optional) is available
+2025-09-22 12:47:34,516 - INFO - [MainThread:import_application_components] Importing application components...
+2025-09-22 12:47:34,919 - INFO - [MainThread:import_application_components] Application components imported successfully
+2025-09-22 12:47:34,920 - INFO - [MainThread:run_cli_mode] 🔧 Starting CLI mode...
+2025-09-22 12:48:06,826 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility v2.1.4 Starting ---
+2025-09-22 12:48:06,830 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2025-09-22 12:48:06,831 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2025-09-22 12:48:06,832 - INFO - [MainThread:setup_logging] Script Directory: G:\My Drive\0dev\BF 2.1.4
+2025-09-22 12:48:06,832 - INFO - [MainThread:setup_logging] Working Directory: G:\My Drive\0dev\BF 2.1.4
+2025-09-22 12:48:06,833 - INFO - [MainThread:check_package_versions] ✓ selenium 4.34.2 is available
+2025-09-22 12:48:07,207 - INFO - [MainThread:check_package_versions] ✓ pandas 2.3.1 is available
+2025-09-22 12:48:07,360 - INFO - [MainThread:check_package_versions] ✓ openpyxl 3.1.5 is available
+2025-09-22 12:48:07,599 - INFO - [MainThread:check_package_versions] ✓ requests 2.32.4 is available
+2025-09-22 12:48:07,615 - INFO - [MainThread:check_package_versions] ✓ pytesseract 0.3.13 is available
+2025-09-22 12:48:07,746 - INFO - [MainThread:check_package_versions] ✓ undetected_chromedriver 3.5.5 (optional) is available
+2025-09-22 12:48:07,750 - INFO - [MainThread:check_package_versions] ✓ webdriver_manager 4.0.2 (optional) is available
+2025-09-22 12:48:07,754 - INFO - [MainThread:import_application_components] Importing application components...
+2025-09-22 12:48:08,153 - INFO - [MainThread:import_application_components] Application components imported successfully
+2025-09-22 12:48:08,154 - INFO - [MainThread:<module>] 🚀 Starting GUI application initialization...
+2025-09-22 12:48:08,155 - INFO - [MainThread:load_and_validate_configurations] Loading base URL configurations from G:\My Drive\0dev\BF 2.1.4\base_urls.csv...
+2025-09-22 12:48:08,191 - INFO - [MainThread:load_base_urls] Loaded 12 base URL configurations from base_urls.csv.
+2025-09-22 12:48:08,192 - INFO - [MainThread:load_and_validate_configurations] ✓ Loaded 12 URL configurations
+2025-09-22 12:48:08,193 - INFO - [MainThread:load_and_validate_configurations] Loading application settings...
+2025-09-22 12:48:08,220 - INFO - [MainThread:load_settings] Settings loaded and merged with defaults from G:\My Drive\0dev\BF 2.1.4\settings.json
+2025-09-22 12:48:08,221 - INFO - [MainThread:load_and_validate_configurations] ✓ Settings loaded and validated
+2025-09-22 12:48:08,221 - INFO - [MainThread:<module>] Creating main application window...
+2025-09-22 12:48:08,274 - INFO - [MainThread:<module>] Creating MainWindow instance...
+2025-09-22 12:48:08,546 - INFO - [MainThread:<module>] ✓ Application initialization completed successfully
+2025-09-22 12:48:08,549 - INFO - [MainThread:<module>] 🎯 Starting main event loop...
+2025-09-22 12:49:54,450 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility v2.1.4 Starting ---
+2025-09-22 12:49:54,459 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2025-09-22 12:49:54,462 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2025-09-22 12:49:54,465 - INFO - [MainThread:setup_logging] Script Directory: G:\My Drive\0dev\BF 2.1.4
+2025-09-22 12:49:54,466 - INFO - [MainThread:setup_logging] Working Directory: G:\My Drive\0dev\BF 2.1.4
+2025-09-22 12:49:54,467 - INFO - [MainThread:check_package_versions] ✓ selenium 4.34.2 is available
+2025-09-22 12:49:54,897 - INFO - [MainThread:check_package_versions] ✓ pandas 2.3.1 is available
+2025-09-22 12:49:55,081 - INFO - [MainThread:check_package_versions] ✓ openpyxl 3.1.5 is available
+2025-09-22 12:49:55,316 - INFO - [MainThread:check_package_versions] ✓ requests 2.32.4 is available
+2025-09-22 12:49:55,331 - INFO - [MainThread:check_package_versions] ✓ pytesseract 0.3.13 is available
+2025-09-22 12:49:55,465 - INFO - [MainThread:check_package_versions] ✓ undetected_chromedriver 3.5.5 (optional) is available
+2025-09-22 12:49:55,470 - INFO - [MainThread:check_package_versions] ✓ webdriver_manager 4.0.2 (optional) is available
+2025-09-22 12:49:55,474 - INFO - [MainThread:import_application_components] Importing application components...
+2025-09-22 12:49:55,853 - INFO - [MainThread:import_application_components] Application components imported successfully
+2025-09-22 12:49:55,855 - INFO - [MainThread:run_cli_mode] 🔧 Starting CLI mode...

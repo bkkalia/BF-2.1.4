@@ -51,3 +51,12 @@ I, the AI assistant, confirm that I will follow the guidelines in this document 
 - Request explicit confirmation to proceed when required.
 
 If you'd like me to proceed now, reply: "Proceed with [brief task description]".
+
+## VS Code / Shell Troubleshooting
+
+If Cline (or the assistant) may have trouble showing command output in VS Code, follow these quick steps:
+
+- Update VS Code: open the Command Palette (Ctrl/Cmd+Shift+P) → type "Update" → choose "Check for Updates" / "Update" and install updates.
+- Use a supported integrated shell: open Command Palette → "Terminal: Select Default Profile" → pick PowerShell, bash, zsh, or fish. Restart the terminal after switching.
+- If VS Code still does not show output or shell integration is unavailable, see troubleshooting:
+  https://github.com/cline/cline/wiki/Troubleshooting-%E2%80%90-Shell-Integration-Unavailable

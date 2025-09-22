@@ -787,6 +787,9 @@ class MainWindow:
         """Enable or disable main interaction controls based on state (tk.NORMAL or tk.DISABLED)."""
         logger.debug(f"Setting controls state to: {state}")
         for label, button in self.sidebar_buttons.items():
+            # Keep Logs tab clickable during scraping
+            if label == "Logs":
+                continue
             is_pressed = 'pressed' in button.state()
             button.config(state=state)
             if state == tk.DISABLED and is_pressed:
