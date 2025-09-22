@@ -1249,3 +1249,673 @@ Saved 87 tender details to: hptenders_gov_in_tenders_20250922_145907.xlsx
 2025-09-22 15:03:00,307 - INFO - [MainThread:import_application_components] Importing application components...
 2025-09-22 15:03:00,412 - INFO - [MainThread:import_application_components] Application components imported successfully
 2025-09-22 15:03:00,413 - INFO - [MainThread:run_cli_mode] 🔧 Starting CLI mode...
+2025-09-22 15:21:45,629 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility v2.1.4 Starting ---
+2025-09-22 15:21:45,629 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2025-09-22 15:21:45,629 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2025-09-22 15:21:45,629 - INFO - [MainThread:setup_logging] Script Directory: D:\Dev84\BF 2.1.4
+2025-09-22 15:21:45,630 - INFO - [MainThread:setup_logging] Working Directory: d:\Dev84\BF 2.1.4
+2025-09-22 15:21:45,630 - INFO - [MainThread:check_package_versions] ✓ selenium 4.34.2 is available
+2025-09-22 15:21:46,167 - INFO - [MainThread:check_package_versions] ✓ pandas 2.3.1 is available
+2025-09-22 15:21:46,372 - INFO - [MainThread:check_package_versions] ✓ openpyxl 3.1.5 is available
+2025-09-22 15:21:46,618 - INFO - [MainThread:check_package_versions] ✓ requests 2.32.4 is available
+2025-09-22 15:21:46,633 - INFO - [MainThread:check_package_versions] ✓ pytesseract 0.3.13 is available
+2025-09-22 15:21:46,799 - INFO - [MainThread:check_package_versions] ✓ undetected_chromedriver 3.5.5 (optional) is available
+2025-09-22 15:21:46,800 - INFO - [MainThread:check_package_versions] ✓ webdriver_manager 4.0.2 (optional) is available
+2025-09-22 15:21:46,800 - INFO - [MainThread:import_application_components] Importing application components...
+2025-09-22 15:21:46,906 - INFO - [MainThread:import_application_components] Application components imported successfully
+2025-09-22 15:21:46,907 - INFO - [MainThread:run_cli_mode] 🔧 Starting CLI mode...
+2025-09-22 15:35:48,734 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility v2.1.4 Starting ---
+2025-09-22 15:35:48,735 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2025-09-22 15:35:48,735 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2025-09-22 15:35:48,735 - INFO - [MainThread:setup_logging] Script Directory: D:\Dev84\BF 2.1.4
+2025-09-22 15:35:48,735 - INFO - [MainThread:setup_logging] Working Directory: d:\Dev84\BF 2.1.4
+2025-09-22 15:35:48,736 - INFO - [MainThread:check_package_versions] ✓ selenium 4.34.2 is available
+2025-09-22 15:35:49,259 - INFO - [MainThread:check_package_versions] ✓ pandas 2.3.1 is available
+2025-09-22 15:35:49,466 - INFO - [MainThread:check_package_versions] ✓ openpyxl 3.1.5 is available
+2025-09-22 15:35:49,704 - INFO - [MainThread:check_package_versions] ✓ requests 2.32.4 is available
+2025-09-22 15:35:49,715 - INFO - [MainThread:check_package_versions] ✓ pytesseract 0.3.13 is available
+2025-09-22 15:35:49,878 - INFO - [MainThread:check_package_versions] ✓ undetected_chromedriver 3.5.5 (optional) is available
+2025-09-22 15:35:49,879 - INFO - [MainThread:check_package_versions] ✓ webdriver_manager 4.0.2 (optional) is available
+2025-09-22 15:35:49,879 - INFO - [MainThread:import_application_components] Importing application components...
+2025-09-22 15:35:49,978 - INFO - [MainThread:import_application_components] Application components imported successfully
+2025-09-22 15:35:49,979 - INFO - [MainThread:run_cli_mode] 🔧 Starting CLI mode...
+2025-09-22 15:36:32,435 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility v2.1.4 Starting ---
+2025-09-22 15:36:32,435 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2025-09-22 15:36:32,435 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2025-09-22 15:36:32,435 - INFO - [MainThread:setup_logging] Script Directory: D:\Dev84\BF 2.1.4
+2025-09-22 15:36:32,435 - INFO - [MainThread:setup_logging] Working Directory: d:\Dev84\BF 2.1.4
+2025-09-22 15:36:32,435 - INFO - [MainThread:check_package_versions] ✓ selenium 4.34.2 is available
+2025-09-22 15:36:32,945 - INFO - [MainThread:check_package_versions] ✓ pandas 2.3.1 is available
+2025-09-22 15:36:33,139 - INFO - [MainThread:check_package_versions] ✓ openpyxl 3.1.5 is available
+2025-09-22 15:36:33,374 - INFO - [MainThread:check_package_versions] ✓ requests 2.32.4 is available
+2025-09-22 15:36:33,383 - INFO - [MainThread:check_package_versions] ✓ pytesseract 0.3.13 is available
+2025-09-22 15:36:33,542 - INFO - [MainThread:check_package_versions] ✓ undetected_chromedriver 3.5.5 (optional) is available
+2025-09-22 15:36:33,543 - INFO - [MainThread:check_package_versions] ✓ webdriver_manager 4.0.2 (optional) is available
+2025-09-22 15:36:33,543 - INFO - [MainThread:import_application_components] Importing application components...
+2025-09-22 15:36:33,641 - INFO - [MainThread:import_application_components] Application components imported successfully
+2025-09-22 15:36:33,642 - INFO - [MainThread:run_cli_mode] 🔧 Starting CLI mode...
+2025-09-22 15:43:56,635 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility v2.1.4 Starting ---
+2025-09-22 15:43:56,636 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2025-09-22 15:43:56,636 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2025-09-22 15:43:56,636 - INFO - [MainThread:setup_logging] Script Directory: D:\Dev84\BF 2.1.4
+2025-09-22 15:43:56,636 - INFO - [MainThread:setup_logging] Working Directory: d:\Dev84\BF 2.1.4
+2025-09-22 15:43:56,636 - INFO - [MainThread:check_package_versions] ✓ selenium 4.34.2 is available
+2025-09-22 15:43:57,145 - INFO - [MainThread:check_package_versions] ✓ pandas 2.3.1 is available
+2025-09-22 15:43:57,345 - INFO - [MainThread:check_package_versions] ✓ openpyxl 3.1.5 is available
+2025-09-22 15:43:57,581 - INFO - [MainThread:check_package_versions] ✓ requests 2.32.4 is available
+2025-09-22 15:43:57,594 - INFO - [MainThread:check_package_versions] ✓ pytesseract 0.3.13 is available
+2025-09-22 15:43:57,763 - INFO - [MainThread:check_package_versions] ✓ undetected_chromedriver 3.5.5 (optional) is available
+2025-09-22 15:43:57,764 - INFO - [MainThread:check_package_versions] ✓ webdriver_manager 4.0.2 (optional) is available
+2025-09-22 15:43:57,764 - INFO - [MainThread:import_application_components] Importing application components...
+2025-09-22 15:43:57,864 - INFO - [MainThread:import_application_components] Application components imported successfully
+2025-09-22 15:43:57,864 - INFO - [MainThread:run_cli_mode] 🔧 Starting CLI mode...
+2025-09-22 15:44:24,796 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility v2.1.4 Starting ---
+2025-09-22 15:44:24,796 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2025-09-22 15:44:24,796 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2025-09-22 15:44:24,796 - INFO - [MainThread:setup_logging] Script Directory: D:\Dev84\BF 2.1.4
+2025-09-22 15:44:24,796 - INFO - [MainThread:setup_logging] Working Directory: d:\Dev84\BF 2.1.4
+2025-09-22 15:44:24,797 - INFO - [MainThread:check_package_versions] ✓ selenium 4.34.2 is available
+2025-09-22 15:44:25,322 - INFO - [MainThread:check_package_versions] ✓ pandas 2.3.1 is available
+2025-09-22 15:44:25,516 - INFO - [MainThread:check_package_versions] ✓ openpyxl 3.1.5 is available
+2025-09-22 15:44:25,751 - INFO - [MainThread:check_package_versions] ✓ requests 2.32.4 is available
+2025-09-22 15:44:25,761 - INFO - [MainThread:check_package_versions] ✓ pytesseract 0.3.13 is available
+2025-09-22 15:44:25,925 - INFO - [MainThread:check_package_versions] ✓ undetected_chromedriver 3.5.5 (optional) is available
+2025-09-22 15:44:25,925 - INFO - [MainThread:check_package_versions] ✓ webdriver_manager 4.0.2 (optional) is available
+2025-09-22 15:44:25,926 - INFO - [MainThread:import_application_components] Importing application components...
+2025-09-22 15:44:26,024 - INFO - [MainThread:import_application_components] Application components imported successfully
+2025-09-22 15:44:26,024 - INFO - [MainThread:run_cli_mode] 🔧 Starting CLI mode...
+2025-09-22 15:45:28,350 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility v2.1.4 Starting ---
+2025-09-22 15:45:28,350 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2025-09-22 15:45:28,351 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2025-09-22 15:45:28,351 - INFO - [MainThread:setup_logging] Script Directory: D:\Dev84\BF 2.1.4
+2025-09-22 15:45:28,351 - INFO - [MainThread:setup_logging] Working Directory: D:\Dev84\BF 2.1.4
+2025-09-22 15:45:28,351 - INFO - [MainThread:check_package_versions] ✓ selenium 4.34.2 is available
+2025-09-22 15:45:28,917 - INFO - [MainThread:check_package_versions] ✓ pandas 2.3.1 is available
+2025-09-22 15:45:29,060 - INFO - [MainThread:check_package_versions] ✓ openpyxl 3.1.5 is available
+2025-09-22 15:45:29,292 - INFO - [MainThread:check_package_versions] ✓ requests 2.32.4 is available
+2025-09-22 15:45:29,298 - INFO - [MainThread:check_package_versions] ✓ pytesseract 0.3.13 is available
+2025-09-22 15:45:29,378 - INFO - [MainThread:check_package_versions] ✓ undetected_chromedriver 3.5.5 (optional) is available
+2025-09-22 15:45:29,378 - INFO - [MainThread:check_package_versions] ✓ webdriver_manager 4.0.2 (optional) is available
+2025-09-22 15:45:29,379 - INFO - [MainThread:import_application_components] Importing application components...
+2025-09-22 15:45:29,432 - INFO - [MainThread:import_application_components] Application components imported successfully
+2025-09-22 15:45:29,432 - INFO - [MainThread:run_cli_mode] 🔧 Starting CLI mode...
+2025-09-22 15:55:17,055 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility v2.1.4 Starting ---
+2025-09-22 15:55:17,056 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2025-09-22 15:55:17,056 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2025-09-22 15:55:17,056 - INFO - [MainThread:setup_logging] Script Directory: D:\Dev84\BF 2.1.4
+2025-09-22 15:55:17,056 - INFO - [MainThread:setup_logging] Working Directory: D:\Dev84\BF 2.1.4
+2025-09-22 15:55:17,056 - INFO - [MainThread:check_package_versions] ✓ selenium 4.34.2 is available
+2025-09-22 15:55:17,344 - INFO - [MainThread:check_package_versions] ✓ pandas 2.3.1 is available
+2025-09-22 15:55:17,480 - INFO - [MainThread:check_package_versions] ✓ openpyxl 3.1.5 is available
+2025-09-22 15:55:17,699 - INFO - [MainThread:check_package_versions] ✓ requests 2.32.4 is available
+2025-09-22 15:55:17,705 - INFO - [MainThread:check_package_versions] ✓ pytesseract 0.3.13 is available
+2025-09-22 15:55:17,781 - INFO - [MainThread:check_package_versions] ✓ undetected_chromedriver 3.5.5 (optional) is available
+2025-09-22 15:55:17,781 - INFO - [MainThread:check_package_versions] ✓ webdriver_manager 4.0.2 (optional) is available
+2025-09-22 15:55:17,782 - INFO - [MainThread:import_application_components] Importing application components...
+2025-09-22 15:55:17,839 - INFO - [MainThread:import_application_components] Application components imported successfully
+2025-09-22 15:55:17,840 - INFO - [MainThread:run_cli_mode] 🔧 Starting CLI mode...
+2025-09-22 15:56:52,529 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility v2.1.4 Starting ---
+2025-09-22 15:56:52,529 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2025-09-22 15:56:52,529 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2025-09-22 15:56:52,529 - INFO - [MainThread:setup_logging] Script Directory: d:\Dev84\BF 2.1.4
+2025-09-22 15:56:52,529 - INFO - [MainThread:setup_logging] Working Directory: d:\Dev84\BF 2.1.4
+2025-09-22 15:56:52,529 - INFO - [MainThread:check_package_versions] ✓ selenium 4.34.2 is available
+2025-09-22 15:56:52,894 - INFO - [MainThread:check_package_versions] ✓ pandas 2.3.1 is available
+2025-09-22 15:56:53,040 - INFO - [MainThread:check_package_versions] ✓ openpyxl 3.1.5 is available
+2025-09-22 15:56:53,278 - INFO - [MainThread:check_package_versions] ✓ requests 2.32.4 is available
+2025-09-22 15:56:53,284 - INFO - [MainThread:check_package_versions] ✓ pytesseract 0.3.13 is available
+2025-09-22 15:56:53,380 - INFO - [MainThread:check_package_versions] ✓ undetected_chromedriver 3.5.5 (optional) is available
+2025-09-22 15:56:53,381 - INFO - [MainThread:check_package_versions] ✓ webdriver_manager 4.0.2 (optional) is available
+2025-09-22 15:56:53,381 - INFO - [MainThread:import_application_components] Importing application components...
+2025-09-22 15:56:53,440 - INFO - [MainThread:import_application_components] Application components imported successfully
+2025-09-22 15:56:53,440 - INFO - [MainThread:<module>] 🚀 Starting GUI application initialization...
+2025-09-22 15:56:53,441 - INFO - [MainThread:load_and_validate_configurations] Loading base URL configurations from d:\Dev84\BF 2.1.4\base_urls.csv...
+2025-09-22 15:56:53,441 - INFO - [MainThread:load_base_urls] Loaded 12 base URL configurations from base_urls.csv.
+2025-09-22 15:56:53,441 - INFO - [MainThread:load_and_validate_configurations] ✓ Loaded 12 URL configurations
+2025-09-22 15:56:53,441 - INFO - [MainThread:load_and_validate_configurations] Loading application settings...
+2025-09-22 15:56:53,442 - INFO - [MainThread:load_settings] Settings loaded and merged with defaults from d:\Dev84\BF 2.1.4\settings.json
+2025-09-22 15:56:53,442 - INFO - [MainThread:load_and_validate_configurations] ✓ Settings loaded and validated
+2025-09-22 15:56:53,442 - INFO - [MainThread:<module>] Creating main application window...
+2025-09-22 15:56:53,476 - INFO - [MainThread:<module>] Creating MainWindow instance...
+2025-09-22 15:56:53,592 - INFO - [MainThread:<module>] ✓ Application initialization completed successfully
+2025-09-22 15:56:53,592 - INFO - [MainThread:<module>] 🎯 Starting main event loop...
+2025-09-22 15:56:56,684 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility v2.1.4 Starting ---
+2025-09-22 15:56:56,685 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2025-09-22 15:56:56,685 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2025-09-22 15:56:56,685 - INFO - [MainThread:setup_logging] Script Directory: d:\Dev84\BF 2.1.4
+2025-09-22 15:56:56,685 - INFO - [MainThread:setup_logging] Working Directory: d:\Dev84\BF 2.1.4
+2025-09-22 15:56:56,685 - INFO - [MainThread:check_package_versions] ✓ selenium 4.34.2 is available
+2025-09-22 15:56:56,989 - INFO - [MainThread:check_package_versions] ✓ pandas 2.3.1 is available
+2025-09-22 15:56:57,124 - INFO - [MainThread:check_package_versions] ✓ openpyxl 3.1.5 is available
+2025-09-22 15:56:57,366 - INFO - [MainThread:check_package_versions] ✓ requests 2.32.4 is available
+2025-09-22 15:56:57,372 - INFO - [MainThread:check_package_versions] ✓ pytesseract 0.3.13 is available
+2025-09-22 15:56:57,462 - INFO - [MainThread:check_package_versions] ✓ undetected_chromedriver 3.5.5 (optional) is available
+2025-09-22 15:56:57,463 - INFO - [MainThread:check_package_versions] ✓ webdriver_manager 4.0.2 (optional) is available
+2025-09-22 15:56:57,463 - INFO - [MainThread:import_application_components] Importing application components...
+2025-09-22 15:56:57,525 - INFO - [MainThread:import_application_components] Application components imported successfully
+2025-09-22 15:56:57,525 - INFO - [MainThread:run_cli_mode] 🔧 Starting CLI mode...
+2025-09-22 16:22:04,205 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility v2.1.4 Starting ---
+2025-09-22 16:22:04,205 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2025-09-22 16:22:04,205 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2025-09-22 16:22:04,205 - INFO - [MainThread:setup_logging] Script Directory: D:\Dev84\BF 2.1.4
+2025-09-22 16:22:04,206 - INFO - [MainThread:setup_logging] Working Directory: d:\Dev84\BF 2.1.4
+2025-09-22 16:22:04,206 - INFO - [MainThread:check_package_versions] ✓ selenium 4.34.2 is available
+2025-09-22 16:22:04,680 - INFO - [MainThread:check_package_versions] ✓ pandas 2.3.1 is available
+2025-09-22 16:22:04,840 - INFO - [MainThread:check_package_versions] ✓ openpyxl 3.1.5 is available
+2025-09-22 16:22:05,086 - INFO - [MainThread:check_package_versions] ✓ requests 2.32.4 is available
+2025-09-22 16:22:05,095 - INFO - [MainThread:check_package_versions] ✓ pytesseract 0.3.13 is available
+2025-09-22 16:22:05,231 - INFO - [MainThread:check_package_versions] ✓ undetected_chromedriver 3.5.5 (optional) is available
+2025-09-22 16:22:05,232 - INFO - [MainThread:check_package_versions] ✓ webdriver_manager 4.0.2 (optional) is available
+2025-09-22 16:22:05,232 - INFO - [MainThread:import_application_components] Importing application components...
+2025-09-22 16:22:05,340 - INFO - [MainThread:import_application_components] Application components imported successfully
+2025-09-22 16:22:05,340 - INFO - [MainThread:<module>] 🚀 Starting GUI application initialization...
+2025-09-22 16:22:05,340 - INFO - [MainThread:load_and_validate_configurations] Loading base URL configurations from D:\Dev84\BF 2.1.4\base_urls.csv...
+2025-09-22 16:22:05,341 - INFO - [MainThread:load_base_urls] Loaded 12 base URL configurations from base_urls.csv.
+2025-09-22 16:22:05,341 - INFO - [MainThread:load_and_validate_configurations] ✓ Loaded 12 URL configurations
+2025-09-22 16:22:05,341 - INFO - [MainThread:load_and_validate_configurations] Loading application settings...
+2025-09-22 16:22:05,342 - INFO - [MainThread:load_settings] Settings loaded and merged with defaults from D:\Dev84\BF 2.1.4\settings.json
+2025-09-22 16:22:05,342 - INFO - [MainThread:load_and_validate_configurations] ✓ Settings loaded and validated
+2025-09-22 16:22:05,342 - INFO - [MainThread:<module>] Creating main application window...
+2025-09-22 16:22:05,379 - INFO - [MainThread:<module>] Creating MainWindow instance...
+2025-09-22 16:22:05,500 - INFO - [MainThread:<module>] ✓ Application initialization completed successfully
+2025-09-22 16:22:05,500 - INFO - [MainThread:<module>] 🎯 Starting main event loop...
+2025-09-22 16:24:17,974 - INFO - [MainThread:on_closing] Close requested.
+2025-09-22 16:24:17,974 - INFO - [MainThread:_save_current_settings_and_show_message] Saving current settings...
+2025-09-22 16:24:17,975 - ERROR - [MainThread:on_closing] Failed to save settings on exit: invalid literal for int() with base 10: '10.0'
+2025-09-22 16:24:18,084 - INFO - [MainThread:on_closing] Tkinter root window destroyed.
+2025-09-22 16:24:18,085 - INFO - [MainThread:on_closing] --- Application Shutdown Sequence Complete ---
+2025-09-22 16:24:18,085 - INFO - [MainThread:<module>] Main event loop ended normally
+2025-09-22 16:24:18,085 - INFO - [MainThread:<module>] 🛑 Application shutdown initiated...
+2025-09-22 16:24:18,085 - INFO - [MainThread:_save_current_settings] Saving current settings...
+2025-09-22 16:24:18,086 - WARNING - [MainThread:_save_current_settings] Could not get window geometry, possibly already be closed.
+2025-09-22 16:24:18,089 - INFO - [MainThread:save_settings] Settings saved successfully to D:\Dev84\BF 2.1.4\settings.json
+2025-09-22 16:24:18,089 - INFO - [MainThread:<module>] ✅ Application shutdown completed successfully
+2025-09-22 16:24:30,768 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility v2.1.4 Starting ---
+2025-09-22 16:24:30,768 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2025-09-22 16:24:30,768 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2025-09-22 16:24:30,768 - INFO - [MainThread:setup_logging] Script Directory: D:\Dev84\BF 2.1.4
+2025-09-22 16:24:30,769 - INFO - [MainThread:setup_logging] Working Directory: d:\Dev84\BF 2.1.4
+2025-09-22 16:24:30,769 - INFO - [MainThread:check_package_versions] ✓ selenium 4.34.2 is available
+2025-09-22 16:24:31,219 - INFO - [MainThread:check_package_versions] ✓ pandas 2.3.1 is available
+2025-09-22 16:24:31,378 - INFO - [MainThread:check_package_versions] ✓ openpyxl 3.1.5 is available
+2025-09-22 16:24:31,616 - INFO - [MainThread:check_package_versions] ✓ requests 2.32.4 is available
+2025-09-22 16:24:31,625 - INFO - [MainThread:check_package_versions] ✓ pytesseract 0.3.13 is available
+2025-09-22 16:24:31,762 - INFO - [MainThread:check_package_versions] ✓ undetected_chromedriver 3.5.5 (optional) is available
+2025-09-22 16:24:31,763 - INFO - [MainThread:check_package_versions] ✓ webdriver_manager 4.0.2 (optional) is available
+2025-09-22 16:24:31,763 - INFO - [MainThread:import_application_components] Importing application components...
+2025-09-22 16:24:31,849 - INFO - [MainThread:import_application_components] Application components imported successfully
+2025-09-22 16:24:31,849 - INFO - [MainThread:<module>] 🚀 Starting GUI application initialization...
+2025-09-22 16:24:31,850 - INFO - [MainThread:load_and_validate_configurations] Loading base URL configurations from D:\Dev84\BF 2.1.4\base_urls.csv...
+2025-09-22 16:24:31,850 - INFO - [MainThread:load_base_urls] Loaded 12 base URL configurations from base_urls.csv.
+2025-09-22 16:24:31,850 - INFO - [MainThread:load_and_validate_configurations] ✓ Loaded 12 URL configurations
+2025-09-22 16:24:31,851 - INFO - [MainThread:load_and_validate_configurations] Loading application settings...
+2025-09-22 16:24:31,851 - INFO - [MainThread:load_settings] Settings loaded and merged with defaults from D:\Dev84\BF 2.1.4\settings.json
+2025-09-22 16:24:31,851 - INFO - [MainThread:load_and_validate_configurations] ✓ Settings loaded and validated
+2025-09-22 16:24:31,852 - INFO - [MainThread:<module>] Creating main application window...
+2025-09-22 16:24:31,887 - INFO - [MainThread:<module>] Creating MainWindow instance...
+2025-09-22 16:24:32,004 - INFO - [MainThread:<module>] ✓ Application initialization completed successfully
+2025-09-22 16:24:32,004 - INFO - [MainThread:<module>] 🎯 Starting main event loop...
+2025-09-22 16:31:30,229 - INFO - [MainThread:on_closing] Close requested.
+2025-09-22 16:31:30,229 - INFO - [MainThread:_save_current_settings_and_show_message] Saving current settings...
+2025-09-22 16:31:30,230 - ERROR - [MainThread:on_closing] Failed to save settings on exit: invalid literal for int() with base 10: '10.0'
+2025-09-22 16:31:30,316 - INFO - [MainThread:on_closing] Tkinter root window destroyed.
+2025-09-22 16:31:30,316 - INFO - [MainThread:on_closing] --- Application Shutdown Sequence Complete ---
+2025-09-22 16:31:30,316 - INFO - [MainThread:<module>] Main event loop ended normally
+2025-09-22 16:31:30,317 - INFO - [MainThread:<module>] 🛑 Application shutdown initiated...
+2025-09-22 16:31:30,317 - INFO - [MainThread:_save_current_settings] Saving current settings...
+2025-09-22 16:31:30,318 - WARNING - [MainThread:_save_current_settings] Could not get window geometry, possibly already be closed.
+2025-09-22 16:31:30,322 - INFO - [MainThread:save_settings] Settings saved successfully to D:\Dev84\BF 2.1.4\settings.json
+2025-09-22 16:31:30,322 - INFO - [MainThread:<module>] ✅ Application shutdown completed successfully
+2025-09-22 16:59:29,857 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility v2.1.4 Starting ---
+2025-09-22 16:59:29,857 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2025-09-22 16:59:29,857 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2025-09-22 16:59:29,858 - INFO - [MainThread:setup_logging] Script Directory: D:\Dev84\BF 2.1.4
+2025-09-22 16:59:29,858 - INFO - [MainThread:setup_logging] Working Directory: D:\Dev84\BF 2.1.4
+2025-09-22 16:59:29,858 - INFO - [MainThread:check_package_versions] ✓ selenium 4.34.2 is available
+2025-09-22 16:59:30,214 - INFO - [MainThread:check_package_versions] ✓ pandas 2.3.1 is available
+2025-09-22 16:59:30,371 - INFO - [MainThread:check_package_versions] ✓ openpyxl 3.1.5 is available
+2025-09-22 16:59:30,608 - INFO - [MainThread:check_package_versions] ✓ requests 2.32.4 is available
+2025-09-22 16:59:30,614 - INFO - [MainThread:check_package_versions] ✓ pytesseract 0.3.13 is available
+2025-09-22 16:59:30,715 - INFO - [MainThread:check_package_versions] ✓ undetected_chromedriver 3.5.5 (optional) is available
+2025-09-22 16:59:30,716 - INFO - [MainThread:check_package_versions] ✓ webdriver_manager 4.0.2 (optional) is available
+2025-09-22 16:59:30,716 - INFO - [MainThread:import_application_components] Importing application components...
+2025-09-22 16:59:30,813 - INFO - [MainThread:import_application_components] Application components imported successfully
+2025-09-22 16:59:30,813 - INFO - [MainThread:<module>] 🚀 Starting GUI application initialization...
+2025-09-22 16:59:30,813 - INFO - [MainThread:load_and_validate_configurations] Loading base URL configurations from D:\Dev84\BF 2.1.4\base_urls.csv...
+2025-09-22 16:59:30,814 - INFO - [MainThread:load_base_urls] Loaded 12 base URL configurations from base_urls.csv.
+2025-09-22 16:59:30,814 - INFO - [MainThread:load_and_validate_configurations] ✓ Loaded 12 URL configurations
+2025-09-22 16:59:30,814 - INFO - [MainThread:load_and_validate_configurations] Loading application settings...
+2025-09-22 16:59:30,815 - INFO - [MainThread:load_settings] Settings loaded and merged with defaults from D:\Dev84\BF 2.1.4\settings.json
+2025-09-22 16:59:30,815 - INFO - [MainThread:load_and_validate_configurations] ✓ Settings loaded and validated
+2025-09-22 16:59:30,815 - INFO - [MainThread:<module>] Creating main application window...
+2025-09-22 16:59:30,878 - INFO - [MainThread:<module>] Creating MainWindow instance...
+2025-09-22 16:59:30,880 - WARNING - [MainThread:_configure_styles_and_fonts] Star Wars font file found but tkinter cannot load TTF files directly
+2025-09-22 16:59:30,993 - INFO - [MainThread:<module>] ✓ Application initialization completed successfully
+2025-09-22 16:59:30,994 - INFO - [MainThread:<module>] 🎯 Starting main event loop...
+2025-09-22 17:10:08,261 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility v2.1.4 Starting ---
+2025-09-22 17:10:08,262 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2025-09-22 17:10:08,262 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2025-09-22 17:10:08,262 - INFO - [MainThread:setup_logging] Script Directory: D:\Dev84\BF 2.1.4
+2025-09-22 17:10:08,262 - INFO - [MainThread:setup_logging] Working Directory: D:\Dev84\BF 2.1.4
+2025-09-22 17:10:08,263 - INFO - [MainThread:check_package_versions] ✓ selenium 4.34.2 is available
+2025-09-22 17:10:08,514 - INFO - [MainThread:check_package_versions] ✓ pandas 2.3.1 is available
+2025-09-22 17:10:08,632 - INFO - [MainThread:check_package_versions] ✓ openpyxl 3.1.5 is available
+2025-09-22 17:10:08,852 - INFO - [MainThread:check_package_versions] ✓ requests 2.32.4 is available
+2025-09-22 17:10:08,857 - INFO - [MainThread:check_package_versions] ✓ pytesseract 0.3.13 is available
+2025-09-22 17:10:08,944 - INFO - [MainThread:check_package_versions] ✓ undetected_chromedriver 3.5.5 (optional) is available
+2025-09-22 17:10:08,945 - INFO - [MainThread:check_package_versions] ✓ webdriver_manager 4.0.2 (optional) is available
+2025-09-22 17:10:08,946 - INFO - [MainThread:import_application_components] Importing application components...
+2025-09-22 17:10:08,994 - INFO - [MainThread:import_application_components] Application components imported successfully
+2025-09-22 17:10:08,995 - INFO - [MainThread:run_cli_mode] 🔧 Starting CLI mode...
+2025-09-22 17:10:38,682 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility v2.1.4 Starting ---
+2025-09-22 17:10:38,683 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2025-09-22 17:10:38,683 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2025-09-22 17:10:38,683 - INFO - [MainThread:setup_logging] Script Directory: D:\Dev84\BF 2.1.4
+2025-09-22 17:10:38,683 - INFO - [MainThread:setup_logging] Working Directory: D:\Dev84\BF 2.1.4
+2025-09-22 17:10:38,683 - INFO - [MainThread:check_package_versions] ✓ selenium 4.34.2 is available
+2025-09-22 17:10:38,924 - INFO - [MainThread:check_package_versions] ✓ pandas 2.3.1 is available
+2025-09-22 17:10:39,039 - INFO - [MainThread:check_package_versions] ✓ openpyxl 3.1.5 is available
+2025-09-22 17:10:39,257 - INFO - [MainThread:check_package_versions] ✓ requests 2.32.4 is available
+2025-09-22 17:10:39,261 - INFO - [MainThread:check_package_versions] ✓ pytesseract 0.3.13 is available
+2025-09-22 17:10:39,331 - INFO - [MainThread:check_package_versions] ✓ undetected_chromedriver 3.5.5 (optional) is available
+2025-09-22 17:10:39,332 - INFO - [MainThread:check_package_versions] ✓ webdriver_manager 4.0.2 (optional) is available
+2025-09-22 17:10:39,333 - INFO - [MainThread:import_application_components] Importing application components...
+2025-09-22 17:10:39,378 - INFO - [MainThread:import_application_components] Application components imported successfully
+2025-09-22 17:10:39,378 - INFO - [MainThread:<module>] 🚀 Starting GUI application initialization...
+2025-09-22 17:10:39,378 - INFO - [MainThread:load_and_validate_configurations] Loading base URL configurations from D:\Dev84\BF 2.1.4\base_urls.csv...
+2025-09-22 17:10:39,379 - INFO - [MainThread:load_base_urls] Loaded 12 base URL configurations from base_urls.csv.
+2025-09-22 17:10:39,379 - INFO - [MainThread:load_and_validate_configurations] ✓ Loaded 12 URL configurations
+2025-09-22 17:10:39,379 - INFO - [MainThread:load_and_validate_configurations] Loading application settings...
+2025-09-22 17:10:39,379 - INFO - [MainThread:load_settings] Settings loaded and merged with defaults from D:\Dev84\BF 2.1.4\settings.json
+2025-09-22 17:10:39,380 - INFO - [MainThread:load_and_validate_configurations] ✓ Settings loaded and validated
+2025-09-22 17:10:39,380 - INFO - [MainThread:<module>] Creating main application window...
+2025-09-22 17:10:39,411 - INFO - [MainThread:<module>] Creating MainWindow instance...
+2025-09-22 17:10:39,413 - WARNING - [MainThread:_configure_styles_and_fonts] Star Wars font file found but tkinter cannot load TTF files directly
+2025-09-22 17:10:39,513 - INFO - [MainThread:<module>] ✓ Application initialization completed successfully
+2025-09-22 17:10:39,513 - INFO - [MainThread:<module>] 🎯 Starting main event loop...
+2025-09-22 17:10:55,192 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility v2.1.4 Starting ---
+2025-09-22 17:10:55,192 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2025-09-22 17:10:55,192 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2025-09-22 17:10:55,192 - INFO - [MainThread:setup_logging] Script Directory: D:\Dev84\BF 2.1.4
+2025-09-22 17:10:55,193 - INFO - [MainThread:setup_logging] Working Directory: D:\Dev84\BF 2.1.4
+2025-09-22 17:10:55,193 - INFO - [MainThread:check_package_versions] ✓ selenium 4.34.2 is available
+2025-09-22 17:10:55,442 - INFO - [MainThread:check_package_versions] ✓ pandas 2.3.1 is available
+2025-09-22 17:10:55,564 - INFO - [MainThread:check_package_versions] ✓ openpyxl 3.1.5 is available
+2025-09-22 17:10:55,784 - INFO - [MainThread:check_package_versions] ✓ requests 2.32.4 is available
+2025-09-22 17:10:55,789 - INFO - [MainThread:check_package_versions] ✓ pytesseract 0.3.13 is available
+2025-09-22 17:10:55,855 - INFO - [MainThread:check_package_versions] ✓ undetected_chromedriver 3.5.5 (optional) is available
+2025-09-22 17:10:55,855 - INFO - [MainThread:check_package_versions] ✓ webdriver_manager 4.0.2 (optional) is available
+2025-09-22 17:10:55,856 - INFO - [MainThread:import_application_components] Importing application components...
+2025-09-22 17:10:55,904 - INFO - [MainThread:import_application_components] Application components imported successfully
+2025-09-22 17:10:55,904 - INFO - [MainThread:run_cli_mode] 🔧 Starting CLI mode...
+2025-09-22 17:18:02,751 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility v2.1.4 Starting ---
+2025-09-22 17:18:02,751 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2025-09-22 17:18:02,751 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2025-09-22 17:18:02,751 - INFO - [MainThread:setup_logging] Script Directory: D:\Dev84\BF 2.1.4
+2025-09-22 17:18:02,752 - INFO - [MainThread:setup_logging] Working Directory: d:\Dev84\BF 2.1.4
+2025-09-22 17:18:02,752 - INFO - [MainThread:check_package_versions] ✓ selenium 4.34.2 is available
+2025-09-22 17:18:03,184 - INFO - [MainThread:check_package_versions] ✓ pandas 2.3.1 is available
+2025-09-22 17:18:03,345 - INFO - [MainThread:check_package_versions] ✓ openpyxl 3.1.5 is available
+2025-09-22 17:18:03,573 - INFO - [MainThread:check_package_versions] ✓ requests 2.32.4 is available
+2025-09-22 17:18:03,584 - INFO - [MainThread:check_package_versions] ✓ pytesseract 0.3.13 is available
+2025-09-22 17:18:03,720 - INFO - [MainThread:check_package_versions] ✓ undetected_chromedriver 3.5.5 (optional) is available
+2025-09-22 17:18:03,720 - INFO - [MainThread:check_package_versions] ✓ webdriver_manager 4.0.2 (optional) is available
+2025-09-22 17:18:03,721 - INFO - [MainThread:import_application_components] Importing application components...
+2025-09-22 17:18:03,807 - INFO - [MainThread:import_application_components] Application components imported successfully
+2025-09-22 17:18:03,808 - INFO - [MainThread:<module>] 🚀 Starting GUI application initialization...
+2025-09-22 17:18:03,808 - INFO - [MainThread:load_and_validate_configurations] Loading base URL configurations from D:\Dev84\BF 2.1.4\base_urls.csv...
+2025-09-22 17:18:03,809 - INFO - [MainThread:load_base_urls] Loaded 12 base URL configurations from base_urls.csv.
+2025-09-22 17:18:03,809 - INFO - [MainThread:load_and_validate_configurations] ✓ Loaded 12 URL configurations
+2025-09-22 17:18:03,809 - INFO - [MainThread:load_and_validate_configurations] Loading application settings...
+2025-09-22 17:18:03,809 - INFO - [MainThread:load_settings] Settings loaded and merged with defaults from D:\Dev84\BF 2.1.4\settings.json
+2025-09-22 17:18:03,809 - INFO - [MainThread:load_and_validate_configurations] ✓ Settings loaded and validated
+2025-09-22 17:18:03,809 - INFO - [MainThread:<module>] Creating main application window...
+2025-09-22 17:18:03,842 - INFO - [MainThread:<module>] Creating MainWindow instance...
+2025-09-22 17:18:03,845 - WARNING - [MainThread:_configure_styles_and_fonts] Star Wars font file found but tkinter cannot load TTF files directly
+2025-09-22 17:18:03,962 - INFO - [MainThread:<module>] ✓ Application initialization completed successfully
+2025-09-22 17:18:03,962 - INFO - [MainThread:<module>] 🎯 Starting main event loop...
+2025-09-22 17:21:22,328 - INFO - [MainThread:on_closing] Close requested.
+2025-09-22 17:21:22,329 - INFO - [MainThread:_save_current_settings_and_show_message] Saving current settings...
+2025-09-22 17:21:22,329 - ERROR - [MainThread:on_closing] Failed to save settings on exit: invalid literal for int() with base 10: '10.0'
+2025-09-22 17:21:22,418 - INFO - [MainThread:on_closing] Tkinter root window destroyed.
+2025-09-22 17:21:22,418 - INFO - [MainThread:on_closing] --- Application Shutdown Sequence Complete ---
+2025-09-22 17:21:22,419 - INFO - [MainThread:<module>] Main event loop ended normally
+2025-09-22 17:21:22,419 - INFO - [MainThread:<module>] 🛑 Application shutdown initiated...
+2025-09-22 17:21:22,420 - INFO - [MainThread:_save_current_settings] Saving current settings...
+2025-09-22 17:21:22,420 - WARNING - [MainThread:_save_current_settings] Could not get window geometry, possibly already be closed.
+2025-09-22 17:21:22,426 - INFO - [MainThread:save_settings] Settings saved successfully to D:\Dev84\BF 2.1.4\settings.json
+2025-09-22 17:21:22,427 - INFO - [MainThread:<module>] ✅ Application shutdown completed successfully
+2025-09-22 17:21:25,497 - INFO - [MainThread:on_closing] Close requested.
+2025-09-22 17:21:25,497 - INFO - [MainThread:_save_current_settings_and_show_message] Saving current settings...
+2025-09-22 17:21:25,497 - ERROR - [MainThread:on_closing] Failed to save settings on exit: invalid literal for int() with base 10: '10.0'
+2025-09-22 17:21:25,584 - INFO - [MainThread:on_closing] Tkinter root window destroyed.
+2025-09-22 17:21:25,584 - INFO - [MainThread:on_closing] --- Application Shutdown Sequence Complete ---
+2025-09-22 17:21:25,585 - INFO - [MainThread:<module>] Main event loop ended normally
+2025-09-22 17:21:25,585 - INFO - [MainThread:<module>] 🛑 Application shutdown initiated...
+2025-09-22 17:21:25,585 - INFO - [MainThread:_save_current_settings] Saving current settings...
+2025-09-22 17:21:25,586 - WARNING - [MainThread:_save_current_settings] Could not get window geometry, possibly already be closed.
+2025-09-22 17:21:25,590 - INFO - [MainThread:save_settings] Settings saved successfully to D:\Dev84\BF 2.1.4\settings.json
+2025-09-22 17:21:25,591 - INFO - [MainThread:<module>] ✅ Application shutdown completed successfully
+2025-09-22 17:21:27,560 - INFO - [MainThread:on_closing] Close requested.
+2025-09-22 17:21:27,561 - INFO - [MainThread:_save_current_settings_and_show_message] Saving current settings...
+2025-09-22 17:21:27,561 - ERROR - [MainThread:on_closing] Failed to save settings on exit: invalid literal for int() with base 10: '10.0'
+2025-09-22 17:21:27,654 - INFO - [MainThread:on_closing] Tkinter root window destroyed.
+2025-09-22 17:21:27,654 - INFO - [MainThread:on_closing] --- Application Shutdown Sequence Complete ---
+2025-09-22 17:21:27,655 - INFO - [MainThread:<module>] Main event loop ended normally
+2025-09-22 17:21:27,655 - INFO - [MainThread:<module>] 🛑 Application shutdown initiated...
+2025-09-22 17:21:27,655 - INFO - [MainThread:_save_current_settings] Saving current settings...
+2025-09-22 17:21:27,656 - WARNING - [MainThread:_save_current_settings] Could not get window geometry, possibly already be closed.
+2025-09-22 17:21:27,658 - INFO - [MainThread:save_settings] Settings saved successfully to D:\Dev84\BF 2.1.4\settings.json
+2025-09-22 17:21:27,659 - INFO - [MainThread:<module>] ✅ Application shutdown completed successfully
+2025-09-22 17:24:54,473 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility v2.1.4 Starting ---
+2025-09-22 17:24:54,473 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2025-09-22 17:24:54,473 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2025-09-22 17:24:54,473 - INFO - [MainThread:setup_logging] Script Directory: D:\Dev84\BF 2.1.4
+2025-09-22 17:24:54,474 - INFO - [MainThread:setup_logging] Working Directory: D:\Dev84\BF 2.1.4
+2025-09-22 17:24:54,474 - INFO - [MainThread:check_package_versions] ✓ selenium 4.34.2 is available
+2025-09-22 17:24:54,716 - INFO - [MainThread:check_package_versions] ✓ pandas 2.3.1 is available
+2025-09-22 17:24:54,832 - INFO - [MainThread:check_package_versions] ✓ openpyxl 3.1.5 is available
+2025-09-22 17:24:55,046 - INFO - [MainThread:check_package_versions] ✓ requests 2.32.4 is available
+2025-09-22 17:24:55,050 - INFO - [MainThread:check_package_versions] ✓ pytesseract 0.3.13 is available
+2025-09-22 17:24:55,110 - INFO - [MainThread:check_package_versions] ✓ undetected_chromedriver 3.5.5 (optional) is available
+2025-09-22 17:24:55,111 - INFO - [MainThread:check_package_versions] ✓ webdriver_manager 4.0.2 (optional) is available
+2025-09-22 17:24:55,112 - INFO - [MainThread:import_application_components] Importing application components...
+2025-09-22 17:24:55,153 - INFO - [MainThread:import_application_components] Application components imported successfully
+2025-09-22 17:24:55,153 - INFO - [MainThread:<module>] 🚀 Starting GUI application initialization...
+2025-09-22 17:24:55,153 - INFO - [MainThread:load_and_validate_configurations] Loading base URL configurations from D:\Dev84\BF 2.1.4\base_urls.csv...
+2025-09-22 17:24:55,154 - INFO - [MainThread:load_base_urls] Loaded 12 base URL configurations from base_urls.csv.
+2025-09-22 17:24:55,154 - INFO - [MainThread:load_and_validate_configurations] ✓ Loaded 12 URL configurations
+2025-09-22 17:24:55,154 - INFO - [MainThread:load_and_validate_configurations] Loading application settings...
+2025-09-22 17:24:55,155 - INFO - [MainThread:load_settings] Settings loaded and merged with defaults from D:\Dev84\BF 2.1.4\settings.json
+2025-09-22 17:24:55,155 - INFO - [MainThread:load_and_validate_configurations] ✓ Settings loaded and validated
+2025-09-22 17:24:55,155 - INFO - [MainThread:<module>] Creating main application window...
+2025-09-22 17:24:55,189 - INFO - [MainThread:<module>] Creating MainWindow instance...
+2025-09-22 17:24:55,191 - WARNING - [MainThread:_configure_styles_and_fonts] Star Wars font file found but tkinter cannot load TTF files directly
+2025-09-22 17:24:55,298 - INFO - [MainThread:<module>] ✓ Application initialization completed successfully
+2025-09-22 17:24:55,298 - INFO - [MainThread:<module>] 🎯 Starting main event loop...
+2025-09-22 17:35:48,493 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility v2.1.4 Starting ---
+2025-09-22 17:35:48,493 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2025-09-22 17:35:48,493 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2025-09-22 17:35:48,494 - INFO - [MainThread:setup_logging] Script Directory: D:\Dev84\BF 2.1.4
+2025-09-22 17:35:48,494 - INFO - [MainThread:setup_logging] Working Directory: D:\Dev84\BF 2.1.4
+2025-09-22 17:35:48,494 - INFO - [MainThread:check_package_versions] ✓ selenium 4.34.2 is available
+2025-09-22 17:35:48,737 - INFO - [MainThread:check_package_versions] ✓ pandas 2.3.1 is available
+2025-09-22 17:35:48,852 - INFO - [MainThread:check_package_versions] ✓ openpyxl 3.1.5 is available
+2025-09-22 17:35:49,072 - INFO - [MainThread:check_package_versions] ✓ requests 2.32.4 is available
+2025-09-22 17:35:49,076 - INFO - [MainThread:check_package_versions] ✓ pytesseract 0.3.13 is available
+2025-09-22 17:35:49,141 - INFO - [MainThread:check_package_versions] ✓ undetected_chromedriver 3.5.5 (optional) is available
+2025-09-22 17:35:49,142 - INFO - [MainThread:check_package_versions] ✓ webdriver_manager 4.0.2 (optional) is available
+2025-09-22 17:35:49,143 - INFO - [MainThread:import_application_components] Importing application components...
+2025-09-22 17:35:49,186 - INFO - [MainThread:import_application_components] Application components imported successfully
+2025-09-22 17:35:49,186 - INFO - [MainThread:run_cli_mode] 🔧 Starting CLI mode...
+2025-09-22 17:37:15,785 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility v2.1.4 Starting ---
+2025-09-22 17:37:15,786 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2025-09-22 17:37:15,786 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2025-09-22 17:37:15,786 - INFO - [MainThread:setup_logging] Script Directory: D:\Dev84\BF 2.1.4
+2025-09-22 17:37:15,787 - INFO - [MainThread:setup_logging] Working Directory: d:\Dev84\BF 2.1.4
+2025-09-22 17:37:15,787 - INFO - [MainThread:check_package_versions] ✓ selenium 4.34.2 is available
+2025-09-22 17:37:16,225 - INFO - [MainThread:check_package_versions] ✓ pandas 2.3.1 is available
+2025-09-22 17:37:16,382 - INFO - [MainThread:check_package_versions] ✓ openpyxl 3.1.5 is available
+2025-09-22 17:37:16,612 - INFO - [MainThread:check_package_versions] ✓ requests 2.32.4 is available
+2025-09-22 17:37:16,621 - INFO - [MainThread:check_package_versions] ✓ pytesseract 0.3.13 is available
+2025-09-22 17:37:16,756 - INFO - [MainThread:check_package_versions] ✓ undetected_chromedriver 3.5.5 (optional) is available
+2025-09-22 17:37:16,757 - INFO - [MainThread:check_package_versions] ✓ webdriver_manager 4.0.2 (optional) is available
+2025-09-22 17:37:16,757 - INFO - [MainThread:import_application_components] Importing application components...
+2025-09-22 17:37:16,842 - INFO - [MainThread:import_application_components] Application components imported successfully
+2025-09-22 17:37:16,843 - INFO - [MainThread:<module>] 🚀 Starting GUI application initialization...
+2025-09-22 17:37:16,843 - INFO - [MainThread:load_and_validate_configurations] Loading base URL configurations from D:\Dev84\BF 2.1.4\base_urls.csv...
+2025-09-22 17:37:16,844 - INFO - [MainThread:load_base_urls] Loaded 12 base URL configurations from base_urls.csv.
+2025-09-22 17:37:16,844 - INFO - [MainThread:load_and_validate_configurations] ✓ Loaded 12 URL configurations
+2025-09-22 17:37:16,844 - INFO - [MainThread:load_and_validate_configurations] Loading application settings...
+2025-09-22 17:37:16,845 - INFO - [MainThread:load_settings] Settings loaded and merged with defaults from D:\Dev84\BF 2.1.4\settings.json
+2025-09-22 17:37:16,845 - INFO - [MainThread:load_and_validate_configurations] ✓ Settings loaded and validated
+2025-09-22 17:37:16,845 - INFO - [MainThread:<module>] Creating main application window...
+2025-09-22 17:37:16,880 - INFO - [MainThread:<module>] Creating MainWindow instance...
+2025-09-22 17:37:16,883 - WARNING - [MainThread:_configure_styles_and_fonts] Star Wars font file found but tkinter cannot load TTF files directly
+2025-09-22 17:37:17,001 - INFO - [MainThread:<module>] ✓ Application initialization completed successfully
+2025-09-22 17:37:17,002 - INFO - [MainThread:<module>] 🎯 Starting main event loop...
+2025-09-22 17:40:58,427 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility v2.1.4 Starting ---
+2025-09-22 17:40:58,427 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2025-09-22 17:40:58,427 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2025-09-22 17:40:58,428 - INFO - [MainThread:setup_logging] Script Directory: D:\Dev84\BF 2.1.4
+2025-09-22 17:40:58,428 - INFO - [MainThread:setup_logging] Working Directory: D:\Dev84\BF 2.1.4
+2025-09-22 17:40:58,428 - INFO - [MainThread:check_package_versions] ✓ selenium 4.34.2 is available
+2025-09-22 17:40:58,672 - INFO - [MainThread:check_package_versions] ✓ pandas 2.3.1 is available
+2025-09-22 17:40:58,789 - INFO - [MainThread:check_package_versions] ✓ openpyxl 3.1.5 is available
+2025-09-22 17:40:59,009 - INFO - [MainThread:check_package_versions] ✓ requests 2.32.4 is available
+2025-09-22 17:40:59,013 - INFO - [MainThread:check_package_versions] ✓ pytesseract 0.3.13 is available
+2025-09-22 17:40:59,080 - INFO - [MainThread:check_package_versions] ✓ undetected_chromedriver 3.5.5 (optional) is available
+2025-09-22 17:40:59,081 - INFO - [MainThread:check_package_versions] ✓ webdriver_manager 4.0.2 (optional) is available
+2025-09-22 17:40:59,081 - INFO - [MainThread:import_application_components] Importing application components...
+2025-09-22 17:40:59,170 - INFO - [MainThread:import_application_components] Application components imported successfully
+2025-09-22 17:40:59,171 - INFO - [MainThread:<module>] 🚀 Starting GUI application initialization...
+2025-09-22 17:40:59,171 - INFO - [MainThread:load_and_validate_configurations] Loading base URL configurations from D:\Dev84\BF 2.1.4\base_urls.csv...
+2025-09-22 17:40:59,171 - INFO - [MainThread:load_base_urls] Loaded 12 base URL configurations from base_urls.csv.
+2025-09-22 17:40:59,172 - INFO - [MainThread:load_and_validate_configurations] ✓ Loaded 12 URL configurations
+2025-09-22 17:40:59,172 - INFO - [MainThread:load_and_validate_configurations] Loading application settings...
+2025-09-22 17:40:59,172 - INFO - [MainThread:load_settings] Settings loaded and merged with defaults from D:\Dev84\BF 2.1.4\settings.json
+2025-09-22 17:40:59,172 - INFO - [MainThread:load_and_validate_configurations] ✓ Settings loaded and validated
+2025-09-22 17:40:59,172 - INFO - [MainThread:<module>] Creating main application window...
+2025-09-22 17:40:59,209 - INFO - [MainThread:<module>] Creating MainWindow instance...
+2025-09-22 17:40:59,212 - WARNING - [MainThread:_configure_styles_and_fonts] Star Wars font file found but tkinter cannot load TTF files directly
+2025-09-22 17:40:59,315 - INFO - [MainThread:<module>] ✓ Application initialization completed successfully
+2025-09-22 17:40:59,315 - INFO - [MainThread:<module>] 🎯 Starting main event loop...
+2025-09-22 17:41:38,013 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility v2.1.4 Starting ---
+2025-09-22 17:41:38,013 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2025-09-22 17:41:38,013 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2025-09-22 17:41:38,013 - INFO - [MainThread:setup_logging] Script Directory: D:\Dev84\BF 2.1.4
+2025-09-22 17:41:38,014 - INFO - [MainThread:setup_logging] Working Directory: D:\Dev84\BF 2.1.4
+2025-09-22 17:41:38,014 - INFO - [MainThread:check_package_versions] ✓ selenium 4.34.2 is available
+2025-09-22 17:41:38,259 - INFO - [MainThread:check_package_versions] ✓ pandas 2.3.1 is available
+2025-09-22 17:41:38,378 - INFO - [MainThread:check_package_versions] ✓ openpyxl 3.1.5 is available
+2025-09-22 17:41:38,593 - INFO - [MainThread:check_package_versions] ✓ requests 2.32.4 is available
+2025-09-22 17:41:38,597 - INFO - [MainThread:check_package_versions] ✓ pytesseract 0.3.13 is available
+2025-09-22 17:41:38,667 - INFO - [MainThread:check_package_versions] ✓ undetected_chromedriver 3.5.5 (optional) is available
+2025-09-22 17:41:38,668 - INFO - [MainThread:check_package_versions] ✓ webdriver_manager 4.0.2 (optional) is available
+2025-09-22 17:41:38,668 - INFO - [MainThread:import_application_components] Importing application components...
+2025-09-22 17:41:38,727 - INFO - [MainThread:import_application_components] Application components imported successfully
+2025-09-22 17:41:38,727 - INFO - [MainThread:<module>] 🚀 Starting GUI application initialization...
+2025-09-22 17:41:38,727 - INFO - [MainThread:load_and_validate_configurations] Loading base URL configurations from D:\Dev84\BF 2.1.4\base_urls.csv...
+2025-09-22 17:41:38,728 - INFO - [MainThread:load_base_urls] Loaded 12 base URL configurations from base_urls.csv.
+2025-09-22 17:41:38,728 - INFO - [MainThread:load_and_validate_configurations] ✓ Loaded 12 URL configurations
+2025-09-22 17:41:38,728 - INFO - [MainThread:load_and_validate_configurations] Loading application settings...
+2025-09-22 17:41:38,728 - INFO - [MainThread:load_settings] Settings loaded and merged with defaults from D:\Dev84\BF 2.1.4\settings.json
+2025-09-22 17:41:38,729 - INFO - [MainThread:load_and_validate_configurations] ✓ Settings loaded and validated
+2025-09-22 17:41:38,729 - INFO - [MainThread:<module>] Creating main application window...
+2025-09-22 17:41:38,761 - INFO - [MainThread:<module>] Creating MainWindow instance...
+2025-09-22 17:41:38,762 - WARNING - [MainThread:_configure_styles_and_fonts] Star Wars font file found but tkinter cannot load TTF files directly
+2025-09-22 17:41:38,891 - INFO - [MainThread:<module>] ✓ Application initialization completed successfully
+2025-09-22 17:41:38,891 - INFO - [MainThread:<module>] 🎯 Starting main event loop...
+2025-09-22 17:42:09,419 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility v2.1.4 Starting ---
+2025-09-22 17:42:09,420 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2025-09-22 17:42:09,420 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2025-09-22 17:42:09,420 - INFO - [MainThread:setup_logging] Script Directory: D:\Dev84\BF 2.1.4
+2025-09-22 17:42:09,420 - INFO - [MainThread:setup_logging] Working Directory: D:\Dev84\BF 2.1.4
+2025-09-22 17:42:09,420 - INFO - [MainThread:check_package_versions] ✓ selenium 4.34.2 is available
+2025-09-22 17:42:09,663 - INFO - [MainThread:check_package_versions] ✓ pandas 2.3.1 is available
+2025-09-22 17:42:09,775 - INFO - [MainThread:check_package_versions] ✓ openpyxl 3.1.5 is available
+2025-09-22 17:42:09,993 - INFO - [MainThread:check_package_versions] ✓ requests 2.32.4 is available
+2025-09-22 17:42:09,997 - INFO - [MainThread:check_package_versions] ✓ pytesseract 0.3.13 is available
+2025-09-22 17:42:10,064 - INFO - [MainThread:check_package_versions] ✓ undetected_chromedriver 3.5.5 (optional) is available
+2025-09-22 17:42:10,064 - INFO - [MainThread:check_package_versions] ✓ webdriver_manager 4.0.2 (optional) is available
+2025-09-22 17:42:10,065 - INFO - [MainThread:import_application_components] Importing application components...
+2025-09-22 17:42:10,111 - INFO - [MainThread:import_application_components] Application components imported successfully
+2025-09-22 17:42:10,111 - INFO - [MainThread:run_cli_mode] 🔧 Starting CLI mode...
+2025-09-22 17:42:10,150 - INFO - [MainThread:load_settings] Settings loaded and merged with defaults from D:\Dev84\BF 2.1.4\settings.json
+2025-09-22 17:42:10,150 - INFO - [MainThread:load_configuration] Loaded configuration from D:\Dev84\BF 2.1.4\settings.json
+2025-09-22 17:42:43,482 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility v2.1.4 Starting ---
+2025-09-22 17:42:43,482 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2025-09-22 17:42:43,482 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2025-09-22 17:42:43,482 - INFO - [MainThread:setup_logging] Script Directory: D:\Dev84\BF 2.1.4
+2025-09-22 17:42:43,482 - INFO - [MainThread:setup_logging] Working Directory: D:\Dev84\BF 2.1.4
+2025-09-22 17:42:43,483 - INFO - [MainThread:check_package_versions] ✓ selenium 4.34.2 is available
+2025-09-22 17:42:43,721 - INFO - [MainThread:check_package_versions] ✓ pandas 2.3.1 is available
+2025-09-22 17:42:43,833 - INFO - [MainThread:check_package_versions] ✓ openpyxl 3.1.5 is available
+2025-09-22 17:42:44,051 - INFO - [MainThread:check_package_versions] ✓ requests 2.32.4 is available
+2025-09-22 17:42:44,055 - INFO - [MainThread:check_package_versions] ✓ pytesseract 0.3.13 is available
+2025-09-22 17:42:44,143 - INFO - [MainThread:check_package_versions] ✓ undetected_chromedriver 3.5.5 (optional) is available
+2025-09-22 17:42:44,143 - INFO - [MainThread:check_package_versions] ✓ webdriver_manager 4.0.2 (optional) is available
+2025-09-22 17:42:44,144 - INFO - [MainThread:import_application_components] Importing application components...
+2025-09-22 17:42:44,193 - INFO - [MainThread:import_application_components] Application components imported successfully
+2025-09-22 17:42:44,193 - INFO - [MainThread:run_cli_mode] 🔧 Starting CLI mode...
+2025-09-22 17:42:44,226 - INFO - [MainThread:load_settings] Settings loaded and merged with defaults from D:\Dev84\BF 2.1.4\settings.json
+2025-09-22 17:42:44,227 - INFO - [MainThread:load_configuration] Loaded configuration from D:\Dev84\BF 2.1.4\settings.json
+2025-09-22 17:45:26,916 - INFO - [MainThread:on_closing] Close requested.
+2025-09-22 17:45:26,916 - INFO - [MainThread:_save_current_settings_and_show_message] Saving current settings...
+2025-09-22 17:45:26,917 - ERROR - [MainThread:on_closing] Failed to save settings on exit: invalid literal for int() with base 10: '10.0'
+2025-09-22 17:45:27,009 - INFO - [MainThread:on_closing] Tkinter root window destroyed.
+2025-09-22 17:45:27,009 - INFO - [MainThread:on_closing] --- Application Shutdown Sequence Complete ---
+2025-09-22 17:45:27,009 - INFO - [MainThread:<module>] Main event loop ended normally
+2025-09-22 17:45:27,010 - INFO - [MainThread:<module>] 🛑 Application shutdown initiated...
+2025-09-22 17:45:27,010 - INFO - [MainThread:_save_current_settings] Saving current settings...
+2025-09-22 17:45:27,010 - WARNING - [MainThread:_save_current_settings] Could not get window geometry, possibly already be closed.
+2025-09-22 17:45:27,013 - INFO - [MainThread:save_settings] Settings saved successfully to D:\Dev84\BF 2.1.4\settings.json
+2025-09-22 17:45:27,014 - INFO - [MainThread:<module>] ✅ Application shutdown completed successfully
+2025-09-22 17:45:30,613 - INFO - [MainThread:on_closing] Close requested.
+2025-09-22 17:45:30,613 - INFO - [MainThread:_save_current_settings_and_show_message] Saving current settings...
+2025-09-22 17:45:30,614 - ERROR - [MainThread:on_closing] Failed to save settings on exit: invalid literal for int() with base 10: '10.0'
+2025-09-22 17:45:30,708 - INFO - [MainThread:on_closing] Tkinter root window destroyed.
+2025-09-22 17:45:30,708 - INFO - [MainThread:on_closing] --- Application Shutdown Sequence Complete ---
+2025-09-22 17:45:30,709 - INFO - [MainThread:<module>] Main event loop ended normally
+2025-09-22 17:45:30,709 - INFO - [MainThread:<module>] 🛑 Application shutdown initiated...
+2025-09-22 17:45:30,709 - INFO - [MainThread:_save_current_settings] Saving current settings...
+2025-09-22 17:45:30,710 - WARNING - [MainThread:_save_current_settings] Could not get window geometry, possibly already be closed.
+2025-09-22 17:45:30,713 - INFO - [MainThread:save_settings] Settings saved successfully to D:\Dev84\BF 2.1.4\settings.json
+2025-09-22 17:45:30,713 - INFO - [MainThread:<module>] ✅ Application shutdown completed successfully
+2025-09-22 17:45:32,508 - INFO - [MainThread:on_closing] Close requested.
+2025-09-22 17:45:32,509 - INFO - [MainThread:_save_current_settings_and_show_message] Saving current settings...
+2025-09-22 17:45:32,510 - ERROR - [MainThread:on_closing] Failed to save settings on exit: invalid literal for int() with base 10: '10.0'
+2025-09-22 17:45:32,605 - INFO - [MainThread:on_closing] Tkinter root window destroyed.
+2025-09-22 17:45:32,606 - INFO - [MainThread:on_closing] --- Application Shutdown Sequence Complete ---
+2025-09-22 17:45:32,606 - INFO - [MainThread:<module>] Main event loop ended normally
+2025-09-22 17:45:32,607 - INFO - [MainThread:<module>] 🛑 Application shutdown initiated...
+2025-09-22 17:45:32,607 - INFO - [MainThread:_save_current_settings] Saving current settings...
+2025-09-22 17:45:32,609 - WARNING - [MainThread:_save_current_settings] Could not get window geometry, possibly already be closed.
+2025-09-22 17:45:32,612 - INFO - [MainThread:save_settings] Settings saved successfully to D:\Dev84\BF 2.1.4\settings.json
+2025-09-22 17:45:32,613 - INFO - [MainThread:<module>] ✅ Application shutdown completed successfully
+2025-09-22 17:53:06,117 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility v2.1.4 Starting ---
+2025-09-22 17:53:06,117 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2025-09-22 17:53:06,117 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2025-09-22 17:53:06,118 - INFO - [MainThread:setup_logging] Script Directory: D:\Dev84\BF 2.1.4
+2025-09-22 17:53:06,119 - INFO - [MainThread:setup_logging] Working Directory: d:\Dev84\BF 2.1.4
+2025-09-22 17:53:06,119 - INFO - [MainThread:check_package_versions] ✓ selenium 4.34.2 is available
+2025-09-22 17:53:06,584 - INFO - [MainThread:check_package_versions] ✓ pandas 2.3.1 is available
+2025-09-22 17:53:06,744 - INFO - [MainThread:check_package_versions] ✓ openpyxl 3.1.5 is available
+2025-09-22 17:53:06,972 - INFO - [MainThread:check_package_versions] ✓ requests 2.32.4 is available
+2025-09-22 17:53:06,981 - INFO - [MainThread:check_package_versions] ✓ pytesseract 0.3.13 is available
+2025-09-22 17:53:07,117 - INFO - [MainThread:check_package_versions] ✓ undetected_chromedriver 3.5.5 (optional) is available
+2025-09-22 17:53:07,118 - INFO - [MainThread:check_package_versions] ✓ webdriver_manager 4.0.2 (optional) is available
+2025-09-22 17:53:07,118 - INFO - [MainThread:import_application_components] Importing application components...
+2025-09-22 17:53:07,205 - INFO - [MainThread:import_application_components] Application components imported successfully
+2025-09-22 17:53:07,205 - INFO - [MainThread:<module>] 🚀 Starting GUI application initialization...
+2025-09-22 17:53:07,206 - INFO - [MainThread:load_and_validate_configurations] Loading base URL configurations from D:\Dev84\BF 2.1.4\base_urls.csv...
+2025-09-22 17:53:07,206 - INFO - [MainThread:load_base_urls] Loaded 12 base URL configurations from base_urls.csv.
+2025-09-22 17:53:07,207 - INFO - [MainThread:load_and_validate_configurations] ✓ Loaded 12 URL configurations
+2025-09-22 17:53:07,207 - INFO - [MainThread:load_and_validate_configurations] Loading application settings...
+2025-09-22 17:53:07,207 - INFO - [MainThread:load_settings] Settings loaded and merged with defaults from D:\Dev84\BF 2.1.4\settings.json
+2025-09-22 17:53:07,207 - INFO - [MainThread:load_and_validate_configurations] ✓ Settings loaded and validated
+2025-09-22 17:53:07,208 - INFO - [MainThread:<module>] Creating main application window...
+2025-09-22 17:53:07,243 - INFO - [MainThread:<module>] Creating MainWindow instance...
+2025-09-22 17:53:07,246 - WARNING - [MainThread:_configure_styles_and_fonts] Star Wars font file found but tkinter cannot load TTF files directly
+2025-09-22 17:53:07,363 - INFO - [MainThread:<module>] ✓ Application initialization completed successfully
+2025-09-22 17:53:07,364 - INFO - [MainThread:<module>] 🎯 Starting main event loop...
+2025-09-22 17:55:42,083 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility v2.1.4 Starting ---
+2025-09-22 17:55:42,084 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2025-09-22 17:55:42,084 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2025-09-22 17:55:42,084 - INFO - [MainThread:setup_logging] Script Directory: D:\Dev84\BF 2.1.4
+2025-09-22 17:55:42,084 - INFO - [MainThread:setup_logging] Working Directory: D:\Dev84\BF 2.1.4
+2025-09-22 17:55:42,084 - INFO - [MainThread:check_package_versions] ✓ selenium 4.34.2 is available
+2025-09-22 17:55:42,406 - INFO - [MainThread:check_package_versions] ✓ pandas 2.3.1 is available
+2025-09-22 17:55:42,554 - INFO - [MainThread:check_package_versions] ✓ openpyxl 3.1.5 is available
+2025-09-22 17:55:42,797 - INFO - [MainThread:check_package_versions] ✓ requests 2.32.4 is available
+2025-09-22 17:55:42,802 - INFO - [MainThread:check_package_versions] ✓ pytesseract 0.3.13 is available
+2025-09-22 17:55:42,868 - INFO - [MainThread:check_package_versions] ✓ undetected_chromedriver 3.5.5 (optional) is available
+2025-09-22 17:55:42,869 - INFO - [MainThread:check_package_versions] ✓ webdriver_manager 4.0.2 (optional) is available
+2025-09-22 17:55:42,870 - INFO - [MainThread:import_application_components] Importing application components...
+2025-09-22 17:55:42,914 - INFO - [MainThread:import_application_components] Application components imported successfully
+2025-09-22 17:55:42,915 - INFO - [MainThread:<module>] 🚀 Starting GUI application initialization...
+2025-09-22 17:55:42,915 - INFO - [MainThread:load_and_validate_configurations] Loading base URL configurations from D:\Dev84\BF 2.1.4\base_urls.csv...
+2025-09-22 17:55:42,915 - INFO - [MainThread:load_base_urls] Loaded 12 base URL configurations from base_urls.csv.
+2025-09-22 17:55:42,915 - INFO - [MainThread:load_and_validate_configurations] ✓ Loaded 12 URL configurations
+2025-09-22 17:55:42,915 - INFO - [MainThread:load_and_validate_configurations] Loading application settings...
+2025-09-22 17:55:42,916 - INFO - [MainThread:load_settings] Settings loaded and merged with defaults from D:\Dev84\BF 2.1.4\settings.json
+2025-09-22 17:55:42,916 - INFO - [MainThread:load_and_validate_configurations] ✓ Settings loaded and validated
+2025-09-22 17:55:42,916 - INFO - [MainThread:<module>] Creating main application window...
+2025-09-22 17:55:42,949 - INFO - [MainThread:<module>] Creating MainWindow instance...
+2025-09-22 17:55:42,951 - WARNING - [MainThread:_configure_styles_and_fonts] Star Wars font file found but tkinter cannot load TTF files directly
+2025-09-22 17:55:43,060 - INFO - [MainThread:<module>] ✓ Application initialization completed successfully
+2025-09-22 17:55:43,061 - INFO - [MainThread:<module>] 🎯 Starting main event loop...
+2025-09-22 17:59:52,174 - INFO - [MainThread:on_closing] Close requested.
+2025-09-22 17:59:52,174 - INFO - [MainThread:_save_current_settings_and_show_message] Saving current settings...
+2025-09-22 17:59:52,175 - ERROR - [MainThread:on_closing] Failed to save settings on exit: invalid literal for int() with base 10: '10.0'
+2025-09-22 17:59:52,256 - INFO - [MainThread:on_closing] Tkinter root window destroyed.
+2025-09-22 17:59:52,256 - INFO - [MainThread:on_closing] --- Application Shutdown Sequence Complete ---
+2025-09-22 17:59:52,256 - INFO - [MainThread:<module>] Main event loop ended normally
+2025-09-22 17:59:52,256 - INFO - [MainThread:<module>] 🛑 Application shutdown initiated...
+2025-09-22 17:59:52,257 - INFO - [MainThread:_save_current_settings] Saving current settings...
+2025-09-22 17:59:52,258 - WARNING - [MainThread:_save_current_settings] Could not get window geometry, possibly already be closed.
+2025-09-22 17:59:52,260 - INFO - [MainThread:save_settings] Settings saved successfully to D:\Dev84\BF 2.1.4\settings.json
+2025-09-22 17:59:52,261 - INFO - [MainThread:<module>] ✅ Application shutdown completed successfully
+2025-09-22 18:00:01,513 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility v2.1.4 Starting ---
+2025-09-22 18:00:01,513 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2025-09-22 18:00:01,513 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2025-09-22 18:00:01,514 - INFO - [MainThread:setup_logging] Script Directory: D:\Dev84\BF 2.1.4
+2025-09-22 18:00:01,514 - INFO - [MainThread:setup_logging] Working Directory: d:\Dev84\BF 2.1.4
+2025-09-22 18:00:01,514 - INFO - [MainThread:check_package_versions] ✓ selenium 4.34.2 is available
+2025-09-22 18:00:01,973 - INFO - [MainThread:check_package_versions] ✓ pandas 2.3.1 is available
+2025-09-22 18:00:02,140 - INFO - [MainThread:check_package_versions] ✓ openpyxl 3.1.5 is available
+2025-09-22 18:00:02,363 - INFO - [MainThread:check_package_versions] ✓ requests 2.32.4 is available
+2025-09-22 18:00:02,372 - INFO - [MainThread:check_package_versions] ✓ pytesseract 0.3.13 is available
+2025-09-22 18:00:02,511 - INFO - [MainThread:check_package_versions] ✓ undetected_chromedriver 3.5.5 (optional) is available
+2025-09-22 18:00:02,512 - INFO - [MainThread:check_package_versions] ✓ webdriver_manager 4.0.2 (optional) is available
+2025-09-22 18:00:02,512 - INFO - [MainThread:import_application_components] Importing application components...
+2025-09-22 18:00:02,598 - INFO - [MainThread:import_application_components] Application components imported successfully
+2025-09-22 18:00:02,599 - INFO - [MainThread:<module>] 🚀 Starting GUI application initialization...
+2025-09-22 18:00:02,599 - INFO - [MainThread:load_and_validate_configurations] Loading base URL configurations from D:\Dev84\BF 2.1.4\base_urls.csv...
+2025-09-22 18:00:02,600 - INFO - [MainThread:load_base_urls] Loaded 12 base URL configurations from base_urls.csv.
+2025-09-22 18:00:02,600 - INFO - [MainThread:load_and_validate_configurations] ✓ Loaded 12 URL configurations
+2025-09-22 18:00:02,600 - INFO - [MainThread:load_and_validate_configurations] Loading application settings...
+2025-09-22 18:00:02,601 - INFO - [MainThread:load_settings] Settings loaded and merged with defaults from D:\Dev84\BF 2.1.4\settings.json
+2025-09-22 18:00:02,601 - INFO - [MainThread:load_and_validate_configurations] ✓ Settings loaded and validated
+2025-09-22 18:00:02,601 - INFO - [MainThread:<module>] Creating main application window...
+2025-09-22 18:00:02,635 - INFO - [MainThread:<module>] Creating MainWindow instance...
+2025-09-22 18:00:02,638 - WARNING - [MainThread:_configure_styles_and_fonts] Star Wars font file found but tkinter cannot load TTF files directly
+2025-09-22 18:00:02,755 - INFO - [MainThread:<module>] ✓ Application initialization completed successfully
+2025-09-22 18:00:02,756 - INFO - [MainThread:<module>] 🎯 Starting main event loop...
+2025-09-22 19:19:03,436 - INFO - [MainThread:on_closing] Close requested.
+2025-09-22 19:19:03,439 - INFO - [MainThread:_save_current_settings_and_show_message] Saving current settings...
+2025-09-22 19:19:03,444 - ERROR - [MainThread:on_closing] Failed to save settings on exit: invalid literal for int() with base 10: '10.0'
+2025-09-22 19:19:03,533 - INFO - [MainThread:on_closing] Tkinter root window destroyed.
+2025-09-22 19:19:03,533 - INFO - [MainThread:on_closing] --- Application Shutdown Sequence Complete ---
+2025-09-22 19:19:03,534 - INFO - [MainThread:<module>] Main event loop ended normally
+2025-09-22 19:19:03,534 - INFO - [MainThread:<module>] 🛑 Application shutdown initiated...
+2025-09-22 19:19:03,534 - INFO - [MainThread:_save_current_settings] Saving current settings...
+2025-09-22 19:19:03,536 - WARNING - [MainThread:_save_current_settings] Could not get window geometry, possibly already be closed.
+2025-09-22 19:19:03,540 - INFO - [MainThread:save_settings] Settings saved successfully to D:\Dev84\BF 2.1.4\settings.json
+2025-09-22 19:19:03,541 - INFO - [MainThread:<module>] ✅ Application shutdown completed successfully
+2025-09-22 19:19:38,321 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility v2.1.4 Starting ---
+2025-09-22 19:19:38,321 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2025-09-22 19:19:38,321 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2025-09-22 19:19:38,321 - INFO - [MainThread:setup_logging] Script Directory: D:\Dev84\BF 2.1.4
+2025-09-22 19:19:38,321 - INFO - [MainThread:setup_logging] Working Directory: d:\Dev84\BF 2.1.4
+2025-09-22 19:19:38,321 - INFO - [MainThread:check_package_versions] ✓ selenium 4.34.2 is available
+2025-09-22 19:19:42,055 - INFO - [MainThread:check_package_versions] ✓ pandas 2.3.1 is available
+2025-09-22 19:19:42,456 - INFO - [MainThread:check_package_versions] ✓ openpyxl 3.1.5 is available
+2025-09-22 19:19:42,748 - INFO - [MainThread:check_package_versions] ✓ requests 2.32.4 is available
+2025-09-22 19:19:42,760 - INFO - [MainThread:check_package_versions] ✓ pytesseract 0.3.13 is available
+2025-09-22 19:19:43,039 - INFO - [MainThread:check_package_versions] ✓ undetected_chromedriver 3.5.5 (optional) is available
+2025-09-22 19:19:43,040 - INFO - [MainThread:check_package_versions] ✓ webdriver_manager 4.0.2 (optional) is available
+2025-09-22 19:19:43,041 - INFO - [MainThread:import_application_components] Importing application components...
+2025-09-22 19:19:43,220 - INFO - [MainThread:import_application_components] Application components imported successfully
+2025-09-22 19:19:43,221 - INFO - [MainThread:<module>] 🚀 Starting GUI application initialization...
+2025-09-22 19:19:43,221 - INFO - [MainThread:load_and_validate_configurations] Loading base URL configurations from D:\Dev84\BF 2.1.4\base_urls.csv...
+2025-09-22 19:19:43,230 - INFO - [MainThread:load_base_urls] Loaded 12 base URL configurations from base_urls.csv.
+2025-09-22 19:19:43,230 - INFO - [MainThread:load_and_validate_configurations] ✓ Loaded 12 URL configurations
+2025-09-22 19:19:43,231 - INFO - [MainThread:load_and_validate_configurations] Loading application settings...
+2025-09-22 19:19:43,231 - INFO - [MainThread:load_settings] Settings loaded and merged with defaults from D:\Dev84\BF 2.1.4\settings.json
+2025-09-22 19:19:43,231 - INFO - [MainThread:load_and_validate_configurations] ✓ Settings loaded and validated
+2025-09-22 19:19:43,231 - INFO - [MainThread:<module>] Creating main application window...
+2025-09-22 19:19:43,806 - INFO - [MainThread:<module>] Creating MainWindow instance...
+2025-09-22 19:19:43,812 - WARNING - [MainThread:_configure_styles_and_fonts] Star Wars font file found but tkinter cannot load TTF files directly
+2025-09-22 19:19:44,008 - INFO - [MainThread:<module>] ✓ Application initialization completed successfully
+2025-09-22 19:19:44,008 - INFO - [MainThread:<module>] 🎯 Starting main event loop...

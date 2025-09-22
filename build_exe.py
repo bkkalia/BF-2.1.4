@@ -49,7 +49,11 @@ def main():
             sys.exit(1)
 
         # Prepare command to run main.py
-        python_exe = 'python'  # Use Python interpreter
+        # Use pythonw.exe on Windows to avoid console window
+        if os.name == 'nt':  # Windows
+            python_exe = 'pythonw.exe'
+        else:
+            python_exe = 'python'
         cmd = [python_exe, str(main_script)] + sys.argv[1:]
 
         # Run the main application

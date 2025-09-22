@@ -9,6 +9,25 @@ NOT a web application - NO JavaScript/HTML/CSS
 # main.py v2.1.4
 # Main entry point for the Cloud84 Tender Scraper application.
 
+# Handle readline compatibility issues that can occur in CLI mode
+import sys
+try:
+    import readline
+except ImportError:
+    pass
+except AttributeError as e:
+    if 'backend' in str(e):
+        # Create dummy readline module to prevent interactive hook errors
+        import types
+        dummy_readline = types.ModuleType('readline')
+        dummy_readline.backend = type('DummyBackend', (), {})()
+        sys.modules['readline'] = dummy_readline
+    else:
+        raise
+
+# Disable interactive hook to prevent readline setup errors
+sys.__interactivehook__ = lambda: None
+
 import tkinter as tk
 import tkinter.messagebox
 import sys
@@ -360,7 +379,7 @@ def is_cli_mode():
         return should_run_interactive_cli()
 
     # Check for CLI commands
-    cli_commands = ['department', 'tender-id', 'url', 'help', '--help', '-h']
+    cli_commands = ['department', 'tender-id', 'url', 'urls', 'help', '--help', '-h']
     return any(cmd in args for cmd in cli_commands)
 
 def should_run_interactive_cli():
@@ -374,15 +393,8 @@ def should_run_interactive_cli():
     if 'cli' in exe_name:
         return True
 
-    # Check if launched from a console (basic heuristic)
-    try:
-        # Try to get terminal size - if it fails, might be GUI launch
-        import shutil
-        columns, rows = shutil.get_terminal_size()
-        return columns > 0 and rows > 0
-    except Exception:
-        # If we can't get terminal size, assume GUI launch wants CLI
-        return True
+    # Default to GUI mode - only run interactive CLI when explicitly requested
+    return False
 
 # --- CLI Mode Handler ---
 def run_cli_mode():
@@ -467,20 +479,27 @@ def run_cli_mode():
 def show_interactive_banner():
     """Show interactive CLI banner with large, stylish ASCII art."""
     from config import APP_VERSION
-    print("""
-╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
-║                                                                                                                                                              ║
-║        ██████╗ ██╗      █████╗  ██████╗██╗  ██╗    ███████╗ ██████╗ ██████╗ ███████╗███████╗████████╗                                                                 ║
-║        ██╔══██╗██║     ██╔══██╗██╔════╝██║ ██╔╝    ██╔════╝██╔═══██╗██╔══██╗██╔════╝██╔════╝╚══██╔══╝                                                                 ║
-║        ██████╔╝██║     ███████║██║     █████╔╝     █████╗  ██║   ██║██████╔╝█████╗  ███████╗   ██║                                                                    ║
-║        ██╔══██╗██║     ██╔══██║██║     ██╔═██╗     ██╔══╝  ██║   ██║██╔══██╗██╔══╝  ╚════██║   ██║                                                                    ║
-║        ██████╔╝███████╗██║  ██║╚██████╗██║  ██╗    ██║     ╚██████╔╝██║  ██║███████╗███████║   ██║                                                                    ║
-║        ╚═════╝ ╚══════╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝    ╚═╝      ╚═════╝ ╚═╝  ╚═╝╚══════╝╚══════╝   ╚═╝                                                                    ║
-║                                                                                                                                                              ║
-╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+    print(r"""
+: "
+########################################################################
+#                                                                      #
+# .______    __           ___        ______  __  ___                   #
+# |   _  \  |  |         /   \      /      ||  |/  /                   #
+# |  |_)  | |  |        /  ^  \    |  ,----'|  '  /                    #
+# |   _  <  |  |       /  /_\  \   |  |     |    <                     #
+# |  |_)  | |  `----. /  _____  \  |  `----.|  .  \                    #
+# |______/  |_______|/__/     \__\  \______||__|\__\                   #
+#                                                                      #
+#  _______   ______   .______       _______      _______..___________. #
+# |   ____| /  __  \  |   _  \     |   ____|    /       ||           | #
+# |  |__   |  |  |  | |  |_)  |    |  |__      |   (----``---|  |----` #
+# |   __|  |  |  |  | |      /     |   __|      \   \        |  |      #
+# |  |     |  `--'  | |  |\  \----.|  |____ .----)   |       |  |      #
+# |__|      \______/  | _| `._____||_______||_______/        |__|      #
+#                                                                      #
+########################################################################
+"
 """)
-    print(f"{'Black Forest v' + APP_VERSION + ' - CLI Mode - Interactive Prompt':^134}")
-    print("=" * 134)
 
 # --- Main Execution Block ---
 if __name__ == "__main__":

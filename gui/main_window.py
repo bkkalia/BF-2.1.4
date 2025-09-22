@@ -178,7 +178,35 @@ class MainWindow:
 
     def _configure_styles_and_fonts(self):
         """Configure ttk styles and fonts."""
-        self.heading_font = tkFont.Font(family="Segoe UI", size=18, weight="bold")
+        # Try to use Star Wars font for ASCII styling (assuming it's installed)
+        try:
+            # Check if Star Wars font is available
+            available_fonts = tkFont.families()
+            starwars_family = None
+            for font_name in available_fonts:
+                if 'star wars' in font_name.lower() or 'starwars' in font_name.lower():
+                    starwars_family = font_name
+                    break
+
+            if starwars_family:
+                self.starwars_font = tkFont.Font(family=starwars_family, size=24)
+                logging.info(f"✓ Star Wars font '{starwars_family}' loaded successfully")
+            else:
+                # Try to register the font if not available
+                starwars_font_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "resources", "starwars.ttf")
+                if os.path.exists(starwars_font_path):
+                    # Note: tkinter doesn't support loading TTF files directly
+                    # This would require additional libraries or system font installation
+                    logging.warning("Star Wars font file found but tkinter cannot load TTF files directly")
+                    self.starwars_font = tkFont.Font(family="Segoe UI", size=18, weight="bold")
+                else:
+                    logging.warning("Star Wars font file not found")
+                    self.starwars_font = tkFont.Font(family="Segoe UI", size=18, weight="bold")
+        except Exception as e:
+            logging.warning(f"Could not load Star Wars font: {e}, falling back to default")
+            self.starwars_font = tkFont.Font(family="Segoe UI", size=18, weight="bold")
+
+        self.heading_font = self.starwars_font
         self.subheading_font = tkFont.Font(family="Segoe UI", size=12, weight="bold")
         self.label_font = tkFont.Font(family="Segoe UI", size=11)
         self.button_font = tkFont.Font(family="Segoe UI", size=11, weight="bold")
@@ -979,28 +1007,22 @@ class MainWindow:
         import sys
         import os
         try:
-            exe_dir = os.path.dirname(sys.executable) if getattr(sys, 'frozen', False) else os.path.dirname(__file__)
+            # Get the project directory (where main.py is located)
+            project_dir = os.path.dirname(os.path.dirname(__file__))  # Go up from gui/ to project root
 
-            # Check if separate CLI EXE exists
-            cli_exe_path = os.path.join(exe_dir, 'BlackForest_CLI.exe')
-            if os.path.exists(cli_exe_path):
-                # Use separate CLI EXE
-                cmd = [cli_exe_path]
-            elif getattr(sys, 'frozen', False):
-                # Running as compiled EXE
-                exe = sys.executable
-                cmd = [exe]
-            else:
-                # Running as script
-                cmd = [sys.executable, 'main.py']
+            # Use cmd.exe to open console in project directory with custom title
+            cmd = [
+                'cmd.exe', '/k',
+                f'title "BlackForest CLI v{self.app_version}" && python main.py'
+            ]
 
             # Set environment variable to indicate interactive CLI mode
             env = os.environ.copy()
             env['BLACKFOREST_CLI_MODE'] = 'interactive'
 
-            # Launch in new console window on Windows
-            subprocess.Popen(cmd, creationflags=subprocess.CREATE_NEW_CONSOLE, env=env)
-            self.update_log("CLI mode launched - type commands in the console window")
+            # Launch in new console window on Windows, starting in project directory
+            subprocess.Popen(cmd, cwd=project_dir, creationflags=subprocess.CREATE_NEW_CONSOLE, env=env)
+            self.update_log("CLI mode launched in project directory with ASCII banner - type commands in the console window")
         except Exception as e:
             self.update_log(f"Failed to launch CLI: {e}")
             logger.error(f"CLI launch error: {e}")
