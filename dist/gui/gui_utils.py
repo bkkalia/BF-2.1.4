@@ -185,11 +185,122 @@ def open_folder(folder_path, log_callback):
 
 def show_message(title, message, type="info", parent=None):
     """Wrapper for messagebox functions."""
-    if type == "info":          messagebox.showinfo(title, message, parent=parent)
-    elif type == "warning":     messagebox.showwarning(title, message, parent=parent)
-    elif type == "error":       messagebox.showerror(title, message, parent=parent)
-    elif type == "askyesno":    return messagebox.askyesno(title, message, parent=parent)
-    elif type == "askokcancel": return messagebox.askokcancel(title, message, parent=parent)
+    kwargs = {}
+    if parent is not None:
+        kwargs['parent'] = parent
+    if type == "info":
+        messagebox.showinfo(title, message, **kwargs)
+    elif type == "warning":
+        messagebox.showwarning(title, message, **kwargs)
+    elif type == "error":
+        messagebox.showerror(title, message, **kwargs)
+    elif type == "askyesno":
+        return messagebox.askyesno(title, message, **kwargs)
+    elif type == "askokcancel":
+        return messagebox.askokcancel(title, message, **kwargs)
     else:
         logger.warning(f"Unknown message type: {type}")
-        messagebox.showinfo(title, message, parent=parent) # Default to info
+        messagebox.showinfo(title, message, **kwargs) # Default to info
+
+class EmergencyStopDialog:
+    """Dialog for emergency stop options with user interaction."""
+
+    def __init__(self, parent, main_window):
+        self.parent = parent
+        self.main_window = main_window
+        self.result = None
+        self.dialog = None
+
+    def show(self):
+        """Show the emergency stop dialog and return user choice."""
+        # Create dialog in main thread
+        self.dialog = tk.Toplevel(self.parent)
+        self.dialog.title("Emergency Stop Options")
+        self.dialog.resizable(False, False)
+        self.dialog.grab_set()  # Make modal
+
+        # Keep on top
+        try:
+            self.dialog.attributes("-topmost", True)
+        except Exception:
+            pass
+
+        # Center the dialog and add padding
+        width, height = 400, 180
+        self.dialog.update_idletasks()
+        x = (self.dialog.winfo_screenwidth() // 2) - (width // 2)
+        y = (self.dialog.winfo_screenheight() // 2) - (height // 2)
+        self.dialog.geometry(f"{width}x{height}+{x}+{y}")
+
+        # Outer frame with padding
+        outer = tk.Frame(self.dialog, padx=14, pady=10)
+        outer.pack(fill=tk.BOTH, expand=True)
+
+        # Dialog content
+        tk.Label(
+            outer,
+            text="Emergency Stop",
+            font=("Arial", 14, "bold")
+        ).pack(pady=(2, 6))
+
+        tk.Label(
+            outer,
+            text="Choose an action for the current running process:",
+            justify=tk.CENTER
+        ).pack(pady=(6, 8))
+
+        # Buttons frame
+        button_frame = tk.Frame(outer)
+        button_frame.pack(pady=6)
+
+        tk.Button(
+            button_frame,
+            text="Kill Process",
+            command=lambda: self._set_result("kill"),
+            bg="red",
+            fg="white",
+            width=12
+        ).pack(side=tk.LEFT, padx=4)
+
+        tk.Button(
+            button_frame,
+            text="Pause Process",
+            command=lambda: self._set_result("pause"),
+            bg="orange",
+            fg="white",
+            width=12
+        ).pack(side=tk.LEFT, padx=4)
+
+        tk.Button(
+            button_frame,
+            text="Cancel",
+            command=lambda: self._set_result("cancel"),
+            bg="gray",
+            fg="white",
+            width=12
+        ).pack(side=tk.LEFT, padx=4)
+
+        # Handle window close (same as cancel)
+        self.dialog.protocol("WM_DELETE_WINDOW", lambda: self._set_result("cancel"))
+
+        # Ensure focus
+        local_dialog = self.dialog
+        try:
+            local_dialog.lift()
+            local_dialog.focus_force()
+            local_dialog.after(50, lambda: local_dialog.focus_set())
+        except Exception:
+            pass
+
+        # Wait for user response
+        self.dialog.wait_window()
+        return self.result
+
+    def _set_result(self, result):
+        """Set the result and close dialog."""
+        self.result = result
+        if self.dialog:
+            try:
+                self.dialog.destroy()
+            except Exception:
+                pass

@@ -35,15 +35,19 @@ REM --- Original standard locations fallback ---
 if exist "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" (
     echo Found Inno Setup 6
     set "ISCC_CMD=C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
-) else if exist "C:\Program Files\Inno Setup 6\ISCC.exe" (
+    goto :run_iscc
+)
+if exist "C:\Program Files\Inno Setup 6\ISCC.exe" (
     echo Found Inno Setup 6 (64-bit)
     set "ISCC_CMD=C:\Program Files\Inno Setup 6\ISCC.exe"
-) else if exist "C:\Program Files (x86)\Inno Setup 5\ISCC.exe" (
+    goto :run_iscc
+)
+if exist "C:\Program Files (x86)\Inno Setup 5\ISCC.exe" (
     echo Found Inno Setup 5
     set "ISCC_CMD=C:\Program Files (x86)\Inno Setup 5\ISCC.exe"
-) else (
-    set "ISCC_CMD="
+    goto :run_iscc
 )
+set "ISCC_CMD="
 
 if defined ISCC_CMD (
     echo Using ISCC: %ISCC_CMD%

@@ -35,7 +35,8 @@ def main():
         python_exe = sys.executable  # Use same Python that launched this script
         cmd = [python_exe, str(main_script)] + sys.argv[1:]
 
-        print("Black Forest Tender Scraper"        print(f"Launcher directory: {launcher_dir}")
+print("Black Forest Tender Scraper")
+print(f"Launcher directory: {launcher_dir}")
         print(f"Command: {' '.join(cmd)}")
         print("-" * 50)
 

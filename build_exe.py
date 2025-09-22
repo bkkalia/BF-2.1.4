@@ -75,11 +75,11 @@ if __name__ == '__main__':
     with open('blackforest_launcher.py', 'w', encoding='utf-8') as f:
         f.write(launcher_code)
 
-    print("✅ Created launcher script: blackforest_launcher.py")
+    print("Created launcher script: blackforest_launcher.py")
 
 def build_hybrid():
     """Build hybrid launcher EXE + Python files"""
-    print("🔨 Building Hybrid Launcher (Option 4)")
+    print("Building Hybrid Launcher")
     print("=" * 50)
 
     # Ensure we're in the correct directory
@@ -117,11 +117,11 @@ def build_hybrid():
 
     try:
         result = subprocess.run(pyinstaller_cmd, check=True, capture_output=True, text=True)
-        print("✅ Launcher EXE built successfully")
+        print("Launcher EXE built successfully")
         if result.stdout:
             print(f"Build output: {result.stdout}")
     except subprocess.CalledProcessError as e:
-        print(f"❌ Error building launcher: {e}")
+        print(f"Error building launcher: {e}")
         print(f"STDOUT: {e.stdout}")
         print(f"STDERR: {e.stderr}")
         return False
@@ -131,7 +131,7 @@ def build_hybrid():
     if launcher_exe.exists():
         final_exe = dist_dir / 'BlackForest.exe'
         shutil.copy2(launcher_exe, final_exe)
-        print(f"✅ Copied launcher to: {final_exe}")
+        print(f"Copied launcher to: {final_exe}")
 
     # Step 4: Copy all Python files and resources
     print("\\n3. Copying application files...")
@@ -173,7 +173,7 @@ def build_hybrid():
         if src.exists():
             shutil.copy2(src, dist_dir / file)
             copied_files += 1
-            print(f"  📄 {file}")
+            print(f"  {file}")
 
     # Copy directories
     for dir_name in dirs_to_copy:
@@ -186,7 +186,7 @@ def build_hybrid():
             # Count files in directory
             file_count = sum(1 for _ in dst_dir.rglob('*') if _.is_file())
             copied_files += file_count
-            print(f"  📁 {dir_name}/ ({file_count} files)")
+            print(f"  {dir_name}/ ({file_count} files)")
 
     # Step 5: Create README for distribution
     create_distribution_readme(dist_dir)
@@ -207,16 +207,16 @@ def build_hybrid():
         (script_dir / 'dist' / 'BlackForest_Launcher.exe').unlink()
 
     print("\\n" + "=" * 50)
-    print("🎉 HYBRID BUILD COMPLETED SUCCESSFULLY!")
+    print("HYBRID BUILD COMPLETED SUCCESSFULLY!")
     print("=" * 50)
-    print(f"📁 Distribution directory: {dist_dir}")
-    print(f"📊 Files copied: {copied_files}")
-    print(f"💾 Estimated size: {get_dir_size(dist_dir):.1f} MB")
-    print("\\n🚀 Usage:")
+    print(f"Distribution directory: {dist_dir}")
+    print(f"Files copied: {copied_files}")
+    print(f"Estimated size: {get_dir_size(dist_dir):.1f} MB")
+    print("\\nUsage:")
     print("  BlackForest.exe department --all")
     print("  BlackForest.exe urls")
     print("  BlackForest.exe --url 'etenders' department --all")
-    print("\\n📋 For Windows Task Scheduler:")
+    print("\\nFor Windows Task Scheduler:")
     print("  Use BlackForest.exe in batch files or scheduled tasks")
 
     return True
@@ -293,7 +293,7 @@ See `CLI_HELP.md` for detailed usage instructions
     with open(readme_file, 'w', encoding='utf-8') as f:
         f.write(readme_content)
 
-    print("  📄 README.md (distribution guide)")
+    print("  README.md (distribution guide)")
 
 def get_dir_size(path):
     """Get directory size in MB"""
@@ -306,7 +306,7 @@ def get_dir_size(path):
 
 def build_portable():
     """Build portable directory version (alternative)"""
-    print("🔨 Building Portable Directory Version")
+    print("Building Portable Directory Version")
     print("=" * 50)
 
     script_dir = Path(__file__).parent
@@ -333,7 +333,7 @@ def build_portable():
 
     try:
         subprocess.run(pyinstaller_cmd, check=True)
-        print("✅ Portable build completed")
+        print("Portable build completed")
 
         # Copy additional files
         portable_dir = script_dir / 'dist' / 'BlackForest'
@@ -348,13 +348,13 @@ def build_portable():
             shutil.copytree(portable_dir, final_dir)
 
             size_mb = get_dir_size(final_dir)
-            print(f"📁 Portable directory: {final_dir}")
-            print(f"💾 Size: {size_mb:.1f} MB")
-            print("\\n🚀 Usage:")
+            print(f"Portable directory: {final_dir}")
+            print(f"Size: {size_mb:.1f} MB")
+            print("\\nUsage:")
             print("  BlackForest_Portable\\BlackForest.exe department --all")
 
     except subprocess.CalledProcessError as e:
-        print(f"❌ Error building portable: {e}")
+        print(f"Error building portable: {e}")
 
 def main():
     """Main build function"""

@@ -41,3 +41,13 @@ Lines: [line numbers being modified]
 **Remember: I prefer 5 small, confirmed steps over 1 big change that breaks things.**
 
 Ready to start? Please confirm you understand these guidelines.
+
+## Assistant Acknowledgement
+
+I, the AI assistant, confirm that I will follow the guidelines in this document for the current session:
+- Ask before making changes.
+- Work in small, targeted increments.
+- Explain the plan before implementing changes.
+- Request explicit confirmation to proceed when required.
+
+If you'd like me to proceed now, reply: "Proceed with [brief task description]".

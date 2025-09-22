@@ -20,7 +20,7 @@
     "POPUP_WAIT_TIMEOUT": 8.0,
     "POST_DOWNLOAD_CLICK_WAIT": 3.0,
     "enable_sounds": true,
-    "sound_ding_file": "C:\\Windows\\Media\\ding.wav",
-    "sound_success_file": "C:\\Windows\\Media\\tada.wav",
-    "sound_error_file": "C:\\Windows\\Media\\Windows Error.wav"
+    "sound_ding_file": "",
+    "sound_success_file": "",
+    "sound_error_file": ""
 }

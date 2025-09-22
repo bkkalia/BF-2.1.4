@@ -1,0 +1,221 @@
+2025-09-22 09:35:29,755 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility v2.1.4 Starting ---
+2025-09-22 09:35:29,759 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2025-09-22 09:35:29,760 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2025-09-22 09:35:29,760 - INFO - [MainThread:setup_logging] Script Directory: G:\My Drive\0dev\BF 2.1.4
+2025-09-22 09:35:29,761 - INFO - [MainThread:setup_logging] Working Directory: G:\My Drive\0dev\BF 2.1.4
+2025-09-22 09:35:29,762 - INFO - [MainThread:check_package_versions] ✓ selenium 4.34.2 is available
+2025-09-22 09:35:32,443 - INFO - [MainThread:check_package_versions] ✓ pandas 2.3.1 is available
+2025-09-22 09:35:32,744 - INFO - [MainThread:check_package_versions] ✓ openpyxl 3.1.5 is available
+2025-09-22 09:35:33,073 - INFO - [MainThread:check_package_versions] ✓ requests 2.32.4 is available
+2025-09-22 09:35:33,090 - INFO - [MainThread:check_package_versions] ✓ pytesseract 0.3.13 is available
+2025-09-22 09:35:33,354 - INFO - [MainThread:check_package_versions] ✓ undetected_chromedriver 3.5.5 (optional) is available
+2025-09-22 09:35:33,357 - INFO - [MainThread:check_package_versions] ✓ webdriver_manager 4.0.2 (optional) is available
+2025-09-22 09:35:33,362 - INFO - [MainThread:import_application_components] Importing application components...
+2025-09-22 09:35:33,949 - INFO - [MainThread:import_application_components] Application components imported successfully
+2025-09-22 09:35:33,949 - INFO - [MainThread:<module>] 🚀 Starting GUI application initialization...
+2025-09-22 09:35:33,950 - INFO - [MainThread:load_and_validate_configurations] Loading base URL configurations from G:\My Drive\0dev\BF 2.1.4\base_urls.csv...
+2025-09-22 09:35:33,971 - INFO - [MainThread:load_base_urls] Loaded 12 base URL configurations from base_urls.csv.
+2025-09-22 09:35:33,972 - INFO - [MainThread:load_and_validate_configurations] ✓ Loaded 12 URL configurations
+2025-09-22 09:35:33,972 - INFO - [MainThread:load_and_validate_configurations] Loading application settings...
+2025-09-22 09:35:33,983 - INFO - [MainThread:load_settings] Settings loaded and merged with defaults from G:\My Drive\0dev\BF 2.1.4\settings.json
+2025-09-22 09:35:33,984 - INFO - [MainThread:load_and_validate_configurations] ✓ Settings loaded and validated
+2025-09-22 09:35:33,984 - INFO - [MainThread:<module>] Creating main application window...
+2025-09-22 09:35:34,538 - INFO - [MainThread:<module>] Creating MainWindow instance...
+2025-09-22 09:35:34,810 - INFO - [MainThread:<module>] ✓ Application initialization completed successfully
+2025-09-22 09:35:34,810 - INFO - [MainThread:<module>] 🎯 Starting main event loop...
+2025-09-22 09:36:09,531 - INFO - [MainThread:_start_fetch_departments_thread] Fetch Departments button clicked.
+2025-09-22 09:36:09,545 - INFO - [DeptFetchThread:setup_driver] Setting up Chrome WebDriver...
+2025-09-22 09:36:09,546 - INFO - [DeptFetchThread:setup_driver] Using standard ChromeDriver for better compatibility
+2025-09-22 09:36:09,547 - INFO - [DeptFetchThread:setup_driver] Setting download directory to: G:\My Drive\0dev\BF 2.1.4
+2025-09-22 09:36:09,548 - INFO - [DeptFetchThread:setup_driver] Installing ChromeDriver using webdriver-manager...
+2025-09-22 09:36:09,549 - INFO - [DeptFetchThread:log] ====== WebDriver manager ======
+2025-09-22 09:36:10,825 - INFO - [DeptFetchThread:log] Get LATEST chromedriver version for google-chrome
+2025-09-22 09:36:12,105 - INFO - [DeptFetchThread:log] Get LATEST chromedriver version for google-chrome
+2025-09-22 09:36:13,296 - INFO - [DeptFetchThread:log] Get LATEST chromedriver version for google-chrome
+2025-09-22 09:36:14,425 - INFO - [DeptFetchThread:log] WebDriver version 140.0.7339.185 selected
+2025-09-22 09:36:14,428 - INFO - [DeptFetchThread:log] Modern chrome version https://storage.googleapis.com/chrome-for-testing-public/140.0.7339.185/win32/chromedriver-win32.zip
+2025-09-22 09:36:14,429 - INFO - [DeptFetchThread:log] About to download new driver from https://storage.googleapis.com/chrome-for-testing-public/140.0.7339.185/win32/chromedriver-win32.zip
+2025-09-22 09:36:14,592 - INFO - [DeptFetchThread:log] Driver downloading response is 200
+2025-09-22 09:36:25,671 - INFO - [DeptFetchThread:log] Get LATEST chromedriver version for google-chrome
+2025-09-22 09:36:26,939 - INFO - [DeptFetchThread:log] Driver has been saved in cache [C:\Users\kalia\.wdm\drivers\chromedriver\win64\140.0.7339.185]
+2025-09-22 09:36:26,941 - INFO - [DeptFetchThread:setup_driver] ChromeDriver installed successfully
+2025-09-22 09:36:26,941 - INFO - [DeptFetchThread:setup_driver] Creating Chrome WebDriver instance...
+2025-09-22 09:36:29,245 - INFO - [DeptFetchThread:setup_driver] Chrome WebDriver setup completed successfully
+2025-09-22 09:36:36,197 - INFO - [DeptFetchThread:safe_quit_driver] Closing WebDriver instance...
+2025-09-22 09:36:38,348 - INFO - [DeptFetchThread:safe_quit_driver] WebDriver quit successfully.
+2025-09-22 09:40:56,559 - INFO - [MainThread:get_tender_ids_from_input] Parsed 1 potential Tender IDs from input.
+2025-09-22 09:40:56,561 - INFO - [MainThread:start_search_ids] Starting Search & Download for 1 ID(s) on HP Tenders. Base download dir: C:\Users\kalia\Downloads
+2025-09-22 09:40:56,567 - INFO - [Tender ID Search:setup_driver] Setting up Chrome WebDriver...
+2025-09-22 09:40:56,568 - INFO - [Tender ID Search:setup_driver] Using standard ChromeDriver for better compatibility
+2025-09-22 09:40:56,569 - INFO - [Tender ID Search:setup_driver] Setting download directory to: C:\Users\kalia\Downloads
+2025-09-22 09:40:56,570 - INFO - [Tender ID Search:setup_driver] Installing ChromeDriver using webdriver-manager...
+2025-09-22 09:40:56,571 - INFO - [Tender ID Search:log] ====== WebDriver manager ======
+2025-09-22 09:40:57,764 - INFO - [Tender ID Search:log] Get LATEST chromedriver version for google-chrome
+2025-09-22 09:40:58,291 - INFO - [Tender ID Search:log] Get LATEST chromedriver version for google-chrome
+2025-09-22 09:40:58,462 - INFO - [Tender ID Search:log] Driver [C:\Users\kalia\.wdm\drivers\chromedriver\win64\140.0.7339.185\chromedriver-win32/chromedriver.exe] found in cache
+2025-09-22 09:40:58,464 - INFO - [Tender ID Search:setup_driver] ChromeDriver installed successfully
+2025-09-22 09:40:58,466 - INFO - [Tender ID Search:setup_driver] Creating Chrome WebDriver instance...
+2025-09-22 09:40:59,536 - INFO - [Tender ID Search:setup_driver] Chrome WebDriver setup completed successfully
+2025-09-22 09:41:23,263 - WARNING - [Tender ID Search:safe_extract_text] Tender Title (('xpath', "//td[normalize-space(.)='Tender Title']/following-sibling::td[1]")) not found/visible in 15s.
+2025-09-22 09:41:34,629 - INFO - [Tender ID Search:click_element] Standard click successful for 'View More Details Link'.
+2025-09-22 09:41:35,250 - INFO - [Tender ID Search:save_page_as_pdf] Attempting to save current page as PDF: 2025_HPIPH_115137_1_more_details.pdf
+2025-09-22 09:41:35,722 - INFO - [Tender ID Search:save_page_as_pdf] Successfully saved PDF: 2025_HPIPH_115137_1_more_details.pdf (Size: 481057 bytes)
+2025-09-22 09:41:36,618 - INFO - [Tender ID Search:click_element] Standard click successful for 'Initial Download Link ('Download as zip file...')'.
+2025-09-22 09:42:47,357 - INFO - [Tender ID Search:click_element] Standard click successful for 'Download Link 'Download as zip file''.
+2025-09-22 09:42:49,437 - INFO - [Tender ID Search:click_element] Standard click successful for 'Download Link 'Tendernotice_1.pdf''.
+2025-09-22 09:42:51,040 - INFO - [Tender ID Search:wait_for_downloads] Waiting up to 30s for downloads in '2025_HPIPH_115137_1'...
+2025-09-22 09:42:53,043 - INFO - [Tender ID Search:wait_for_downloads] No active downloads detected in '2025_HPIPH_115137_1' after 0.0s.
+2025-09-22 09:42:53,123 - INFO - [Tender ID Search:safe_quit_driver] Closing WebDriver instance...
+2025-09-22 09:42:55,289 - INFO - [Tender ID Search:safe_quit_driver] WebDriver quit successfully.
+2025-09-22 10:04:06,606 - INFO - [MainThread:_configure_tesseract] Tesseract configured successfully at: C:\Program Files\Tesseract-OCR\tesseract.exe
+2025-09-22 11:26:09,398 - INFO - [MainThread:_start_fetch_departments_thread] Fetch Departments button clicked.
+2025-09-22 11:26:09,428 - INFO - [DeptFetchThread:setup_driver] Setting up Chrome WebDriver...
+2025-09-22 11:26:09,428 - INFO - [DeptFetchThread:setup_driver] Using standard ChromeDriver for better compatibility
+2025-09-22 11:26:09,429 - INFO - [DeptFetchThread:setup_driver] Setting download directory to: G:\My Drive\0dev\BF 2.1.4
+2025-09-22 11:26:09,430 - INFO - [DeptFetchThread:setup_driver] Installing ChromeDriver using webdriver-manager...
+2025-09-22 11:26:09,430 - INFO - [DeptFetchThread:log] ====== WebDriver manager ======
+2025-09-22 11:26:10,631 - INFO - [DeptFetchThread:log] Get LATEST chromedriver version for google-chrome
+2025-09-22 11:26:10,794 - INFO - [DeptFetchThread:log] Get LATEST chromedriver version for google-chrome
+2025-09-22 11:26:10,934 - INFO - [DeptFetchThread:log] Driver [C:\Users\kalia\.wdm\drivers\chromedriver\win64\140.0.7339.185\chromedriver-win32/chromedriver.exe] found in cache
+2025-09-22 11:26:10,936 - INFO - [DeptFetchThread:setup_driver] ChromeDriver installed successfully
+2025-09-22 11:26:10,937 - INFO - [DeptFetchThread:setup_driver] Creating Chrome WebDriver instance...
+2025-09-22 11:26:11,972 - INFO - [DeptFetchThread:setup_driver] Chrome WebDriver setup completed successfully
+2025-09-22 11:26:18,183 - INFO - [DeptFetchThread:safe_quit_driver] Closing WebDriver instance...
+2025-09-22 11:26:20,293 - INFO - [DeptFetchThread:safe_quit_driver] WebDriver quit successfully.
+2025-09-22 11:27:50,157 - INFO - [MainThread:_get_all_valid_departments] Starting scraping for ALL 42 valid departments (filtered from 42 total).
+2025-09-22 11:27:50,159 - INFO - [Department Scrape:setup_driver] Setting up Chrome WebDriver...
+2025-09-22 11:27:50,160 - INFO - [Department Scrape:setup_driver] Using standard ChromeDriver for better compatibility
+2025-09-22 11:27:50,161 - INFO - [Department Scrape:setup_driver] Setting download directory to: C:\Users\kalia\Downloads
+2025-09-22 11:27:50,162 - INFO - [Department Scrape:setup_driver] Installing ChromeDriver using webdriver-manager...
+2025-09-22 11:27:50,162 - INFO - [Department Scrape:log] ====== WebDriver manager ======
+2025-09-22 11:27:51,298 - INFO - [Department Scrape:log] Get LATEST chromedriver version for google-chrome
+2025-09-22 11:27:51,452 - INFO - [Department Scrape:log] Get LATEST chromedriver version for google-chrome
+2025-09-22 11:27:51,596 - INFO - [Department Scrape:log] Driver [C:\Users\kalia\.wdm\drivers\chromedriver\win64\140.0.7339.185\chromedriver-win32/chromedriver.exe] found in cache
+2025-09-22 11:27:51,599 - INFO - [Department Scrape:setup_driver] ChromeDriver installed successfully
+2025-09-22 11:27:51,600 - INFO - [Department Scrape:setup_driver] Creating Chrome WebDriver instance...
+2025-09-22 11:27:52,649 - INFO - [Department Scrape:setup_driver] Chrome WebDriver setup completed successfully
+2025-09-22 11:27:55,526 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Baddi Barotiwala Nal' (SNo:1)'.
+2025-09-22 11:28:01,138 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-22 11:28:04,886 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Chief Project Direct' (SNo:2)'.
+2025-09-22 11:28:11,041 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-22 11:28:14,758 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'DC Office Kullu' (SNo:3)'.
+2025-09-22 11:28:20,029 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-22 11:28:23,647 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Department of Health' (SNo:4)'.
+2025-09-22 11:28:29,252 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-22 11:28:32,985 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Department of Inform' (SNo:5)'.
+2025-09-22 11:28:38,418 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-22 11:28:42,164 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'DHARAMSHALA SMART CI' (SNo:6)'.
+2025-09-22 11:28:47,561 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-22 11:28:51,417 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Directorate Animal H' (SNo:7)'.
+2025-09-22 11:28:57,032 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-22 11:29:00,801 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Directorate of Food ' (SNo:8)'.
+2025-09-22 11:29:06,698 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-22 11:29:10,584 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Directorate of Foren' (SNo:9)'.
+2025-09-22 11:29:16,164 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-22 11:29:19,935 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Directorate of Horti' (SNo:10)'.
+2025-09-22 11:29:25,270 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-22 11:29:29,012 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Directorate of Medic' (SNo:11)'.
+2025-09-22 11:29:34,523 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-22 11:29:38,232 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Directorate of Techn' (SNo:12)'.
+2025-09-22 11:29:43,656 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-22 11:29:47,427 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Directorate of Urban' (SNo:13)'.
+2025-09-22 11:29:53,700 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-22 11:29:57,398 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Directorate Rural De' (SNo:14)'.
+2025-09-22 11:30:02,764 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-22 11:30:06,530 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Director of Agricult' (SNo:15)'.
+2025-09-22 11:30:12,245 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-22 11:30:16,036 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Disaster Management ' (SNo:16)'.
+2025-09-22 11:30:21,672 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-22 11:30:25,614 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Dr. Yashwant Singh P' (SNo:17)'.
+2025-09-22 11:30:31,251 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-22 11:30:35,062 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Eco-Tourism Society ' (SNo:18)'.
+2025-09-22 11:30:41,537 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-22 11:30:45,365 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Himachal Pradesh Agr' (SNo:19)'.
+2025-09-22 11:30:51,002 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-22 11:30:54,915 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Himachal Pradesh Boa' (SNo:20)'.
+2025-09-22 11:31:00,561 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-22 11:31:04,394 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Himachal Pradesh Med' (SNo:21)'.
+2025-09-22 11:31:09,758 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-22 11:31:13,569 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Himachal Pradesh Tou' (SNo:22)'.
+2025-09-22 11:31:19,282 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-22 11:31:23,070 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Himachal Pradesh Uni' (SNo:23)'.
+2025-09-22 11:31:28,469 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-22 11:31:32,263 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Himachal Urban Devel' (SNo:24)'.
+2025-09-22 11:31:37,713 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-22 11:31:41,611 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'HP Aquaculture Fishe' (SNo:25)'.
+2025-09-22 11:31:46,977 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-22 11:31:50,809 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'HP Cooperative Marke' (SNo:26)'.
+2025-09-22 11:31:56,147 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-22 11:32:00,305 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'HP General Industrie' (SNo:27)'.
+2025-09-22 11:32:05,993 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-22 11:32:09,868 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'HP-HRTC-Manging Dire' (SNo:28)'.
+2025-09-22 11:32:15,244 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-22 11:32:19,258 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'HP Irrigation and Pu' (SNo:29)'.
+2025-09-22 11:32:34,038 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-22 11:32:38,004 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'HP Krishi Vishva Vid' (SNo:30)'.
+2025-09-22 11:32:43,396 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-22 11:32:47,344 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'HP Power Transmissio' (SNo:31)'.
+2025-09-22 11:32:53,025 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-22 11:32:56,962 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'HPSEBL' (SNo:32)'.
+2025-09-22 11:33:07,825 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-22 11:33:12,300 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'HP SIDC Limited' (SNo:33)'.
+2025-09-22 11:33:18,390 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-22 11:33:22,269 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'HP State Forest Deve' (SNo:34)'.
+2025-09-22 11:33:27,566 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-22 11:33:31,528 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Industries Departmen' (SNo:35)'.
+2025-09-22 11:33:36,827 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-22 11:33:41,102 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Municipal Corporatio' (SNo:36)'.
+2025-09-22 11:33:46,818 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-22 11:33:50,901 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Non Conventional Ene' (SNo:37)'.
+2025-09-22 11:33:56,142 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-22 11:34:00,408 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Printing and Station' (SNo:38)'.
+2025-09-22 11:34:05,686 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-22 11:34:09,954 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'PWD' (SNo:39)'.
+2025-09-22 11:34:48,580 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-22 11:34:52,564 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Ropeway and Rapid Tr' (SNo:40)'.
+2025-09-22 11:34:57,939 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-22 11:35:02,001 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Shimla Jal Prabandha' (SNo:41)'.
+2025-09-22 11:35:07,360 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-22 11:35:11,424 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Wool Fedration' (SNo:42)'.
+2025-09-22 11:35:16,696 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-22 11:35:19,735 - INFO - [Department Scrape:safe_quit_driver] Closing WebDriver instance...
+2025-09-22 11:35:21,912 - INFO - [Department Scrape:safe_quit_driver] WebDriver quit successfully.
+2025-09-22 11:39:57,924 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility v2.1.4 Starting ---
+2025-09-22 11:39:57,928 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2025-09-22 11:39:57,929 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2025-09-22 11:39:57,930 - INFO - [MainThread:setup_logging] Script Directory: G:\My Drive\0dev\BF 2.1.4
+2025-09-22 11:39:57,931 - INFO - [MainThread:setup_logging] Working Directory: G:\My Drive\0dev\BF 2.1.4
+2025-09-22 11:39:57,931 - INFO - [MainThread:check_package_versions] ✓ selenium 4.34.2 is available
+2025-09-22 11:39:58,337 - INFO - [MainThread:check_package_versions] ✓ pandas 2.3.1 is available
+2025-09-22 11:39:58,506 - INFO - [MainThread:check_package_versions] ✓ openpyxl 3.1.5 is available
+2025-09-22 11:39:58,752 - INFO - [MainThread:check_package_versions] ✓ requests 2.32.4 is available
+2025-09-22 11:39:58,763 - INFO - [MainThread:check_package_versions] ✓ pytesseract 0.3.13 is available
+2025-09-22 11:39:58,897 - INFO - [MainThread:check_package_versions] ✓ undetected_chromedriver 3.5.5 (optional) is available
+2025-09-22 11:39:58,901 - INFO - [MainThread:check_package_versions] ✓ webdriver_manager 4.0.2 (optional) is available
+2025-09-22 11:39:58,906 - INFO - [MainThread:import_application_components] Importing application components...
+2025-09-22 11:39:59,376 - INFO - [MainThread:import_application_components] Application components imported successfully
+2025-09-22 11:39:59,377 - INFO - [MainThread:<module>] 🚀 Starting GUI application initialization...
+2025-09-22 11:39:59,378 - INFO - [MainThread:load_and_validate_configurations] Loading base URL configurations from G:\My Drive\0dev\BF 2.1.4\base_urls.csv...
+2025-09-22 11:39:59,386 - INFO - [MainThread:load_base_urls] Loaded 12 base URL configurations from base_urls.csv.
+2025-09-22 11:39:59,387 - INFO - [MainThread:load_and_validate_configurations] ✓ Loaded 12 URL configurations
+2025-09-22 11:39:59,388 - INFO - [MainThread:load_and_validate_configurations] Loading application settings...
+2025-09-22 11:39:59,397 - INFO - [MainThread:load_settings] Settings loaded and merged with defaults from G:\My Drive\0dev\BF 2.1.4\settings.json
+2025-09-22 11:39:59,398 - INFO - [MainThread:load_and_validate_configurations] ✓ Settings loaded and validated
+2025-09-22 11:39:59,398 - INFO - [MainThread:<module>] Creating main application window...
+2025-09-22 11:39:59,468 - INFO - [MainThread:<module>] Creating MainWindow instance...
+2025-09-22 11:39:59,732 - INFO - [MainThread:<module>] ✓ Application initialization completed successfully
+2025-09-22 11:39:59,733 - INFO - [MainThread:<module>] 🎯 Starting main event loop...
+2025-09-22 11:40:56,489 - INFO - [MainThread:_start_fetch_departments_thread] Fetch Departments button clicked.
+2025-09-22 11:40:56,500 - INFO - [DeptFetchThread:setup_driver] Setting up Chrome WebDriver...
+2025-09-22 11:40:56,501 - INFO - [DeptFetchThread:setup_driver] Using standard ChromeDriver for better compatibility
+2025-09-22 11:40:56,502 - INFO - [DeptFetchThread:setup_driver] Setting download directory to: G:\My Drive\0dev\BF 2.1.4
+2025-09-22 11:40:56,503 - INFO - [DeptFetchThread:setup_driver] Installing ChromeDriver using webdriver-manager...
+2025-09-22 11:40:56,503 - INFO - [DeptFetchThread:log] ====== WebDriver manager ======
+2025-09-22 11:40:57,638 - INFO - [DeptFetchThread:log] Get LATEST chromedriver version for google-chrome
+2025-09-22 11:40:57,788 - INFO - [DeptFetchThread:log] Get LATEST chromedriver version for google-chrome
+2025-09-22 11:40:57,944 - INFO - [DeptFetchThread:log] Driver [C:\Users\kalia\.wdm\drivers\chromedriver\win64\140.0.7339.185\chromedriver-win32/chromedriver.exe] found in cache
+2025-09-22 11:40:57,946 - INFO - [DeptFetchThread:setup_driver] ChromeDriver installed successfully
+2025-09-22 11:40:57,947 - INFO - [DeptFetchThread:setup_driver] Creating Chrome WebDriver instance...
+2025-09-22 11:40:58,977 - INFO - [DeptFetchThread:setup_driver] Chrome WebDriver setup completed successfully
+2025-09-22 11:41:05,501 - INFO - [DeptFetchThread:safe_quit_driver] Closing WebDriver instance...
+2025-09-22 11:41:07,652 - INFO - [DeptFetchThread:safe_quit_driver] WebDriver quit successfully.

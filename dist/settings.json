@@ -18,5 +18,9 @@
     "CAPTCHA_CHECK_TIMEOUT": 4.0,
     "DOWNLOAD_WAIT_TIMEOUT": 5.0,
     "POPUP_WAIT_TIMEOUT": 8.0,
-    "POST_DOWNLOAD_CLICK_WAIT": 3.0
+    "POST_DOWNLOAD_CLICK_WAIT": 3.0,
+    "enable_sounds": true,
+    "sound_ding_file": "",
+    "sound_success_file": "",
+    "sound_error_file": ""
 }

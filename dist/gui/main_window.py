@@ -14,12 +14,14 @@ if (PROJECT_ROOT not in sys.path):
 
 # --- Import application components ---
 from gui import gui_utils
+from gui.gui_utils import EmergencyStopDialog
 from config import (
     APP_VERSION, APP_AUTHOR, DEFAULT_APP_NAME,
     CONFIGURABLE_TIMEOUTS, DEFAULT_THEME,
     USE_UNDETECTED_DRIVER_DEFAULT, HEADLESS_MODE_DEFAULT,
     DEEP_SCRAPE_DEPARTMENTS_DEFAULT,
-    AVAILABLE_THEMES, PRIMARY_COLOR, SECONDARY_COLOR, TEXT_COLOR, HOVER_COLOR  # added HOVER_COLOR
+    AVAILABLE_THEMES, PRIMARY_COLOR, SECONDARY_COLOR, TEXT_COLOR, HOVER_COLOR,  # added HOVER_COLOR
+    LOG_DIR_NAME, BASE_URLS_FILENAME
 )
 from app_settings import FALLBACK_URL_CONFIG, save_settings, DEFAULT_SETTINGS_STRUCTURE
 from gui.tab_department import DepartmentTab
@@ -156,6 +158,16 @@ class MainWindow:
             initial_url_name = valid_url_names[0] if valid_url_names else FALLBACK_URL_CONFIG["Name"]
         self.selected_url_name_var = StringVar(value=initial_url_name)
 
+        # Sound settings variables
+        self.enable_sounds_var = BooleanVar(value=self.settings.get("enable_sounds", True))
+        self.sound_ding_var = StringVar(value=self.settings.get("sound_ding_file", ""))
+        self.sound_success_var = StringVar(value=self.settings.get("sound_success_file", ""))
+        self.sound_error_var = StringVar(value=self.settings.get("sound_error_file", ""))
+
+        # Additional paths needed for settings tab
+        self.abs_log_dir = os.path.join(os.path.dirname(self.settings_filepath), LOG_DIR_NAME)
+        self.abs_base_urls_file = os.path.join(os.path.dirname(self.settings_filepath), BASE_URLS_FILENAME)
+
     def _configure_window(self):
         """Configure main window properties."""
         self.root.configure(bg="#f5f7fa")
@@ -226,7 +238,8 @@ class MainWindow:
         style.map('Accent.TButton', background=[("active", HOVER_COLOR), ('disabled', '#B0BEC5')])
 
         # Stop Button style
-        style.configure("Danger.TButton", foreground="#FFFFFF", background="#C62828", font=self.button_font)
+        self.stop_button_font = tkFont.Font(family="Segoe UI", size=9, weight="bold")
+        style.configure("Danger.TButton", foreground="#FFFFFF", background="#C62828", font=self.stop_button_font)
         style.map("Danger.TButton", background=[("active", "#E53935"), ('disabled', '#EF9A9A')])
 
         # Progress bar and status area style
@@ -315,7 +328,7 @@ class MainWindow:
         global_panel_height = self.global_panel.winfo_reqheight() + 5
         # Calculate status bar height after it's created
         # --- Status Bar ---
-        status_frame = ttk.Frame(self.root, style='Status.TFrame', height=40)
+        status_frame = ttk.Frame(self.root, style='Status.TFrame', height=44)  # Increased by 10% from 40 to 44
         status_frame.pack(side=tk.BOTTOM, fill=tk.X)
         status_frame.pack_propagate(False)  # Prevent shrinking
 
@@ -329,12 +342,12 @@ class MainWindow:
         self.timer_label.pack(side=tk.LEFT, padx=5, pady=8)
         self.stop_button = ttk.Button(
             status_frame,
-            text="STOP",
+            text="EMERGENCY STOP",
             command=self.request_stop_scraping,
             style="Danger.TButton",
-            width=8
+            width=15
         )
-        self.stop_button.pack(side=tk.RIGHT, padx=(10, 18), pady=8)
+        self.stop_button.pack(side=tk.RIGHT, padx=(2, 5), pady=4)
 
         self.content_frame.update_idletasks()
         status_bar_height = status_frame.winfo_reqheight()
@@ -560,6 +573,12 @@ class MainWindow:
         self.settings["use_undetected_driver"] = self.use_undetected_driver_var.get()
         self.settings["headless_mode"] = self.headless_mode_var.get()
 
+        # Sound settings
+        self.settings["enable_sounds"] = self.enable_sounds_var.get()
+        self.settings["sound_ding_file"] = self.sound_ding_var.get()
+        self.settings["sound_success_file"] = self.sound_success_var.get()
+        self.settings["sound_error_file"] = self.sound_error_var.get()
+
         # Handle timeout values - properly preserve float values
         for key, var in self.timeout_vars.items():
             try:
@@ -575,7 +594,7 @@ class MainWindow:
             if self.root.winfo_exists():
                 self.settings["window_geometry"] = self.root.geometry()
         except tk.TclError:
-            logger.warning("Could not get window geometry, possibly already closed.")
+            logger.warning("Could not get window geometry, possibly already be closed.")
 
         save_settings(self.settings, self.settings_filepath)
         self.update_log("Settings saved.")
@@ -586,17 +605,20 @@ class MainWindow:
             args = ()
         if kwargs is None:
             kwargs = {}
-            
+
+        # Set scraping in progress and disable controls before starting the task
+        self.scraping_in_progress = True
+        self.set_controls_state(tk.DISABLED)
+
         def task_wrapper():
             driver = None
             try:
                 # Create WebDriver instance for this task
                 driver = setup_driver(initial_download_dir=self.download_dir_var.get())
-                
+
                 # Start timer for task
                 self.root.after(0, self.start_timer_updates)
-                self.scraping_in_progress = True
-                
+
                 # Add common args
                 full_kwargs = {
                     'driver': driver,
@@ -611,10 +633,10 @@ class MainWindow:
                     'dl_notice_pdfs': self.dl_notice_pdfs_var.get(),
                     **kwargs
                 }
-                
+
                 # Run the task
                 func(*args, **full_kwargs)
-                
+
             except Exception as e:
                 self.update_log(f"Error in {task_name}: {e}")
                 logger.error(f"Error in {task_name}", exc_info=True)
@@ -707,15 +729,59 @@ class MainWindow:
         self.root.focus_force()
 
     def request_stop_scraping(self):
-        """Sets the stop event for the background thread."""
-        if self.scraping_in_progress and self.background_thread and self.background_thread.is_alive():
+        """Shows emergency stop dialog with options for the current running process."""
+        if not self.scraping_in_progress:
+            self.update_log("Stop requested but no task is running.")
+            return
+
+        # Show the emergency stop dialog
+        dialog = EmergencyStopDialog(self.root, self)
+        result = dialog.show()
+
+        if result == "kill":
+            # Force kill the process
+            self._kill_current_process()
+        elif result == "pause":
+            # Pause the process (for now, treat as stop)
+            self._pause_current_process()
+        elif result == "cancel":
+            # Cancel - do nothing
+            self.update_log("Emergency stop cancelled by user.")
+        else:
+            # Dialog was closed without selection
+            self.update_log("Emergency stop dialog closed without action.")
+
+    def _kill_current_process(self):
+        """Force kill the current running process."""
+        if self.background_thread and self.background_thread.is_alive():
+            try:
+                # Note: In Python, we can't forcefully terminate threads easily
+                # This will set the stop event and log the kill request
+                self.stop_event.set()
+                self.update_status("Kill requested...")
+                self.update_log("Kill request sent to background task - attempting forceful termination.")
+                # For more forceful termination, we could use process-based approach
+                # but for now, we'll rely on the stop event
+                self.stop_button.config(state=tk.DISABLED)
+                self.root.after(2000, lambda: self.stop_button.config(state=tk.NORMAL) if not self.scraping_in_progress else None)
+            except Exception as e:
+                self.update_log(f"Error during kill operation: {e}")
+                logger.error(f"Kill operation error: {e}")
+        else:
+            self.update_log("Kill requested but no task is running.")
+
+    def _pause_current_process(self):
+        """Pause the current running process."""
+        # For now, implement pause as a graceful stop
+        # TODO: Implement actual pause functionality if needed
+        if self.background_thread and self.background_thread.is_alive():
             self.stop_event.set()
-            self.update_status("Stop requested...")
-            self.update_log("Stop request sent to background task.")
+            self.update_status("Pause requested...")
+            self.update_log("Pause request sent to background task - stopping gracefully.")
             self.stop_button.config(state=tk.DISABLED)
             self.root.after(2000, lambda: self.stop_button.config(state=tk.NORMAL) if not self.scraping_in_progress else None)
         else:
-            self.update_log("Stop requested but no task is running.")
+            self.update_log("Pause requested but no task is running.")
 
     def set_controls_state(self, state):
         """Enable or disable main interaction controls based on state (tk.NORMAL or tk.DISABLED)."""

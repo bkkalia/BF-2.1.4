@@ -2257,3 +2257,107 @@ urllib3.exceptions.MaxRetryError: HTTPConnectionPool(host='localhost', port=5549
 2025-09-20 18:22:26,979 - INFO - [MainThread:<module>] Creating MainWindow instance...
 2025-09-20 18:22:27,245 - INFO - [MainThread:<module>] ✓ Application initialization completed successfully
 2025-09-20 18:22:27,246 - INFO - [MainThread:<module>] 🎯 Starting main event loop...
+2025-09-20 19:04:30,180 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility v2.1.4 Starting ---
+2025-09-20 19:04:30,186 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2025-09-20 19:04:30,186 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2025-09-20 19:04:30,187 - INFO - [MainThread:setup_logging] Script Directory: G:\My Drive\0dev\BF 2.1.4
+2025-09-20 19:04:30,188 - INFO - [MainThread:setup_logging] Working Directory: g:\My Drive\0dev\BF 2.1.4
+2025-09-20 19:04:30,189 - INFO - [MainThread:check_package_versions] ✓ selenium 4.34.2 is available
+2025-09-20 19:04:30,581 - INFO - [MainThread:check_package_versions] ✓ pandas 2.3.1 is available
+2025-09-20 19:04:30,753 - INFO - [MainThread:check_package_versions] ✓ openpyxl 3.1.5 is available
+2025-09-20 19:04:31,004 - INFO - [MainThread:check_package_versions] ✓ requests 2.32.4 is available
+2025-09-20 19:04:31,018 - INFO - [MainThread:check_package_versions] ✓ pytesseract 0.3.13 is available
+2025-09-20 19:04:31,144 - INFO - [MainThread:check_package_versions] ✓ undetected_chromedriver 3.5.5 (optional) is available
+2025-09-20 19:04:31,147 - INFO - [MainThread:check_package_versions] ✓ webdriver_manager 4.0.2 (optional) is available
+2025-09-20 19:04:31,151 - INFO - [MainThread:import_application_components] Importing application components...
+2025-09-20 19:04:31,486 - INFO - [MainThread:import_application_components] Application components imported successfully
+2025-09-20 19:04:31,487 - INFO - [MainThread:<module>] 🚀 Starting GUI application initialization...
+2025-09-20 19:04:31,487 - INFO - [MainThread:load_and_validate_configurations] Loading base URL configurations from G:\My Drive\0dev\BF 2.1.4\base_urls.csv...
+2025-09-20 19:04:31,513 - INFO - [MainThread:load_base_urls] Loaded 12 base URL configurations from base_urls.csv.
+2025-09-20 19:04:31,514 - INFO - [MainThread:load_and_validate_configurations] ✓ Loaded 12 URL configurations
+2025-09-20 19:04:31,515 - INFO - [MainThread:load_and_validate_configurations] Loading application settings...
+2025-09-20 19:04:31,526 - INFO - [MainThread:load_settings] Settings loaded and merged with defaults from G:\My Drive\0dev\BF 2.1.4\settings.json
+2025-09-20 19:04:31,527 - INFO - [MainThread:load_and_validate_configurations] ✓ Settings loaded and validated
+2025-09-20 19:04:31,528 - INFO - [MainThread:<module>] Creating main application window...
+2025-09-20 19:04:31,571 - INFO - [MainThread:<module>] Creating MainWindow instance...
+2025-09-20 19:04:31,826 - INFO - [MainThread:<module>] ✓ Application initialization completed successfully
+2025-09-20 19:04:31,827 - INFO - [MainThread:<module>] 🎯 Starting main event loop...
+2025-09-20 19:08:08,918 - INFO - [MainThread:_start_fetch_departments_thread] Fetch Departments button clicked.
+2025-09-20 19:08:08,926 - INFO - [DeptFetchThread:setup_driver] Setting up Chrome WebDriver...
+2025-09-20 19:08:08,927 - INFO - [DeptFetchThread:setup_driver] Using standard ChromeDriver for better compatibility
+2025-09-20 19:08:08,928 - INFO - [DeptFetchThread:setup_driver] Setting download directory to: g:\My Drive\0dev\BF 2.1.4
+2025-09-20 19:08:08,929 - INFO - [DeptFetchThread:setup_driver] Installing ChromeDriver using webdriver-manager...
+2025-09-20 19:08:08,930 - INFO - [DeptFetchThread:log] ====== WebDriver manager ======
+2025-09-20 19:08:10,100 - INFO - [DeptFetchThread:log] Get LATEST chromedriver version for google-chrome
+2025-09-20 19:08:10,304 - INFO - [DeptFetchThread:log] Get LATEST chromedriver version for google-chrome
+2025-09-20 19:08:10,485 - INFO - [DeptFetchThread:log] Driver [C:\Users\kalia\.wdm\drivers\chromedriver\win64\140.0.7339.185\chromedriver-win32/chromedriver.exe] found in cache
+2025-09-20 19:08:10,487 - INFO - [DeptFetchThread:setup_driver] ChromeDriver installed successfully
+2025-09-20 19:08:10,488 - INFO - [DeptFetchThread:setup_driver] Creating Chrome WebDriver instance...
+2025-09-20 19:08:12,215 - INFO - [DeptFetchThread:setup_driver] Chrome WebDriver setup completed successfully
+2025-09-20 19:08:20,298 - INFO - [DeptFetchThread:safe_quit_driver] Closing WebDriver instance...
+2025-09-20 19:08:22,434 - INFO - [DeptFetchThread:safe_quit_driver] WebDriver quit successfully.
+2025-09-20 19:10:36,351 - INFO - [MainThread:_get_all_valid_departments] Starting scraping for ALL 43 valid departments (filtered from 43 total).
+2025-09-20 19:10:36,354 - INFO - [Department Scrape:setup_driver] Setting up Chrome WebDriver...
+2025-09-20 19:10:36,355 - INFO - [Department Scrape:setup_driver] Using standard ChromeDriver for better compatibility
+2025-09-20 19:10:36,356 - INFO - [Department Scrape:setup_driver] Setting download directory to: C:\Users\kalia\Downloads
+2025-09-20 19:10:36,356 - INFO - [Department Scrape:setup_driver] Installing ChromeDriver using webdriver-manager...
+2025-09-20 19:10:36,357 - INFO - [Department Scrape:log] ====== WebDriver manager ======
+2025-09-20 19:10:37,500 - INFO - [Department Scrape:log] Get LATEST chromedriver version for google-chrome
+2025-09-20 19:10:37,654 - INFO - [Department Scrape:log] Get LATEST chromedriver version for google-chrome
+2025-09-20 19:10:37,789 - INFO - [Department Scrape:log] Driver [C:\Users\kalia\.wdm\drivers\chromedriver\win64\140.0.7339.185\chromedriver-win32/chromedriver.exe] found in cache
+2025-09-20 19:10:37,791 - INFO - [Department Scrape:setup_driver] ChromeDriver installed successfully
+2025-09-20 19:10:37,793 - INFO - [Department Scrape:setup_driver] Creating Chrome WebDriver instance...
+2025-09-20 19:10:38,820 - INFO - [Department Scrape:setup_driver] Chrome WebDriver setup completed successfully
+2025-09-20 19:10:42,239 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Baddi Barotiwala Nal' (SNo:1)'.
+2025-09-20 19:10:47,792 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-20 19:10:51,806 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept Link 'Chief Project Direct' (SNo:2)'.
+2025-09-20 19:10:58,092 - INFO - [Department Scrape:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-20 19:11:00,983 - INFO - [Department Scrape:safe_quit_driver] Closing WebDriver instance...
+2025-09-20 19:11:03,142 - INFO - [Department Scrape:safe_quit_driver] WebDriver quit successfully.
+2025-09-20 19:14:09,598 - INFO - [MainThread:on_closing] Close requested.
+2025-09-20 19:14:09,600 - INFO - [MainThread:_save_current_settings_and_show_message] Saving current settings...
+2025-09-20 19:14:09,601 - ERROR - [MainThread:on_closing] Failed to save settings on exit: invalid literal for int() with base 10: '10.0'
+2025-09-20 19:14:09,698 - INFO - [MainThread:on_closing] Tkinter root window destroyed.
+2025-09-20 19:14:09,699 - INFO - [MainThread:on_closing] --- Application Shutdown Sequence Complete ---
+2025-09-20 19:14:09,700 - INFO - [MainThread:<module>] Main event loop ended normally
+2025-09-20 19:14:09,700 - INFO - [MainThread:<module>] 🛑 Application shutdown initiated...
+2025-09-20 19:14:09,701 - INFO - [MainThread:_save_current_settings] Saving current settings...
+2025-09-20 19:14:09,701 - WARNING - [MainThread:_save_current_settings] Could not get window geometry, possibly already be closed.
+2025-09-20 19:14:09,727 - INFO - [MainThread:save_settings] Settings saved successfully to G:\My Drive\0dev\BF 2.1.4\settings.json
+2025-09-20 19:14:09,728 - INFO - [MainThread:<module>] ✅ Application shutdown completed successfully
+2025-09-20 19:46:46,970 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility v2.1.4 Starting ---
+2025-09-20 19:46:46,978 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2025-09-20 19:46:46,979 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2025-09-20 19:46:46,979 - INFO - [MainThread:setup_logging] Script Directory: G:\My Drive\0dev\BF 2.1.4
+2025-09-20 19:46:46,980 - INFO - [MainThread:setup_logging] Working Directory: G:\My Drive\0dev\BF 2.1.4
+2025-09-20 19:46:46,980 - INFO - [MainThread:check_package_versions] ✓ selenium 4.34.2 is available
+2025-09-20 19:46:47,473 - INFO - [MainThread:check_package_versions] ✓ pandas 2.3.1 is available
+2025-09-20 19:46:47,699 - INFO - [MainThread:check_package_versions] ✓ openpyxl 3.1.5 is available
+2025-09-20 19:46:47,967 - INFO - [MainThread:check_package_versions] ✓ requests 2.32.4 is available
+2025-09-20 19:46:47,982 - INFO - [MainThread:check_package_versions] ✓ pytesseract 0.3.13 is available
+2025-09-20 19:46:48,144 - INFO - [MainThread:check_package_versions] ✓ undetected_chromedriver 3.5.5 (optional) is available
+2025-09-20 19:46:48,148 - INFO - [MainThread:check_package_versions] ✓ webdriver_manager 4.0.2 (optional) is available
+2025-09-20 19:46:48,152 - INFO - [MainThread:import_application_components] Importing application components...
+2025-09-20 19:46:48,511 - INFO - [MainThread:import_application_components] Application components imported successfully
+2025-09-20 19:46:48,512 - INFO - [MainThread:<module>] 🚀 Starting GUI application initialization...
+2025-09-20 19:46:48,512 - INFO - [MainThread:load_and_validate_configurations] Loading base URL configurations from G:\My Drive\0dev\BF 2.1.4\base_urls.csv...
+2025-09-20 19:46:48,521 - INFO - [MainThread:load_base_urls] Loaded 12 base URL configurations from base_urls.csv.
+2025-09-20 19:46:48,521 - INFO - [MainThread:load_and_validate_configurations] ✓ Loaded 12 URL configurations
+2025-09-20 19:46:48,522 - INFO - [MainThread:load_and_validate_configurations] Loading application settings...
+2025-09-20 19:46:48,535 - INFO - [MainThread:load_settings] Settings loaded and merged with defaults from G:\My Drive\0dev\BF 2.1.4\settings.json
+2025-09-20 19:46:48,536 - INFO - [MainThread:load_and_validate_configurations] ✓ Settings loaded and validated
+2025-09-20 19:46:48,536 - INFO - [MainThread:<module>] Creating main application window...
+2025-09-20 19:46:48,597 - INFO - [MainThread:<module>] Creating MainWindow instance...
+2025-09-20 19:46:48,891 - INFO - [MainThread:<module>] ✓ Application initialization completed successfully
+2025-09-20 19:46:48,892 - INFO - [MainThread:<module>] 🎯 Starting main event loop...
+2025-09-20 19:47:21,870 - INFO - [MainThread:on_closing] Close requested.
+2025-09-20 19:47:21,871 - INFO - [MainThread:_save_current_settings_and_show_message] Saving current settings...
+2025-09-20 19:47:21,872 - ERROR - [MainThread:on_closing] Failed to save settings on exit: invalid literal for int() with base 10: '10.0'
+2025-09-20 19:47:22,003 - INFO - [MainThread:on_closing] Tkinter root window destroyed.
+2025-09-20 19:47:22,004 - INFO - [MainThread:on_closing] --- Application Shutdown Sequence Complete ---
+2025-09-20 19:47:22,005 - INFO - [MainThread:<module>] Main event loop ended normally
+2025-09-20 19:47:22,005 - INFO - [MainThread:<module>] 🛑 Application shutdown initiated...
+2025-09-20 19:47:22,006 - INFO - [MainThread:_save_current_settings] Saving current settings...
+2025-09-20 19:47:22,007 - WARNING - [MainThread:_save_current_settings] Could not get window geometry, possibly already be closed.
+2025-09-20 19:47:22,031 - INFO - [MainThread:save_settings] Settings saved successfully to G:\My Drive\0dev\BF 2.1.4\settings.json
+2025-09-20 19:47:22,032 - INFO - [MainThread:<module>] ✅ Application shutdown completed successfully

@@ -11,113 +11,123 @@ class HelpTab(ttk.Frame):
         self._create_widgets()
 
     def _create_widgets(self):
-        # Create notebook for User/Developer tabs
+        # Create notebook for multiple help tabs
         self.notebook = ttk.Notebook(self)
         self.notebook.pack(fill=tk.BOTH, expand=True, padx=10, pady=5)
 
-        # User Help Tab
-        self.user_help = ttk.Frame(self.notebook)
-        self.notebook.add(self.user_help, text="User Guide")
-        self._create_user_help()
+        # Project Scope & Goal Tab
+        self.project_scope = ttk.Frame(self.notebook)
+        self.notebook.add(self.project_scope, text="Project Scope & Goal")
+        self._create_project_scope()
+
+        # Changelog Tab
+        self.changelog = ttk.Frame(self.notebook)
+        self.notebook.add(self.changelog, text="Changelog")
+        self._create_changelog()
+
+        # End User Help Tab
+        self.end_user_help = ttk.Frame(self.notebook)
+        self.notebook.add(self.end_user_help, text="End User Help")
+        self._create_end_user_help()
+
+        # Roadmap Tab
+        self.roadmap = ttk.Frame(self.notebook)
+        self.notebook.add(self.roadmap, text="Roadmap")
+        self._create_roadmap()
 
         # Developer Help Tab
         self.dev_help = ttk.Frame(self.notebook)
-        self.notebook.add(self.dev_help, text="Developer Guide")
+        self.notebook.add(self.dev_help, text="Developer Help")
         self._create_developer_help()
-
-    def _create_user_help(self):
-        """Create user help content"""
-        # Header
-        header = ttk.Label(self.user_help, 
-                          text="Black Forest Tender Scraper - User Guide",
-                          font=self.main_app.heading_font)
-        header.pack(pady=10)
-
-        # Create scrolled text widget for user documentation
-        self.user_text = ScrolledText(self.user_help, 
-                                    wrap=tk.WORD, 
-                                    font=("Segoe UI", 10),
-                                    padx=10, pady=10)
-        self.user_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
-        self.user_text.insert(tk.END, self._get_user_help_content())
-        self.user_text.config(state=tk.DISABLED)
 
     def _create_developer_help(self):
         """Create developer help content"""
         # Header
-        header = ttk.Label(self.dev_help, 
+        header = ttk.Label(self.dev_help,
                           text="Developer Documentation",
                           font=self.main_app.heading_font)
         header.pack(pady=10)
 
         # Create scrolled text widget for developer documentation
-        self.dev_text = ScrolledText(self.dev_help, 
-                                   wrap=tk.WORD, 
+        self.dev_text = ScrolledText(self.dev_help,
+                                   wrap=tk.WORD,
                                    font=("Consolas", 10),
                                    padx=10, pady=10)
         self.dev_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
         self.dev_text.insert(tk.END, self._get_developer_help_content())
         self.dev_text.config(state=tk.DISABLED)
 
-    def _get_user_help_content(self):
-        return """
-Black Forest Tender Scraper - User Guide
-======================================
+    def _load_md_file(self, filename):
+        """Load content from a markdown file."""
+        try:
+            with open(filename, 'r', encoding='utf-8') as f:
+                return f.read()
+        except Exception as e:
+            return f"Error loading {filename}: {e}"
 
-1. Getting Started
------------------
-- Install required dependencies using requirements.txt
-- Launch the application
-- Configure download directory in Settings tab
+    def _create_project_scope(self):
+        """Create project scope content from PROJECT_CONTEXT.md"""
+        header = ttk.Label(self.project_scope,
+                          text="Project Scope & Goal",
+                          font=self.main_app.heading_font)
+        header.pack(pady=10)
 
-2. Scraping Methods
-------------------
-a) By Department:
-   - Select departments from the list
-   - Click "Fetch Departments" to update
-   - Select desired departments
-   - Click "Start Scraping" to begin
+        text = ScrolledText(self.project_scope,
+                           wrap=tk.WORD,
+                           font=("Segoe UI", 10),
+                           padx=10, pady=10)
+        text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+        content = self._load_md_file("PROJECT_CONTEXT.md")
+        text.insert(tk.END, content)
+        text.config(state=tk.DISABLED)
 
-b) By Tender ID:
-   - Enter or paste tender IDs
-   - Import IDs from:
-     * Image (screenshot)
-     * Excel file
-     * Text file
-     * PDF file
-   - Click "Start Search by ID"
+    def _create_changelog(self):
+        """Create changelog content from CHANGELOG.md"""
+        header = ttk.Label(self.changelog,
+                          text="Changelog",
+                          font=self.main_app.heading_font)
+        header.pack(pady=10)
 
-c) By Direct URL:
-   - Enter tender URLs directly
-   - Click "Process URLs"
+        text = ScrolledText(self.changelog,
+                           wrap=tk.WORD,
+                           font=("Segoe UI", 10),
+                           padx=10, pady=10)
+        text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+        content = self._load_md_file("CHANGELOG.md")
+        text.insert(tk.END, content)
+        text.config(state=tk.DISABLED)
 
-3. Settings
-----------
-- Download Directory: Where files are saved
-- Portal Selection: Choose tender portal
-- Advanced Options:
-  * Deep Scrape
-  * Download Options
-  * Theme Selection
-  * Browser Options
+    def _create_end_user_help(self):
+        """Create end user help content from GUI_HELP.md"""
+        header = ttk.Label(self.end_user_help,
+                          text="End User Help",
+                          font=self.main_app.heading_font)
+        header.pack(pady=10)
 
-4. Features
-----------
-- Multi-threaded scraping
-- Progress tracking
-- Error handling
-- File format support:
-  * Excel exports
-  * PDF downloads
-  * ZIP archives
+        text = ScrolledText(self.end_user_help,
+                           wrap=tk.WORD,
+                           font=("Segoe UI", 10),
+                           padx=10, pady=10)
+        text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+        content = self._load_md_file("GUI_HELP.md")
+        text.insert(tk.END, content)
+        text.config(state=tk.DISABLED)
 
-5. Troubleshooting
------------------
-- Check console output for errors
-- Verify internet connection
-- Ensure Chrome browser is installed
-- Check download directory permissions
-"""
+    def _create_roadmap(self):
+        """Create roadmap content from ROADMAP.md"""
+        header = ttk.Label(self.roadmap,
+                          text="Roadmap",
+                          font=self.main_app.heading_font)
+        header.pack(pady=10)
+
+        text = ScrolledText(self.roadmap,
+                           wrap=tk.WORD,
+                           font=("Segoe UI", 10),
+                           padx=10, pady=10)
+        text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+        content = self._load_md_file("ROADMAP.md")
+        text.insert(tk.END, content)
+        text.config(state=tk.DISABLED)
 
     def _get_developer_help_content(self):
         return """
