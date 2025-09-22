@@ -278,6 +278,11 @@ class MainWindow:
             btn.pack(fill=tk.X, pady=(10 if idx == 0 else 2, 0), padx=10)
             self.sidebar_buttons[label] = btn
 
+        # CLI Mode button below Logs
+        cli_button = ttk.Button(sidebar_frame, text="CLI Mode", style='Sidebar.TButton', command=self.launch_cli_mode)
+        cli_button.pack(fill=tk.X, pady=(10, 0), padx=10)
+        self.sidebar_buttons["CLI Mode"] = cli_button
+
         # Exit button at the bottom of sidebar
         exit_button = ttk.Button(sidebar_frame, text="Exit", style='Sidebar.TButton', command=self.on_closing)
         exit_button.pack(side=tk.BOTTOM, fill=tk.X, padx=10, pady=(10, 20))
@@ -399,6 +404,7 @@ class MainWindow:
         self.log_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
         self.status_label = ttk.Label(logs_frame, text="Status: Initializing...", font=self.status_font, anchor="w")
         self.status_label.pack(fill=tk.X, padx=5, pady=(5, 0))
+
         self.section_frames["Logs"] = logs_container
         logs_container.place(relx=0, rely=0, relwidth=1, relheight=1)
         logs_container.lower()
@@ -966,3 +972,35 @@ class MainWindow:
         self.processed_count = 0
         self.total_count = 0
         self.start_time = None
+
+    def launch_cli_mode(self):
+        """Launch CLI mode in a new console window with interactive prompt."""
+        import subprocess
+        import sys
+        import os
+        try:
+            exe_dir = os.path.dirname(sys.executable) if getattr(sys, 'frozen', False) else os.path.dirname(__file__)
+
+            # Check if separate CLI EXE exists
+            cli_exe_path = os.path.join(exe_dir, 'BlackForest_CLI.exe')
+            if os.path.exists(cli_exe_path):
+                # Use separate CLI EXE
+                cmd = [cli_exe_path]
+            elif getattr(sys, 'frozen', False):
+                # Running as compiled EXE
+                exe = sys.executable
+                cmd = [exe]
+            else:
+                # Running as script
+                cmd = [sys.executable, 'main.py']
+
+            # Set environment variable to indicate interactive CLI mode
+            env = os.environ.copy()
+            env['BLACKFOREST_CLI_MODE'] = 'interactive'
+
+            # Launch in new console window on Windows
+            subprocess.Popen(cmd, creationflags=subprocess.CREATE_NEW_CONSOLE, env=env)
+            self.update_log("CLI mode launched - type commands in the console window")
+        except Exception as e:
+            self.update_log(f"Failed to launch CLI: {e}")
+            logger.error(f"CLI launch error: {e}")

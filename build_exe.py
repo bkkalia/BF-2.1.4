@@ -77,7 +77,7 @@ if __name__ == '__main__':
 
 def build_hybrid():
     """Build hybrid launcher EXE + Python files"""
-    print("Building Hybrid Launcher")
+    print("Building Hybrid Windowed GUI Application")
     print("=" * 50)
 
     # Ensure we're in the correct directory
@@ -91,47 +91,73 @@ def build_hybrid():
     # Clean previous builds
     build_dir = script_dir / 'build'
     if build_dir.exists():
-        shutil.rmtree(build_dir)
+        # Retry cleanup in case files are locked
+        import time
+        max_retries = 5
+        for attempt in range(max_retries):
+            try:
+                shutil.rmtree(build_dir)
+                break
+            except PermissionError as e:
+                if attempt < max_retries - 1:
+                    print(f"Build directory locked, retrying cleanup in 2 seconds... (attempt {attempt + 1}/{max_retries})")
+                    time.sleep(2)
+                else:
+                    print(f"Failed to clean build directory after {max_retries} attempts: {e}")
+                    return False
 
-    spec_file = script_dir / 'BlackForest_Launcher.spec'
+    spec_file = script_dir / 'BlackForest.spec'
     if spec_file.exists():
         spec_file.unlink()
 
-    # Step 1: Create launcher script
+    # Step 1: Create small launcher script
     print("\\n1. Creating launcher script...")
     create_launcher()
 
-    # Step 2: Build small launcher EXE
-    print("\\n2. Building launcher EXE...")
-    pyinstaller_cmd = [
-        sys.executable, '-m', 'PyInstaller',  # Use Python module
-        '--name=BlackForest_Launcher',
-        '--onefile',  # Small single EXE
-        '--console',  # Console mode for CLI
-        '--clean',    # Clean cache
-        '--noconfirm', # Don't ask for confirmation
-        'blackforest_launcher.py'
+    # Step 2: Build small launcher EXE (not the main app)
+    print("\\n2. Building small launcher EXE...")
+    launcher_cmd = [
+        sys.executable, '-m', 'PyInstaller',
+        '--name=BlackForest',
+        '--onefile',  # Single small EXE
+        '--windowed',  # Windowed mode - no console for launcher
+        '--clean',
+        '--noconfirm',
+        'blackforest_launcher.py'  # Build the launcher, not main.py
     ]
 
     try:
-        subprocess.run(pyinstaller_cmd, check=True)
-        print("Launcher EXE built successfully")
+        subprocess.run(launcher_cmd, check=True)
+        print("Small launcher EXE built successfully")
     except subprocess.CalledProcessError as e:
         print(f"Error building launcher: {e}")
         return False
 
-    # Step 3: Copy launcher to dist
-    launcher_exe = script_dir / 'dist' / 'BlackForest_Launcher.exe'
+    # Step 3: Copy built launcher EXE to dist
+    launcher_exe = script_dir / 'dist' / 'BlackForest.exe'
     if launcher_exe.exists():
         final_exe = dist_dir / 'BlackForest.exe'
-        shutil.copy2(launcher_exe, final_exe)
-        print(f"Copied launcher to: {final_exe}")
+        # Retry copy operation in case file is locked by another process
+        import time
+        max_retries = 5
+        for attempt in range(max_retries):
+            try:
+                shutil.copy2(launcher_exe, final_exe)
+                print(f"Copied launcher to: {final_exe}")
+                break
+            except PermissionError as e:
+                if attempt < max_retries - 1:
+                    print(f"File locked, retrying in 2 seconds... (attempt {attempt + 1}/{max_retries})")
+                    time.sleep(2)
+                else:
+                    print(f"Failed to copy after {max_retries} attempts: {e}")
+                    return False
 
-    # Step 4: Copy all Python files and resources
-    print("\\n3. Copying application files...")
+    # Step 3: Copy additional Python files and resources (for CLI functionality)
+    print("\\n2. Copying additional application files...")
 
     files_to_copy = [
-        # Core files
+        # Core files (for CLI and additional functionality)
         'main.py',
         'cli_parser.py',
         'cli_runner.py',
@@ -182,34 +208,31 @@ def build_hybrid():
             copied_files += file_count
             print(f"  {dir_name}/ ({file_count} files)")
 
-    # Step 5: Create README for distribution
+    # Step 4: Create README for distribution
     create_distribution_readme(dist_dir)
 
-    # Step 6: Clean up temporary files
-    print("\\n4. Cleaning up...")
-    if (script_dir / 'blackforest_launcher.py').exists():
-        (script_dir / 'blackforest_launcher.py').unlink()
-
-    if (script_dir / 'BlackForest_Launcher.spec').exists():
-        (script_dir / 'BlackForest_Launcher.spec').unlink()
-
+    # Step 5: Clean up temporary files
+    print("\\n3. Cleaning up...")
     # Remove PyInstaller temp directories
     if build_dir.exists():
         shutil.rmtree(build_dir)
 
-    if (script_dir / 'dist' / 'BlackForest_Launcher.exe').exists():
-        (script_dir / 'dist' / 'BlackForest_Launcher.exe').unlink()
+    if (script_dir / 'dist' / 'BlackForest.exe').exists():
+        (script_dir / 'dist' / 'BlackForest.exe').unlink()
+
+    if (script_dir / 'BlackForest.spec').exists():
+        (script_dir / 'BlackForest.spec').unlink()
 
     print("\\n" + "=" * 50)
-    print("HYBRID BUILD COMPLETED SUCCESSFULLY!")
+    print("WINDOWED GUI BUILD COMPLETED SUCCESSFULLY!")
     print("=" * 50)
     print(f"Distribution directory: {dist_dir}")
     print(f"Files copied: {copied_files}")
     print(f"Estimated size: {get_dir_size(dist_dir):.1f} MB")
     print("\\nUsage:")
-    print("  BlackForest.exe department --all")
-    print("  BlackForest.exe urls")
-    print("  BlackForest.exe --url 'etenders' department --all")
+    print("  Double-click BlackForest.exe (GUI mode)")
+    print("  BlackForest.exe department --all (CLI mode)")
+    print("  BlackForest.exe urls (CLI mode)")
     print("\\nFor Windows Task Scheduler:")
     print("  Use BlackForest.exe in batch files or scheduled tasks")
 
@@ -350,6 +373,194 @@ def build_portable():
     except subprocess.CalledProcessError as e:
         print(f"Error building portable: {e}")
 
+def build_gui():
+    """Build GUI-only EXE (--windowed, no console)"""
+    print("Building GUI EXE (--windowed)")
+    print("=" * 50)
+
+    script_dir = Path(__file__).parent
+    os.chdir(script_dir)
+
+    dist_dir = script_dir / 'dist_gui'
+    dist_dir.mkdir(exist_ok=True)
+
+    # Clean previous builds
+    build_dir = script_dir / 'build'
+    if build_dir.exists():
+        shutil.rmtree(build_dir)
+
+    spec_file = script_dir / 'BlackForest_GUI.spec'
+    if spec_file.exists():
+        spec_file.unlink()
+
+    # Build GUI EXE
+    pyinstaller_cmd = [
+        sys.executable, '-m', 'PyInstaller',
+        '--name=BlackForest_GUI',
+        '--onefile',
+        '--windowed',  # No console window
+        '--clean',
+        '--noconfirm',
+        '--add-data=base_urls.csv;.',
+        '--add-data=settings.json;.',
+        '--hidden-import=cli_parser',
+        '--hidden-import=cli_runner',
+        '--hidden-import=scraper.logic',
+        '--hidden-import=scraper.driver_manager',
+        '--hidden-import=scraper.actions',
+        '--hidden-import=scraper.captcha_handler',
+        '--hidden-import=scraper.ocr_helper',
+        '--hidden-import=scraper.sound_helper',
+        '--hidden-import=scraper.webdriver_manager',
+        '--hidden-import=gui.main_window',
+        '--hidden-import=gui.tab_department',
+        '--hidden-import=gui.tab_id_search',
+        '--hidden-import=gui.tab_url_process',
+        '--hidden-import=gui.tab_settings',
+        '--hidden-import=gui.tab_help',
+        '--hidden-import=gui.global_panel',
+        '--hidden-import=gui.gui_utils',
+        '--hidden-import=app_settings',
+        '--hidden-import=config',
+        '--hidden-import=utils',
+        'main.py'
+    ]
+
+    try:
+        subprocess.run(pyinstaller_cmd, check=True)
+        print("GUI EXE built successfully")
+
+        # Copy to dist_gui
+        src_exe = script_dir / 'dist' / 'BlackForest_GUI.exe'
+        dst_exe = dist_dir / 'BlackForest_GUI.exe'
+        if src_exe.exists():
+            shutil.copy2(src_exe, dst_exe)
+            size_mb = src_exe.stat().st_size / (1024 * 1024)
+            print(f"GUI EXE: {dst_exe}")
+            print(f"Size: {size_mb:.1f} MB")
+            print("\nUsage:")
+            print("  Double-click BlackForest_GUI.exe (GUI mode)")
+        else:
+            print("Error: GUI EXE not found after build")
+
+    except subprocess.CalledProcessError as e:
+        print(f"Error building GUI EXE: {e}")
+
+    # Cleanup
+    if build_dir.exists():
+        shutil.rmtree(build_dir)
+    if (script_dir / 'dist').exists():
+        shutil.rmtree(script_dir / 'dist')
+    if spec_file.exists():
+        spec_file.unlink()
+
+def build_cli():
+    """Build CLI-only EXE (--console, shows console)"""
+    print("Building CLI EXE (--console)")
+    print("=" * 50)
+
+    script_dir = Path(__file__).parent
+    os.chdir(script_dir)
+
+    dist_dir = script_dir / 'dist_cli'
+    dist_dir.mkdir(exist_ok=True)
+
+    # Clean previous builds
+    build_dir = script_dir / 'build'
+    if build_dir.exists():
+        shutil.rmtree(build_dir)
+
+    spec_file = script_dir / 'BlackForest_CLI.spec'
+    if spec_file.exists():
+        spec_file.unlink()
+
+    # Build CLI EXE
+    pyinstaller_cmd = [
+        sys.executable, '-m', 'PyInstaller',
+        '--name=BlackForest_CLI',
+        '--onefile',
+        '--console',  # Show console window
+        '--clean',
+        '--noconfirm',
+        '--add-data=base_urls.csv;.',
+        '--add-data=settings.json;.',
+        '--hidden-import=cli_parser',
+        '--hidden-import=cli_runner',
+        '--hidden-import=scraper.logic',
+        '--hidden-import=scraper.driver_manager',
+        '--hidden-import=scraper.actions',
+        '--hidden-import=scraper.captcha_handler',
+        '--hidden-import=scraper.ocr_helper',
+        '--hidden-import=scraper.sound_helper',
+        '--hidden-import=scraper.webdriver_manager',
+        '--hidden-import=gui.main_window',
+        '--hidden-import=gui.tab_department',
+        '--hidden-import=gui.tab_id_search',
+        '--hidden-import=gui.tab_url_process',
+        '--hidden-import=gui.tab_settings',
+        '--hidden-import=gui.tab_help',
+        '--hidden-import=gui.global_panel',
+        '--hidden-import=gui.gui_utils',
+        '--hidden-import=app_settings',
+        '--hidden-import=config',
+        '--hidden-import=utils',
+        'main.py'
+    ]
+
+    try:
+        subprocess.run(pyinstaller_cmd, check=True)
+        print("CLI EXE built successfully")
+
+        # Copy to dist_cli
+        src_exe = script_dir / 'dist' / 'BlackForest_CLI.exe'
+        dst_exe = dist_dir / 'BlackForest_CLI.exe'
+        if src_exe.exists():
+            shutil.copy2(src_exe, dst_exe)
+            size_mb = src_exe.stat().st_size / (1024 * 1024)
+            print(f"CLI EXE: {dst_exe}")
+            print(f"Size: {size_mb:.1f} MB")
+            print("\nUsage:")
+            print("  BlackForest_CLI.exe department --all")
+            print("  BlackForest_CLI.exe urls")
+        else:
+            print("Error: CLI EXE not found after build")
+
+    except subprocess.CalledProcessError as e:
+        print(f"Error building CLI EXE: {e}")
+
+    # Cleanup
+    if build_dir.exists():
+        shutil.rmtree(build_dir)
+    if (script_dir / 'dist').exists():
+        shutil.rmtree(script_dir / 'dist')
+    if spec_file.exists():
+        spec_file.unlink()
+
+def build_separate():
+    """Build both GUI and CLI EXEs separately"""
+    print("Building Separate GUI and CLI EXEs")
+    print("=" * 50)
+
+    build_gui()
+    print()
+    build_cli()
+
+    print("\n" + "=" * 50)
+    print("SEPARATE BUILDS COMPLETED!")
+    print("=" * 50)
+    print("Files created:")
+    gui_exe = Path(__file__).parent / 'dist_gui' / 'BlackForest_GUI.exe'
+    cli_exe = Path(__file__).parent / 'dist_cli' / 'BlackForest_CLI.exe'
+    if gui_exe.exists():
+        size_mb = gui_exe.stat().st_size / (1024 * 1024)
+        print(f"  {gui_exe} ({size_mb:.1f} MB) - GUI mode")
+    if cli_exe.exists():
+        size_mb = cli_exe.stat().st_size / (1024 * 1024)
+        print(f"  {cli_exe} ({size_mb:.1f} MB) - CLI mode")
+    print("\nUsage:")
+    print("  GUI: Double-click BlackForest_GUI.exe")
+    print("  CLI: BlackForest_CLI.exe department --all")
+
 def main():
     """Main build function"""
     if len(sys.argv) > 1:
@@ -357,10 +568,19 @@ def main():
             build_portable()
         elif sys.argv[1] == 'hybrid':
             build_hybrid()
+        elif sys.argv[1] == 'gui':
+            build_gui()
+        elif sys.argv[1] == 'cli':
+            build_cli()
+        elif sys.argv[1] == 'separate':
+            build_separate()
         else:
-            print("Usage: python build_exe.py [hybrid|portable]")
-            print("  hybrid  - Small EXE launcher + Python files (recommended)")
+            print("Usage: python build_exe.py [hybrid|portable|gui|cli|separate]")
+            print("  hybrid   - Small EXE launcher + Python files (recommended)")
             print("  portable - Self-contained directory")
+            print("  gui      - GUI-only EXE (--windowed)")
+            print("  cli      - CLI-only EXE (--console)")
+            print("  separate - Both GUI and CLI EXEs")
     else:
         # Default to hybrid build
         build_hybrid()

@@ -1,11 +1,12 @@
 # -*- mode: python ; coding: utf-8 -*-
 
+
 a = Analysis(
-    ['main.py'],
+    ['blackforest_launcher.py'],
     pathex=[],
     binaries=[],
-    datas=[('base_urls.csv', '.'), ('resources\\app_icon.ico', 'resources')],
-    hiddenimports=['PIL._tkinter_finder', 'selenium', 'undetected_chromedriver', 'PyPDF2', 'pandas', 'pytesseract'],
+    datas=[],
+    hiddenimports=[],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
@@ -34,6 +35,4 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=['resources\\app_icon.ico'],
-    version='version_info.txt'
 )

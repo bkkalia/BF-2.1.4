@@ -274,3 +274,978 @@
 2025-09-22 12:49:55,474 - INFO - [MainThread:import_application_components] Importing application components...
 2025-09-22 12:49:55,853 - INFO - [MainThread:import_application_components] Application components imported successfully
 2025-09-22 12:49:55,855 - INFO - [MainThread:run_cli_mode] 🔧 Starting CLI mode...
+2025-09-22 13:58:52,890 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility v2.1.4 Starting ---
+2025-09-22 13:58:52,890 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2025-09-22 13:58:52,890 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2025-09-22 13:58:52,891 - INFO - [MainThread:setup_logging] Script Directory: D:\Dev84\BF 2.1.4
+2025-09-22 13:58:52,891 - INFO - [MainThread:setup_logging] Working Directory: D:\Dev84\BF 2.1.4
+2025-09-22 13:58:52,892 - INFO - [MainThread:check_package_versions] ✓ selenium 4.34.2 is available
+2025-09-22 13:58:53,524 - INFO - [MainThread:check_package_versions] ✓ pandas 2.3.1 is available
+2025-09-22 13:58:53,675 - INFO - [MainThread:check_package_versions] ✓ openpyxl 3.1.5 is available
+2025-09-22 13:58:53,913 - INFO - [MainThread:check_package_versions] ✓ requests 2.32.4 is available
+2025-09-22 13:58:53,918 - INFO - [MainThread:check_package_versions] ✓ pytesseract 0.3.13 is available
+2025-09-22 13:58:54,002 - INFO - [MainThread:check_package_versions] ✓ undetected_chromedriver 3.5.5 (optional) is available
+2025-09-22 13:58:54,003 - INFO - [MainThread:check_package_versions] ✓ webdriver_manager 4.0.2 (optional) is available
+2025-09-22 13:58:54,003 - INFO - [MainThread:import_application_components] Importing application components...
+2025-09-22 13:58:54,057 - INFO - [MainThread:import_application_components] Application components imported successfully
+2025-09-22 13:58:54,057 - INFO - [MainThread:<module>] 🚀 Starting GUI application initialization...
+2025-09-22 13:58:54,057 - INFO - [MainThread:load_and_validate_configurations] Loading base URL configurations from D:\Dev84\BF 2.1.4\base_urls.csv...
+2025-09-22 13:58:54,057 - INFO - [MainThread:load_base_urls] Loaded 12 base URL configurations from base_urls.csv.
+2025-09-22 13:58:54,057 - INFO - [MainThread:load_and_validate_configurations] ✓ Loaded 12 URL configurations
+2025-09-22 13:58:54,057 - INFO - [MainThread:load_and_validate_configurations] Loading application settings...
+2025-09-22 13:58:54,058 - INFO - [MainThread:load_settings] Settings loaded and merged with defaults from D:\Dev84\BF 2.1.4\settings.json
+2025-09-22 13:58:54,058 - INFO - [MainThread:load_and_validate_configurations] ✓ Settings loaded and validated
+2025-09-22 13:58:54,058 - INFO - [MainThread:<module>] Creating main application window...
+2025-09-22 13:58:54,095 - INFO - [MainThread:<module>] Creating MainWindow instance...
+2025-09-22 13:58:54,183 - INFO - [MainThread:<module>] ✓ Application initialization completed successfully
+2025-09-22 13:58:54,184 - INFO - [MainThread:<module>] 🎯 Starting main event loop...
+2025-09-22 14:12:46,750 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility v2.1.4 Starting ---
+2025-09-22 14:12:46,750 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2025-09-22 14:12:46,751 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2025-09-22 14:12:46,751 - INFO - [MainThread:setup_logging] Script Directory: D:\Dev84\BF 2.1.4
+2025-09-22 14:12:46,751 - INFO - [MainThread:setup_logging] Working Directory: d:\Dev84\BF 2.1.4
+2025-09-22 14:12:46,751 - INFO - [MainThread:check_package_versions] ✓ selenium 4.34.2 is available
+2025-09-22 14:12:47,240 - INFO - [MainThread:check_package_versions] ✓ pandas 2.3.1 is available
+2025-09-22 14:12:47,423 - INFO - [MainThread:check_package_versions] ✓ openpyxl 3.1.5 is available
+2025-09-22 14:12:47,654 - INFO - [MainThread:check_package_versions] ✓ requests 2.32.4 is available
+2025-09-22 14:12:47,665 - INFO - [MainThread:check_package_versions] ✓ pytesseract 0.3.13 is available
+2025-09-22 14:12:47,829 - INFO - [MainThread:check_package_versions] ✓ undetected_chromedriver 3.5.5 (optional) is available
+2025-09-22 14:12:47,830 - INFO - [MainThread:check_package_versions] ✓ webdriver_manager 4.0.2 (optional) is available
+2025-09-22 14:12:47,830 - INFO - [MainThread:import_application_components] Importing application components...
+2025-09-22 14:12:47,952 - INFO - [MainThread:import_application_components] Application components imported successfully
+2025-09-22 14:12:47,952 - INFO - [MainThread:<module>] 🚀 Starting GUI application initialization...
+2025-09-22 14:12:47,952 - INFO - [MainThread:load_and_validate_configurations] Loading base URL configurations from D:\Dev84\BF 2.1.4\base_urls.csv...
+2025-09-22 14:12:47,953 - INFO - [MainThread:load_base_urls] Loaded 12 base URL configurations from base_urls.csv.
+2025-09-22 14:12:47,953 - INFO - [MainThread:load_and_validate_configurations] ✓ Loaded 12 URL configurations
+2025-09-22 14:12:47,953 - INFO - [MainThread:load_and_validate_configurations] Loading application settings...
+2025-09-22 14:12:47,953 - INFO - [MainThread:load_settings] Settings loaded and merged with defaults from D:\Dev84\BF 2.1.4\settings.json
+2025-09-22 14:12:47,954 - INFO - [MainThread:load_and_validate_configurations] ✓ Settings loaded and validated
+2025-09-22 14:12:47,954 - INFO - [MainThread:<module>] Creating main application window...
+2025-09-22 14:12:47,989 - INFO - [MainThread:<module>] Creating MainWindow instance...
+2025-09-22 14:12:48,088 - INFO - [MainThread:<module>] ✓ Application initialization completed successfully
+2025-09-22 14:12:48,088 - INFO - [MainThread:<module>] 🎯 Starting main event loop...
+2025-09-22 14:44:22,095 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility v2.1.4 Starting ---
+2025-09-22 14:44:22,095 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2025-09-22 14:44:22,096 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2025-09-22 14:44:22,096 - INFO - [MainThread:setup_logging] Script Directory: D:\Dev84\BF 2.1.4
+2025-09-22 14:44:22,096 - INFO - [MainThread:setup_logging] Working Directory: D:\Dev84\BF 2.1.4
+2025-09-22 14:44:22,096 - INFO - [MainThread:check_package_versions] ✓ selenium 4.34.2 is available
+2025-09-22 14:44:22,413 - INFO - [MainThread:check_package_versions] ✓ pandas 2.3.1 is available
+2025-09-22 14:44:22,560 - INFO - [MainThread:check_package_versions] ✓ openpyxl 3.1.5 is available
+2025-09-22 14:44:22,791 - INFO - [MainThread:check_package_versions] ✓ requests 2.32.4 is available
+2025-09-22 14:44:22,798 - INFO - [MainThread:check_package_versions] ✓ pytesseract 0.3.13 is available
+2025-09-22 14:44:22,891 - INFO - [MainThread:check_package_versions] ✓ undetected_chromedriver 3.5.5 (optional) is available
+2025-09-22 14:44:22,892 - INFO - [MainThread:check_package_versions] ✓ webdriver_manager 4.0.2 (optional) is available
+2025-09-22 14:44:22,893 - INFO - [MainThread:import_application_components] Importing application components...
+2025-09-22 14:44:22,964 - INFO - [MainThread:import_application_components] Application components imported successfully
+2025-09-22 14:44:22,964 - INFO - [MainThread:<module>] 🚀 Starting GUI application initialization...
+2025-09-22 14:44:22,964 - INFO - [MainThread:load_and_validate_configurations] Loading base URL configurations from D:\Dev84\BF 2.1.4\base_urls.csv...
+2025-09-22 14:44:22,964 - INFO - [MainThread:load_base_urls] Loaded 12 base URL configurations from base_urls.csv.
+2025-09-22 14:44:22,965 - INFO - [MainThread:load_and_validate_configurations] ✓ Loaded 12 URL configurations
+2025-09-22 14:44:22,965 - INFO - [MainThread:load_and_validate_configurations] Loading application settings...
+2025-09-22 14:44:22,965 - INFO - [MainThread:load_settings] Settings loaded and merged with defaults from D:\Dev84\BF 2.1.4\settings.json
+2025-09-22 14:44:22,965 - INFO - [MainThread:load_and_validate_configurations] ✓ Settings loaded and validated
+2025-09-22 14:44:22,965 - INFO - [MainThread:<module>] Creating main application window...
+2025-09-22 14:44:22,998 - INFO - [MainThread:<module>] Creating MainWindow instance...
+2025-09-22 14:44:23,106 - INFO - [MainThread:<module>] ✓ Application initialization completed successfully
+2025-09-22 14:44:23,107 - INFO - [MainThread:<module>] 🎯 Starting main event loop...
+2025-09-22 14:44:46,551 - INFO - [MainThread:on_closing] Close requested.
+2025-09-22 14:44:46,551 - INFO - [MainThread:_save_current_settings_and_show_message] Saving current settings...
+2025-09-22 14:44:46,551 - ERROR - [MainThread:on_closing] Failed to save settings on exit: invalid literal for int() with base 10: '10.0'
+2025-09-22 14:44:46,627 - INFO - [MainThread:on_closing] Tkinter root window destroyed.
+2025-09-22 14:44:46,627 - INFO - [MainThread:on_closing] --- Application Shutdown Sequence Complete ---
+2025-09-22 14:44:46,627 - INFO - [MainThread:<module>] Main event loop ended normally
+2025-09-22 14:44:46,627 - INFO - [MainThread:<module>] 🛑 Application shutdown initiated...
+2025-09-22 14:44:46,628 - INFO - [MainThread:_save_current_settings] Saving current settings...
+2025-09-22 14:44:46,628 - WARNING - [MainThread:_save_current_settings] Could not get window geometry, possibly already be closed.
+2025-09-22 14:44:46,632 - INFO - [MainThread:save_settings] Settings saved successfully to D:\Dev84\BF 2.1.4\settings.json
+2025-09-22 14:44:46,632 - INFO - [MainThread:<module>] ✅ Application shutdown completed successfully
+2025-09-22 14:46:19,068 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility v2.1.4 Starting ---
+2025-09-22 14:46:19,068 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2025-09-22 14:46:19,068 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2025-09-22 14:46:19,068 - INFO - [MainThread:setup_logging] Script Directory: D:\Dev84\BF 2.1.4
+2025-09-22 14:46:19,068 - INFO - [MainThread:setup_logging] Working Directory: d:\Dev84\BF 2.1.4
+2025-09-22 14:46:19,068 - INFO - [MainThread:check_package_versions] ✓ selenium 4.34.2 is available
+2025-09-22 14:46:19,571 - INFO - [MainThread:check_package_versions] ✓ pandas 2.3.1 is available
+2025-09-22 14:46:19,762 - INFO - [MainThread:check_package_versions] ✓ openpyxl 3.1.5 is available
+2025-09-22 14:46:20,000 - INFO - [MainThread:check_package_versions] ✓ requests 2.32.4 is available
+2025-09-22 14:46:20,013 - INFO - [MainThread:check_package_versions] ✓ pytesseract 0.3.13 is available
+2025-09-22 14:46:20,182 - INFO - [MainThread:check_package_versions] ✓ undetected_chromedriver 3.5.5 (optional) is available
+2025-09-22 14:46:20,183 - INFO - [MainThread:check_package_versions] ✓ webdriver_manager 4.0.2 (optional) is available
+2025-09-22 14:46:20,183 - INFO - [MainThread:import_application_components] Importing application components...
+2025-09-22 14:46:20,294 - INFO - [MainThread:import_application_components] Application components imported successfully
+2025-09-22 14:46:20,294 - INFO - [MainThread:<module>] 🚀 Starting GUI application initialization...
+2025-09-22 14:46:20,294 - INFO - [MainThread:load_and_validate_configurations] Loading base URL configurations from D:\Dev84\BF 2.1.4\base_urls.csv...
+2025-09-22 14:46:20,295 - INFO - [MainThread:load_base_urls] Loaded 12 base URL configurations from base_urls.csv.
+2025-09-22 14:46:20,295 - INFO - [MainThread:load_and_validate_configurations] ✓ Loaded 12 URL configurations
+2025-09-22 14:46:20,296 - INFO - [MainThread:load_and_validate_configurations] Loading application settings...
+2025-09-22 14:46:20,296 - INFO - [MainThread:load_settings] Settings loaded and merged with defaults from D:\Dev84\BF 2.1.4\settings.json
+2025-09-22 14:46:20,296 - INFO - [MainThread:load_and_validate_configurations] ✓ Settings loaded and validated
+2025-09-22 14:46:20,296 - INFO - [MainThread:<module>] Creating main application window...
+2025-09-22 14:46:20,329 - INFO - [MainThread:<module>] Creating MainWindow instance...
+2025-09-22 14:46:20,434 - INFO - [MainThread:<module>] ✓ Application initialization completed successfully
+2025-09-22 14:46:20,434 - INFO - [MainThread:<module>] 🎯 Starting main event loop...
+2025-09-22 14:46:44,121 - INFO - [MainThread:on_closing] Close requested.
+2025-09-22 14:46:44,121 - INFO - [MainThread:_save_current_settings_and_show_message] Saving current settings...
+2025-09-22 14:46:44,122 - ERROR - [MainThread:on_closing] Failed to save settings on exit: invalid literal for int() with base 10: '10.0'
+2025-09-22 14:46:44,201 - INFO - [MainThread:on_closing] Tkinter root window destroyed.
+2025-09-22 14:46:44,201 - INFO - [MainThread:on_closing] --- Application Shutdown Sequence Complete ---
+2025-09-22 14:46:44,201 - INFO - [MainThread:<module>] Main event loop ended normally
+2025-09-22 14:46:44,201 - INFO - [MainThread:<module>] 🛑 Application shutdown initiated...
+2025-09-22 14:46:44,202 - INFO - [MainThread:_save_current_settings] Saving current settings...
+2025-09-22 14:46:44,203 - WARNING - [MainThread:_save_current_settings] Could not get window geometry, possibly already be closed.
+2025-09-22 14:46:44,205 - INFO - [MainThread:save_settings] Settings saved successfully to D:\Dev84\BF 2.1.4\settings.json
+2025-09-22 14:46:44,206 - INFO - [MainThread:<module>] ✅ Application shutdown completed successfully
+2025-09-22 14:51:33,870 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility v2.1.4 Starting ---
+2025-09-22 14:51:33,871 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2025-09-22 14:51:33,871 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2025-09-22 14:51:33,871 - INFO - [MainThread:setup_logging] Script Directory: D:\Dev84\BF 2.1.4
+2025-09-22 14:51:33,871 - INFO - [MainThread:setup_logging] Working Directory: d:\Dev84\BF 2.1.4
+2025-09-22 14:51:33,871 - INFO - [MainThread:check_package_versions] ✓ selenium 4.34.2 is available
+2025-09-22 14:51:34,397 - INFO - [MainThread:check_package_versions] ✓ pandas 2.3.1 is available
+2025-09-22 14:51:34,585 - INFO - [MainThread:check_package_versions] ✓ openpyxl 3.1.5 is available
+2025-09-22 14:51:34,819 - INFO - [MainThread:check_package_versions] ✓ requests 2.32.4 is available
+2025-09-22 14:51:34,830 - INFO - [MainThread:check_package_versions] ✓ pytesseract 0.3.13 is available
+2025-09-22 14:51:34,994 - INFO - [MainThread:check_package_versions] ✓ undetected_chromedriver 3.5.5 (optional) is available
+2025-09-22 14:51:34,995 - INFO - [MainThread:check_package_versions] ✓ webdriver_manager 4.0.2 (optional) is available
+2025-09-22 14:51:34,995 - INFO - [MainThread:import_application_components] Importing application components...
+2025-09-22 14:51:35,100 - INFO - [MainThread:import_application_components] Application components imported successfully
+2025-09-22 14:51:35,100 - INFO - [MainThread:<module>] 🚀 Starting GUI application initialization...
+2025-09-22 14:51:35,100 - INFO - [MainThread:load_and_validate_configurations] Loading base URL configurations from D:\Dev84\BF 2.1.4\base_urls.csv...
+2025-09-22 14:51:35,101 - INFO - [MainThread:load_base_urls] Loaded 12 base URL configurations from base_urls.csv.
+2025-09-22 14:51:35,101 - INFO - [MainThread:load_and_validate_configurations] ✓ Loaded 12 URL configurations
+2025-09-22 14:51:35,102 - INFO - [MainThread:load_and_validate_configurations] Loading application settings...
+2025-09-22 14:51:35,102 - INFO - [MainThread:load_settings] Settings loaded and merged with defaults from D:\Dev84\BF 2.1.4\settings.json
+2025-09-22 14:51:35,102 - INFO - [MainThread:load_and_validate_configurations] ✓ Settings loaded and validated
+2025-09-22 14:51:35,102 - INFO - [MainThread:<module>] Creating main application window...
+2025-09-22 14:51:35,137 - INFO - [MainThread:<module>] Creating MainWindow instance...
+2025-09-22 14:51:35,241 - INFO - [MainThread:<module>] ✓ Application initialization completed successfully
+2025-09-22 14:51:35,241 - INFO - [MainThread:<module>] 🎯 Starting main event loop...
+2025-09-22 14:51:50,175 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility v2.1.4 Starting ---
+2025-09-22 14:51:50,175 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2025-09-22 14:51:50,175 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2025-09-22 14:51:50,175 - INFO - [MainThread:setup_logging] Script Directory: d:\Dev84\BF 2.1.4
+2025-09-22 14:51:50,176 - INFO - [MainThread:setup_logging] Working Directory: d:\Dev84\BF 2.1.4
+2025-09-22 14:51:50,176 - INFO - [MainThread:check_package_versions] ✓ selenium 4.34.2 is available
+2025-09-22 14:51:50,726 - INFO - [MainThread:check_package_versions] ✓ pandas 2.3.1 is available
+2025-09-22 14:51:50,932 - INFO - [MainThread:check_package_versions] ✓ openpyxl 3.1.5 is available
+2025-09-22 14:51:51,175 - INFO - [MainThread:check_package_versions] ✓ requests 2.32.4 is available
+2025-09-22 14:51:51,187 - INFO - [MainThread:check_package_versions] ✓ pytesseract 0.3.13 is available
+2025-09-22 14:51:51,355 - INFO - [MainThread:check_package_versions] ✓ undetected_chromedriver 3.5.5 (optional) is available
+2025-09-22 14:51:51,356 - INFO - [MainThread:check_package_versions] ✓ webdriver_manager 4.0.2 (optional) is available
+2025-09-22 14:51:51,356 - INFO - [MainThread:import_application_components] Importing application components...
+2025-09-22 14:51:51,466 - INFO - [MainThread:import_application_components] Application components imported successfully
+2025-09-22 14:51:51,466 - INFO - [MainThread:run_cli_mode] 🔧 Starting CLI mode...
+2025-09-22 14:51:51,473 - INFO - [MainThread:load_settings] Settings loaded and merged with defaults from d:\Dev84\BF 2.1.4\settings.json
+2025-09-22 14:51:51,474 - INFO - [MainThread:load_configuration] Loaded configuration from d:\Dev84\BF 2.1.4\settings.json
+2025-09-22 14:51:51,478 - INFO - [MainThread:get_portal_config] Using HP Tenders configuration: https://hptenders.gov.in/nicgep/app
+2025-09-22 14:51:51,479 - INFO - [MainThread:run_department_scraping] Setting up WebDriver...
+2025-09-22 14:51:51,479 - INFO - [MainThread:setup_driver] Setting up Chrome WebDriver...
+2025-09-22 14:51:51,479 - INFO - [MainThread:setup_driver] Using standard ChromeDriver for better compatibility
+2025-09-22 14:51:51,479 - INFO - [MainThread:setup_driver] Setting download directory to: D:\Dev84\BF 2.1.4\Tender_Downloads
+2025-09-22 14:51:51,480 - INFO - [MainThread:setup_driver] Installing ChromeDriver using webdriver-manager...
+2025-09-22 14:51:51,481 - INFO - [MainThread:log] ====== WebDriver manager ======
+2025-09-22 14:51:52,349 - INFO - [MainThread:log] Get LATEST chromedriver version for google-chrome
+2025-09-22 14:53:28,869 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility v2.1.4 Starting ---
+2025-09-22 14:53:28,869 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2025-09-22 14:53:28,869 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2025-09-22 14:53:28,869 - INFO - [MainThread:setup_logging] Script Directory: D:\Dev84\BF 2.1.4
+2025-09-22 14:53:28,870 - INFO - [MainThread:setup_logging] Working Directory: d:\Dev84\BF 2.1.4
+2025-09-22 14:53:28,870 - INFO - [MainThread:check_package_versions] ✓ selenium 4.34.2 is available
+2025-09-22 14:53:29,481 - INFO - [MainThread:check_package_versions] ✓ pandas 2.3.1 is available
+2025-09-22 14:53:29,722 - INFO - [MainThread:check_package_versions] ✓ openpyxl 3.1.5 is available
+2025-09-22 14:53:29,990 - INFO - [MainThread:check_package_versions] ✓ requests 2.32.4 is available
+2025-09-22 14:53:30,010 - INFO - [MainThread:check_package_versions] ✓ pytesseract 0.3.13 is available
+2025-09-22 14:53:30,184 - INFO - [MainThread:check_package_versions] ✓ undetected_chromedriver 3.5.5 (optional) is available
+2025-09-22 14:53:30,185 - INFO - [MainThread:check_package_versions] ✓ webdriver_manager 4.0.2 (optional) is available
+2025-09-22 14:53:30,186 - INFO - [MainThread:import_application_components] Importing application components...
+2025-09-22 14:53:30,333 - INFO - [MainThread:import_application_components] Application components imported successfully
+2025-09-22 14:53:30,333 - INFO - [MainThread:<module>] 🚀 Starting GUI application initialization...
+2025-09-22 14:53:30,333 - INFO - [MainThread:load_and_validate_configurations] Loading base URL configurations from D:\Dev84\BF 2.1.4\base_urls.csv...
+2025-09-22 14:53:30,334 - INFO - [MainThread:load_base_urls] Loaded 12 base URL configurations from base_urls.csv.
+2025-09-22 14:53:30,334 - INFO - [MainThread:load_and_validate_configurations] ✓ Loaded 12 URL configurations
+2025-09-22 14:53:30,335 - INFO - [MainThread:load_and_validate_configurations] Loading application settings...
+2025-09-22 14:53:30,335 - INFO - [MainThread:load_settings] Settings loaded and merged with defaults from D:\Dev84\BF 2.1.4\settings.json
+2025-09-22 14:53:30,335 - INFO - [MainThread:load_and_validate_configurations] ✓ Settings loaded and validated
+2025-09-22 14:53:30,335 - INFO - [MainThread:<module>] Creating main application window...
+2025-09-22 14:53:30,372 - INFO - [MainThread:<module>] Creating MainWindow instance...
+2025-09-22 14:53:30,477 - INFO - [MainThread:<module>] ✓ Application initialization completed successfully
+2025-09-22 14:53:30,477 - INFO - [MainThread:<module>] 🎯 Starting main event loop...
+2025-09-22 14:54:44,998 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility v2.1.4 Starting ---
+2025-09-22 14:54:44,998 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2025-09-22 14:54:44,998 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2025-09-22 14:54:44,999 - INFO - [MainThread:setup_logging] Script Directory: d:\Dev84\BF 2.1.4
+2025-09-22 14:54:44,999 - INFO - [MainThread:setup_logging] Working Directory: d:\Dev84\BF 2.1.4
+2025-09-22 14:54:44,999 - INFO - [MainThread:check_package_versions] ✓ selenium 4.34.2 is available
+2025-09-22 14:54:45,500 - INFO - [MainThread:check_package_versions] ✓ pandas 2.3.1 is available
+2025-09-22 14:54:45,686 - INFO - [MainThread:check_package_versions] ✓ openpyxl 3.1.5 is available
+2025-09-22 14:54:45,941 - INFO - [MainThread:check_package_versions] ✓ requests 2.32.4 is available
+2025-09-22 14:54:45,953 - INFO - [MainThread:check_package_versions] ✓ pytesseract 0.3.13 is available
+2025-09-22 14:54:46,125 - INFO - [MainThread:check_package_versions] ✓ undetected_chromedriver 3.5.5 (optional) is available
+2025-09-22 14:54:46,126 - INFO - [MainThread:check_package_versions] ✓ webdriver_manager 4.0.2 (optional) is available
+2025-09-22 14:54:46,127 - INFO - [MainThread:import_application_components] Importing application components...
+2025-09-22 14:54:46,230 - INFO - [MainThread:import_application_components] Application components imported successfully
+2025-09-22 14:54:46,230 - INFO - [MainThread:run_cli_mode] 🔧 Starting CLI mode...
+2025-09-22 14:54:46,237 - INFO - [MainThread:load_settings] Settings loaded and merged with defaults from d:\Dev84\BF 2.1.4\settings.json
+2025-09-22 14:54:46,238 - INFO - [MainThread:load_configuration] Loaded configuration from d:\Dev84\BF 2.1.4\settings.json
+2025-09-22 14:54:46,242 - INFO - [MainThread:get_portal_config] Using HP Tenders configuration: https://hptenders.gov.in/nicgep/app
+2025-09-22 14:54:46,242 - INFO - [MainThread:run_department_scraping] Setting up WebDriver...
+2025-09-22 14:54:46,242 - INFO - [MainThread:setup_driver] Setting up Chrome WebDriver...
+2025-09-22 14:54:46,243 - INFO - [MainThread:setup_driver] Using standard ChromeDriver for better compatibility
+2025-09-22 14:54:46,243 - INFO - [MainThread:setup_driver] Setting download directory to: D:\Dev84\BF 2.1.4\Tender_Downloads
+2025-09-22 14:54:46,243 - INFO - [MainThread:setup_driver] Installing ChromeDriver using webdriver-manager...
+2025-09-22 14:54:46,243 - INFO - [MainThread:log] ====== WebDriver manager ======
+2025-09-22 14:54:47,149 - INFO - [MainThread:log] Get LATEST chromedriver version for google-chrome
+2025-09-22 14:54:47,298 - INFO - [MainThread:log] Get LATEST chromedriver version for google-chrome
+2025-09-22 14:54:47,507 - INFO - [MainThread:log] Driver [C:\Users\kalia\.wdm\drivers\chromedriver\win64\140.0.7339.185\chromedriver-win32/chromedriver.exe] found in cache
+2025-09-22 14:54:47,510 - INFO - [MainThread:setup_driver] ChromeDriver installed successfully
+2025-09-22 14:54:47,512 - INFO - [MainThread:setup_driver] Creating Chrome WebDriver instance...
+2025-09-22 14:54:48,615 - INFO - [MainThread:setup_driver] Chrome WebDriver setup completed successfully
+2025-09-22 14:54:48,615 - INFO - [MainThread:run_department_scraping] Fetching department list from HP Tenders...
+2025-09-22 14:54:48,615 - INFO - [MainThread:fetch_department_list_from_site_v2] Worker: Fetching departments from base URL: https://hptenders.gov.in/nicgep/app?page=FrontEndTendersByOrganisation&service=page
+2025-09-22 14:54:48,616 - INFO - [MainThread:fetch_department_list_from_site_v2] Worker: Setting up WebDriver...
+2025-09-22 14:54:48,617 - INFO - [MainThread:setup_driver] Setting up Chrome WebDriver...
+2025-09-22 14:54:48,618 - INFO - [MainThread:setup_driver] Using standard ChromeDriver for better compatibility
+2025-09-22 14:54:48,618 - INFO - [MainThread:setup_driver] Setting download directory to: d:\Dev84\BF 2.1.4
+2025-09-22 14:54:48,619 - INFO - [MainThread:setup_driver] Installing ChromeDriver using webdriver-manager...
+2025-09-22 14:54:48,620 - INFO - [MainThread:log] ====== WebDriver manager ======
+2025-09-22 14:54:49,544 - INFO - [MainThread:log] Get LATEST chromedriver version for google-chrome
+2025-09-22 14:54:49,684 - INFO - [MainThread:log] Get LATEST chromedriver version for google-chrome
+2025-09-22 14:54:49,844 - INFO - [MainThread:log] Driver [C:\Users\kalia\.wdm\drivers\chromedriver\win64\140.0.7339.185\chromedriver-win32/chromedriver.exe] found in cache
+2025-09-22 14:54:49,846 - INFO - [MainThread:setup_driver] ChromeDriver installed successfully
+2025-09-22 14:54:49,847 - INFO - [MainThread:setup_driver] Creating Chrome WebDriver instance...
+2025-09-22 14:54:50,860 - INFO - [MainThread:setup_driver] Chrome WebDriver setup completed successfully
+2025-09-22 14:54:50,860 - INFO - [MainThread:fetch_department_list_from_site_v2] Worker: Navigating to https://hptenders.gov.in/nicgep/app?page=FrontEndTendersByOrganisation&service=page
+2025-09-22 14:54:53,048 - INFO - [MainThread:fetch_department_list_from_site_v2] Worker: Finding Tenders by Organisation link...
+2025-09-22 14:54:53,057 - INFO - [MainThread:navigate_to_org_list] Worker: Current URL: https://hptenders.gov.in/nicgep/app?page=FrontEndTendersByOrganisation&service=page
+2025-09-22 14:54:53,057 - INFO - [MainThread:navigate_to_org_list] ✓ Already on 'Tenders by Organisation' page
+2025-09-22 14:54:53,058 - INFO - [MainThread:fetch_department_list_from_site_v2] Worker: Waiting for main department table...
+2025-09-22 14:54:53,065 - INFO - [MainThread:fetch_department_list_from_site_v2] Worker: Main table container located.
+2025-09-22 14:54:53,816 - INFO - [MainThread:fetch_department_list_from_site_v2] Worker: Extracting department data...
+2025-09-22 14:54:55,341 - INFO - [MainThread:fetch_department_list_from_site_v2] Worker: Found 44 rows using tbody.
+2025-09-22 14:54:55,379 - INFO - [MainThread:fetch_department_list_from_site_v2] Worker: Skipping header row: S.No='S.No', Name='Organisation Name'
+2025-09-22 14:54:57,471 - INFO - [MainThread:fetch_department_list_from_site_v2] Worker: Processed 42 rows. Found 42 depts. Est tenders: 1328
+2025-09-22 14:54:57,472 - INFO - [MainThread:safe_quit_driver] Closing WebDriver instance...
+2025-09-22 14:54:57,474 - INFO - [MainThread:safe_quit_driver] Closing WebDriver instance...
+2025-09-22 14:54:59,602 - INFO - [MainThread:safe_quit_driver] WebDriver quit successfully.
+2025-09-22 14:54:59,603 - INFO - [MainThread:run_department_scraping] Found 42 departments to process
+2025-09-22 14:54:59,606 - INFO - [MainThread:run_department_scraping] Starting scraping of 42 departments...
+2025-09-22 14:54:59,607 - INFO - [MainThread:run_scraping_logic] Navigating to organization list...
+2025-09-22 14:55:00,887 - INFO - [MainThread:navigate_to_org_list] Worker: Current URL: https://hptenders.gov.in/nicgep/app?page=FrontEndTendersByOrganisation&service=page
+2025-09-22 14:55:00,888 - INFO - [MainThread:navigate_to_org_list] ✓ Already on 'Tenders by Organisation' page
+2025-09-22 14:55:02,404 - INFO - [MainThread:run_scraping_logic] Starting to process 42 departments...
+2025-09-22 14:55:02,410 - INFO - [MainThread:run_scraping_logic] 
+Processing department 1/42: Baddi Barotiwala Nalagarh Development Authority
+2025-09-22 14:55:02,426 - INFO - [MainThread:run_scraping_logic] Current URL before processing: https://hptenders.gov.in/nicgep/app?page=FrontEndTendersByOrganisation&service=page
+2025-09-22 14:55:02,426 - INFO - [MainThread:_find_and_click_dept_link]   Finding link for Dept S.No: 1 - Baddi Barotiwala Nalagarh Deve...
+2025-09-22 14:55:02,471 - INFO - [MainThread:_find_target_row]     Attempt 1: Check 44 rows for S.No '1'...
+2025-09-22 14:55:02,544 - INFO - [MainThread:_find_target_row]     Skip header-like row 0: 'S.No'
+2025-09-22 14:55:02,575 - INFO - [MainThread:_find_target_row]     Found match row index 1.
+2025-09-22 14:55:02,678 - INFO - [MainThread:_click_department_link]     Link found S.No '1'. Clicking...
+2025-09-22 14:55:03,705 - INFO - [MainThread:click_element] Standard click successful for 'Dept Link 'Baddi Barotiwala Nal' (SNo:1)'.
+2025-09-22 14:55:07,314 - INFO - [MainThread:_scrape_tender_details]   Scraping details for: Baddi Barotiwala Nalagarh Development Authority...
+2025-09-22 14:55:07,355 - INFO - [MainThread:_scrape_tender_details]     Details table located.
+2025-09-22 14:55:08,309 - INFO - [MainThread:_scrape_tender_details]     Skipping header row (content match: ['s.no', 'published date', 'closing date', 'opening date', 'title']).
+2025-09-22 14:55:08,309 - INFO - [MainThread:_scrape_tender_details]     Found 6 data rows for Baddi Barotiwala Nalagarh Development Authority.
+2025-09-22 14:55:08,916 - INFO - [MainThread:_scrape_tender_details]   Successfully extracted details for 5 tenders from Baddi Barotiwala Nalagarh Development Authority.
+2025-09-22 14:55:08,917 - INFO - [MainThread:run_scraping_logic] Found 5 tenders in department Baddi Barotiwala Nalagarh Development Authority
+2025-09-22 14:55:08,920 - INFO - [MainThread:_click_on_page_back_button]   Attempting site 'Back' button click...
+2025-09-22 14:55:09,963 - INFO - [MainThread:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-22 14:55:10,565 - INFO - [MainThread:_click_on_page_back_button]     Site 'Back' button clicked.
+2025-09-22 14:55:12,834 - INFO - [MainThread:_click_on_page_back_button]     ✓ Back navigation successful, URL: https://hptenders.gov.in/nicgep/app?page=FrontEndTendersByOrganisation&service=page
+2025-09-22 14:55:12,835 - INFO - [MainThread:run_scraping_logic] 
+Processing department 2/42: Chief Project Director IDP Solan
+2025-09-22 14:55:12,855 - INFO - [MainThread:run_scraping_logic] Current URL before processing: https://hptenders.gov.in/nicgep/app?page=FrontEndTendersByOrganisation&service=page
+2025-09-22 14:55:12,855 - INFO - [MainThread:_find_and_click_dept_link]   Finding link for Dept S.No: 2 - Chief Project Director IDP Sol...
+2025-09-22 14:55:12,907 - INFO - [MainThread:_find_target_row]     Attempt 1: Check 44 rows for S.No '2'...
+2025-09-22 14:55:12,934 - INFO - [MainThread:_find_target_row]     Skip header-like row 0: 'S.No'
+2025-09-22 14:55:12,978 - INFO - [MainThread:_find_target_row]     Found match row index 2.
+2025-09-22 14:55:13,013 - INFO - [MainThread:_click_department_link]     Link found S.No '2'. Clicking...
+2025-09-22 14:55:13,934 - INFO - [MainThread:click_element] Standard click successful for 'Dept Link 'Chief Project Direct' (SNo:2)'.
+2025-09-22 14:55:17,544 - INFO - [MainThread:_scrape_tender_details]   Scraping details for: Chief Project Director IDP Solan...
+2025-09-22 14:55:17,564 - INFO - [MainThread:_scrape_tender_details]     Details table located.
+2025-09-22 14:55:18,452 - INFO - [MainThread:_scrape_tender_details]     Skipping header row (content match: ['s.no', 'published date', 'closing date', 'opening date', 'title']).
+2025-09-22 14:55:18,452 - INFO - [MainThread:_scrape_tender_details]     Found 24 data rows for Chief Project Director IDP Solan.
+2025-09-22 14:55:20,444 - INFO - [MainThread:_scrape_tender_details]   Successfully extracted details for 23 tenders from Chief Project Director IDP Solan.
+2025-09-22 14:55:20,444 - INFO - [MainThread:run_scraping_logic] Found 23 tenders in department Chief Project Director IDP Solan
+2025-09-22 14:55:20,448 - INFO - [MainThread:_click_on_page_back_button]   Attempting site 'Back' button click...
+2025-09-22 14:55:21,502 - INFO - [MainThread:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-22 14:55:22,105 - INFO - [MainThread:_click_on_page_back_button]     Site 'Back' button clicked.
+2025-09-22 14:55:24,366 - INFO - [MainThread:_click_on_page_back_button]     ✓ Back navigation successful, URL: https://hptenders.gov.in/nicgep/app?page=FrontEndTendersByOrganisation&service=page
+2025-09-22 14:55:24,366 - INFO - [MainThread:run_scraping_logic] 
+Processing department 3/42: DC Office Kullu
+2025-09-22 14:55:24,371 - INFO - [MainThread:run_scraping_logic] Current URL before processing: https://hptenders.gov.in/nicgep/app?page=FrontEndTendersByOrganisation&service=page
+2025-09-22 14:55:24,371 - INFO - [MainThread:_find_and_click_dept_link]   Finding link for Dept S.No: 3 - DC Office Kullu...
+2025-09-22 14:55:24,387 - INFO - [MainThread:_find_target_row]     Attempt 1: Check 44 rows for S.No '3'...
+2025-09-22 14:55:24,400 - INFO - [MainThread:_find_target_row]     Skip header-like row 0: 'S.No'
+2025-09-22 14:55:24,432 - INFO - [MainThread:_find_target_row]     Found match row index 3.
+2025-09-22 14:55:24,450 - INFO - [MainThread:_click_department_link]     Link found S.No '3'. Clicking...
+2025-09-22 14:55:24,882 - ERROR - [MainThread:click_element] WebDriver error during standard click 1 for 'Dept Link 'DC Office Kullu' (SNo:3)': Message: tab crashed
+  (Session info: chrome=140.0.7339.128)
+Stacktrace:
+	GetHandleVerifier [0x0x10d0c13+66051]
+	GetHandleVerifier [0x0x10d0c54+66116]
+	(No symbol) [0x0xead980]
+	(No symbol) [0x0xe9e059]
+	(No symbol) [0x0xe9bfa0]
+	(No symbol) [0x0xe9ca87]
+	(No symbol) [0x0xea96ae]
+	(No symbol) [0x0xebb84d]
+	(No symbol) [0x0xf3b966]
+	(No symbol) [0x0xf19d86]
+	(No symbol) [0x0xeeb53e]
+	(No symbol) [0x0xeec414]
+	GetHandleVerifier [0x0x1318a13+2457603]
+	GetHandleVerifier [0x0x13139d2+2437058]
+	GetHandleVerifier [0x0x10f97f2+232930]
+	GetHandleVerifier [0x0x10e9a18+167944]
+	GetHandleVerifier [0x0x10f092d+196381]
+	GetHandleVerifier [0x0x10d8ee8+99544]
+	GetHandleVerifier [0x0x10d9082+99954]
+	GetHandleVerifier [0x0x10c322a+10266]
+	BaseThreadInitThunk [0x0x76f15d49+25]
+	RtlInitializeExceptionChain [0x0x77e8d1ab+107]
+	RtlGetAppContainerNamedObjectPath [0x0x77e8d131+561]
+
+2025-09-22 14:55:24,882 - ERROR - [MainThread:click_element] All click attempts failed for 'Dept Link 'DC Office Kullu' (SNo:3)'. Last error: WebDriverException: Message: tab crashed
+2025-09-22 14:55:24,883 - INFO - [MainThread:_find_and_click_dept_link]     ERROR: click_element failed S.No '3' (Attempt 1).
+2025-09-22 14:55:24,883 - INFO - [MainThread:_find_and_click_dept_link]   Retry 1/2 find link 3...
+2025-09-22 14:55:26,386 - INFO - [MainThread:_find_and_click_dept_link]     UNEXPECTED ERROR finding/click S.No 3 (Att 2): Message: tab crashed
+  (Session info: chrome=140.0.7339.128)
+Stacktrace:
+	GetHandleVerifier [0x0x10d0c13+66051]
+	GetHandleVerifier [0x0x10d0c54+66116]
+	(No symbol) [0x0xead980]
+	(No symbol) [0x0xe9e059]
+	(No symbol) [0x0xe9bfa0]
+	(No symbol) [0x0xe9ca87]
+	(No symbol) [0x0xea96ae]
+	(No symbol) [0x0xebb055]
+	(No symbol) [0x0xec0c06]
+	(No symbol) [0x0xe9d106]
+	(No symbol) [0x0xeba8e8]
+	(No symbol) [0x0xf3b700]
+	(No symbol) [0x0xf19d86]
+	(No symbol) [0x0xeeb53e]
+	(No symbol) [0x0xeec414]
+	GetHandleVerifier [0x0x1318a13+2457603]
+	GetHandleVerifier [0x0x13139d2+2437058]
+	GetHandleVerifier [0x0x10f97f2+232930]
+	GetHandleVerifier [0x0x10e9a18+167944]
+	GetHandleVerifier [0x0x10f092d+196381]
+	GetHandleVerifier [0x0x10d8ee8+99544]
+	GetHandleVerifier [0x0x10d9082+99954]
+	GetHandleVerifier [0x0x10c322a+10266]
+	BaseThreadInitThunk [0x0x76f15d49+25]
+	RtlInitializeExceptionChain [0x0x77e8d1ab+107]
+	RtlGetAppContainerNamedObjectPath [0x0x77e8d131+561]
+
+2025-09-22 14:55:26,390 - ERROR - [MainThread:_find_and_click_dept_link] Unexpected error find/click S.No 3
+Traceback (most recent call last):
+  File "d:\Dev84\BF 2.1.4\scraper\logic.py", line 306, in _find_and_click_dept_link
+    target_row = _find_target_row(driver, s_no, attempt, log_callback)
+  File "d:\Dev84\BF 2.1.4\scraper\logic.py", line 242, in _find_target_row
+    table_body = WebDriverWait(driver, ELEMENT_WAIT_TIMEOUT).until(
+        EC.presence_of_element_located(MAIN_TABLE_BODY_LOCATOR)
+    )
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\support\wait.py", line 129, in until
+    value = method(self._driver)
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\support\expected_conditions.py", line 104, in _predicate
+    return driver.find_element(*locator)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\remote\webdriver.py", line 922, in find_element
+    return self.execute(Command.FIND_ELEMENT, {"using": by, "value": value})["value"]
+           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\remote\webdriver.py", line 454, in execute
+    self.error_handler.check_response(response)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\remote\errorhandler.py", line 232, in check_response
+    raise exception_class(message, screen, stacktrace)
+selenium.common.exceptions.WebDriverException: Message: tab crashed
+  (Session info: chrome=140.0.7339.128)
+Stacktrace:
+	GetHandleVerifier [0x0x10d0c13+66051]
+	GetHandleVerifier [0x0x10d0c54+66116]
+	(No symbol) [0x0xead980]
+	(No symbol) [0x0xe9e059]
+	(No symbol) [0x0xe9bfa0]
+	(No symbol) [0x0xe9ca87]
+	(No symbol) [0x0xea96ae]
+	(No symbol) [0x0xebb055]
+	(No symbol) [0x0xec0c06]
+	(No symbol) [0x0xe9d106]
+	(No symbol) [0x0xeba8e8]
+	(No symbol) [0x0xf3b700]
+	(No symbol) [0x0xf19d86]
+	(No symbol) [0x0xeeb53e]
+	(No symbol) [0x0xeec414]
+	GetHandleVerifier [0x0x1318a13+2457603]
+	GetHandleVerifier [0x0x13139d2+2437058]
+	GetHandleVerifier [0x0x10f97f2+232930]
+	GetHandleVerifier [0x0x10e9a18+167944]
+	GetHandleVerifier [0x0x10f092d+196381]
+	GetHandleVerifier [0x0x10d8ee8+99544]
+	GetHandleVerifier [0x0x10d9082+99954]
+	GetHandleVerifier [0x0x10c322a+10266]
+	BaseThreadInitThunk [0x0x76f15d49+25]
+	RtlInitializeExceptionChain [0x0x77e8d1ab+107]
+	RtlGetAppContainerNamedObjectPath [0x0x77e8d131+561]
+
+2025-09-22 14:55:26,396 - INFO - [MainThread:_find_and_click_dept_link]   Retry 2/2 find link 3...
+2025-09-22 14:55:29,404 - INFO - [MainThread:_find_and_click_dept_link]     UNEXPECTED ERROR finding/click S.No 3 (Att 3): Message: tab crashed
+  (Session info: chrome=140.0.7339.128)
+Stacktrace:
+	GetHandleVerifier [0x0x10d0c13+66051]
+	GetHandleVerifier [0x0x10d0c54+66116]
+	(No symbol) [0x0xead980]
+	(No symbol) [0x0xe9e059]
+	(No symbol) [0x0xe9bfa0]
+	(No symbol) [0x0xe9ca87]
+	(No symbol) [0x0xea96ae]
+	(No symbol) [0x0xebb055]
+	(No symbol) [0x0xec0c06]
+	(No symbol) [0x0xe9d106]
+	(No symbol) [0x0xeba8e8]
+	(No symbol) [0x0xf3b700]
+	(No symbol) [0x0xf19d86]
+	(No symbol) [0x0xeeb53e]
+	(No symbol) [0x0xeec414]
+	GetHandleVerifier [0x0x1318a13+2457603]
+	GetHandleVerifier [0x0x13139d2+2437058]
+	GetHandleVerifier [0x0x10f97f2+232930]
+	GetHandleVerifier [0x0x10e9a18+167944]
+	GetHandleVerifier [0x0x10f092d+196381]
+	GetHandleVerifier [0x0x10d8ee8+99544]
+	GetHandleVerifier [0x0x10d9082+99954]
+	GetHandleVerifier [0x0x10c322a+10266]
+	BaseThreadInitThunk [0x0x76f15d49+25]
+	RtlInitializeExceptionChain [0x0x77e8d1ab+107]
+	RtlGetAppContainerNamedObjectPath [0x0x77e8d131+561]
+
+2025-09-22 14:55:29,406 - ERROR - [MainThread:_find_and_click_dept_link] Unexpected error find/click S.No 3
+Traceback (most recent call last):
+  File "d:\Dev84\BF 2.1.4\scraper\logic.py", line 306, in _find_and_click_dept_link
+    target_row = _find_target_row(driver, s_no, attempt, log_callback)
+  File "d:\Dev84\BF 2.1.4\scraper\logic.py", line 242, in _find_target_row
+    table_body = WebDriverWait(driver, ELEMENT_WAIT_TIMEOUT).until(
+        EC.presence_of_element_located(MAIN_TABLE_BODY_LOCATOR)
+    )
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\support\wait.py", line 129, in until
+    value = method(self._driver)
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\support\expected_conditions.py", line 104, in _predicate
+    return driver.find_element(*locator)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\remote\webdriver.py", line 922, in find_element
+    return self.execute(Command.FIND_ELEMENT, {"using": by, "value": value})["value"]
+           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\remote\webdriver.py", line 454, in execute
+    self.error_handler.check_response(response)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Users\kalia\AppData\Roaming\Python\Python313\site-packages\selenium\webdriver\remote\errorhandler.py", line 232, in check_response
+    raise exception_class(message, screen, stacktrace)
+selenium.common.exceptions.WebDriverException: Message: tab crashed
+  (Session info: chrome=140.0.7339.128)
+Stacktrace:
+	GetHandleVerifier [0x0x10d0c13+66051]
+	GetHandleVerifier [0x0x10d0c54+66116]
+	(No symbol) [0x0xead980]
+	(No symbol) [0x0xe9e059]
+	(No symbol) [0x0xe9bfa0]
+	(No symbol) [0x0xe9ca87]
+	(No symbol) [0x0xea96ae]
+	(No symbol) [0x0xebb055]
+	(No symbol) [0x0xec0c06]
+	(No symbol) [0x0xe9d106]
+	(No symbol) [0x0xeba8e8]
+	(No symbol) [0x0xf3b700]
+	(No symbol) [0x0xf19d86]
+	(No symbol) [0x0xeeb53e]
+	(No symbol) [0x0xeec414]
+	GetHandleVerifier [0x0x1318a13+2457603]
+	GetHandleVerifier [0x0x13139d2+2437058]
+	GetHandleVerifier [0x0x10f97f2+232930]
+	GetHandleVerifier [0x0x10e9a18+167944]
+	GetHandleVerifier [0x0x10f092d+196381]
+	GetHandleVerifier [0x0x10d8ee8+99544]
+	GetHandleVerifier [0x0x10d9082+99954]
+	GetHandleVerifier [0x0x10c322a+10266]
+	BaseThreadInitThunk [0x0x76f15d49+25]
+	RtlInitializeExceptionChain [0x0x77e8d1ab+107]
+	RtlGetAppContainerNamedObjectPath [0x0x77e8d131+561]
+
+2025-09-22 14:55:29,410 - INFO - [MainThread:run_scraping_logic] 
+Processing department 4/42: Department of Health and Family Welfare
+2025-09-22 14:55:29,414 - INFO - [MainThread:run_scraping_logic] Driver session lost before dept Department of Health and Family Welfare: Message: tab crashed
+  (Session info: chrome=140.0.7339.128)
+Stacktrace:
+	GetHandleVerifier [0x0x10d0c13+66051]
+	GetHandleVerifier [0x0x10d0c54+66116]
+	(No symbol) [0x0xead980]
+	(No symbol) [0x0xe9e059]
+	(No symbol) [0x0xe9bfa0]
+	(No symbol) [0x0xe9ca87]
+	(No symbol) [0x0xea96ae]
+	(No symbol) [0x0xebb055]
+	(No symbol) [0x0xec0c06]
+	(No symbol) [0x0xe9d106]
+	(No symbol) [0x0xeba8e8]
+	(No symbol) [0x0xf3b700]
+	(No symbol) [0x0xf19d86]
+	(No symbol) [0x0xeeb53e]
+	(No symbol) [0x0xeec414]
+	GetHandleVerifier [0x0x1318a13+2457603]
+	GetHandleVerifier [0x0x13139d2+2437058]
+	GetHandleVerifier [0x0x10f97f2+232930]
+	GetHandleVerifier [0x0x10e9a18+167944]
+	GetHandleVerifier [0x0x10f092d+196381]
+	GetHandleVerifier [0x0x10d8ee8+99544]
+	GetHandleVerifier [0x0x10d9082+99954]
+	GetHandleVerifier [0x0x10c322a+10266]
+	BaseThreadInitThunk [0x0x76f15d49+25]
+	RtlInitializeExceptionChain [0x0x77e8d1ab+107]
+	RtlGetAppContainerNamedObjectPath [0x0x77e8d131+561]
+
+2025-09-22 14:55:29,470 - INFO - [MainThread:run_scraping_logic] 
+Saved 28 tender details to: hptenders_gov_in_tenders_20250922_145529.xlsx
+2025-09-22 14:55:29,471 - INFO - [MainThread:run_scraping_logic] 
+=== Scraping completed ===
+2025-09-22 14:55:29,472 - INFO - [MainThread:run_scraping_logic] Processed 4 departments
+2025-09-22 14:55:29,472 - INFO - [MainThread:run_scraping_logic] Total tenders found: 28
+2025-09-22 14:55:29,472 - INFO - [MainThread:<lambda>] STATUS: Scraping completed
+2025-09-22 14:55:29,478 - INFO - [MainThread:run_department_scraping] .1f
+2025-09-22 14:55:29,485 - INFO - [MainThread:safe_quit_driver] Closing WebDriver instance...
+2025-09-22 14:55:29,486 - INFO - [MainThread:safe_quit_driver] Closing WebDriver instance...
+2025-09-22 14:55:29,508 - WARNING - [MainThread:urlopen] Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'ConnectionResetError(10054, 'An existing connection was forcibly closed by the remote host', None, 10054, None)': /session/3d859ca7ade931096fd89f3749db3a93
+2025-09-22 14:56:21,391 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility v2.1.4 Starting ---
+2025-09-22 14:56:21,391 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2025-09-22 14:56:21,392 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2025-09-22 14:56:21,392 - INFO - [MainThread:setup_logging] Script Directory: d:\Dev84\BF 2.1.4
+2025-09-22 14:56:21,392 - INFO - [MainThread:setup_logging] Working Directory: d:\Dev84\BF 2.1.4
+2025-09-22 14:56:21,392 - INFO - [MainThread:check_package_versions] ✓ selenium 4.34.2 is available
+2025-09-22 14:56:21,884 - INFO - [MainThread:check_package_versions] ✓ pandas 2.3.1 is available
+2025-09-22 14:56:22,078 - INFO - [MainThread:check_package_versions] ✓ openpyxl 3.1.5 is available
+2025-09-22 14:56:22,312 - INFO - [MainThread:check_package_versions] ✓ requests 2.32.4 is available
+2025-09-22 14:56:22,323 - INFO - [MainThread:check_package_versions] ✓ pytesseract 0.3.13 is available
+2025-09-22 14:56:22,492 - INFO - [MainThread:check_package_versions] ✓ undetected_chromedriver 3.5.5 (optional) is available
+2025-09-22 14:56:22,493 - INFO - [MainThread:check_package_versions] ✓ webdriver_manager 4.0.2 (optional) is available
+2025-09-22 14:56:22,494 - INFO - [MainThread:import_application_components] Importing application components...
+2025-09-22 14:56:22,595 - INFO - [MainThread:import_application_components] Application components imported successfully
+2025-09-22 14:56:22,595 - INFO - [MainThread:run_cli_mode] 🔧 Starting CLI mode...
+2025-09-22 14:56:22,603 - INFO - [MainThread:load_settings] Settings loaded and merged with defaults from d:\Dev84\BF 2.1.4\settings.json
+2025-09-22 14:56:22,604 - INFO - [MainThread:load_configuration] Loaded configuration from d:\Dev84\BF 2.1.4\settings.json
+2025-09-22 14:56:22,608 - INFO - [MainThread:get_portal_config] Using HP Tenders configuration: https://hptenders.gov.in/nicgep/app
+2025-09-22 14:56:22,609 - INFO - [MainThread:run_department_scraping] Setting up WebDriver...
+2025-09-22 14:56:22,609 - INFO - [MainThread:setup_driver] Setting up Chrome WebDriver...
+2025-09-22 14:56:22,609 - INFO - [MainThread:setup_driver] Using standard ChromeDriver for better compatibility
+2025-09-22 14:56:22,609 - INFO - [MainThread:setup_driver] Setting download directory to: D:\Dev84\BF 2.1.4\Tender_Downloads
+2025-09-22 14:56:22,610 - INFO - [MainThread:setup_driver] Installing ChromeDriver using webdriver-manager...
+2025-09-22 14:56:22,610 - INFO - [MainThread:log] ====== WebDriver manager ======
+2025-09-22 14:56:23,389 - INFO - [MainThread:log] Get LATEST chromedriver version for google-chrome
+2025-09-22 14:56:23,554 - INFO - [MainThread:log] Get LATEST chromedriver version for google-chrome
+2025-09-22 14:56:23,753 - INFO - [MainThread:log] Driver [C:\Users\kalia\.wdm\drivers\chromedriver\win64\140.0.7339.185\chromedriver-win32/chromedriver.exe] found in cache
+2025-09-22 14:56:23,754 - INFO - [MainThread:setup_driver] ChromeDriver installed successfully
+2025-09-22 14:56:23,756 - INFO - [MainThread:setup_driver] Creating Chrome WebDriver instance...
+2025-09-22 14:56:24,774 - INFO - [MainThread:setup_driver] Chrome WebDriver setup completed successfully
+2025-09-22 14:56:24,775 - INFO - [MainThread:run_department_scraping] Fetching department list from HP Tenders...
+2025-09-22 14:56:24,776 - INFO - [MainThread:fetch_department_list_from_site_v2] Worker: Fetching departments from base URL: https://hptenders.gov.in/nicgep/app?page=FrontEndTendersByOrganisation&service=page
+2025-09-22 14:56:24,776 - INFO - [MainThread:fetch_department_list_from_site_v2] Worker: Setting up WebDriver...
+2025-09-22 14:56:24,776 - INFO - [MainThread:setup_driver] Setting up Chrome WebDriver...
+2025-09-22 14:56:24,777 - INFO - [MainThread:setup_driver] Using standard ChromeDriver for better compatibility
+2025-09-22 14:56:24,777 - INFO - [MainThread:setup_driver] Setting download directory to: d:\Dev84\BF 2.1.4
+2025-09-22 14:56:24,778 - INFO - [MainThread:setup_driver] Installing ChromeDriver using webdriver-manager...
+2025-09-22 14:56:24,779 - INFO - [MainThread:log] ====== WebDriver manager ======
+2025-09-22 14:56:25,583 - INFO - [MainThread:log] Get LATEST chromedriver version for google-chrome
+2025-09-22 14:56:25,716 - INFO - [MainThread:log] Get LATEST chromedriver version for google-chrome
+2025-09-22 14:56:25,864 - INFO - [MainThread:log] Driver [C:\Users\kalia\.wdm\drivers\chromedriver\win64\140.0.7339.185\chromedriver-win32/chromedriver.exe] found in cache
+2025-09-22 14:56:25,865 - INFO - [MainThread:setup_driver] ChromeDriver installed successfully
+2025-09-22 14:56:25,865 - INFO - [MainThread:setup_driver] Creating Chrome WebDriver instance...
+2025-09-22 14:56:26,931 - INFO - [MainThread:setup_driver] Chrome WebDriver setup completed successfully
+2025-09-22 14:56:26,932 - INFO - [MainThread:fetch_department_list_from_site_v2] Worker: Navigating to https://hptenders.gov.in/nicgep/app?page=FrontEndTendersByOrganisation&service=page
+2025-09-22 14:56:28,961 - INFO - [MainThread:fetch_department_list_from_site_v2] Worker: Finding Tenders by Organisation link...
+2025-09-22 14:56:28,966 - INFO - [MainThread:navigate_to_org_list] Worker: Current URL: https://hptenders.gov.in/nicgep/app?page=FrontEndTendersByOrganisation&service=page
+2025-09-22 14:56:28,967 - INFO - [MainThread:navigate_to_org_list] ✓ Already on 'Tenders by Organisation' page
+2025-09-22 14:56:28,967 - INFO - [MainThread:fetch_department_list_from_site_v2] Worker: Waiting for main department table...
+2025-09-22 14:56:28,976 - INFO - [MainThread:fetch_department_list_from_site_v2] Worker: Main table container located.
+2025-09-22 14:56:29,726 - INFO - [MainThread:fetch_department_list_from_site_v2] Worker: Extracting department data...
+2025-09-22 14:56:31,247 - INFO - [MainThread:fetch_department_list_from_site_v2] Worker: Found 44 rows using tbody.
+2025-09-22 14:56:31,284 - INFO - [MainThread:fetch_department_list_from_site_v2] Worker: Skipping header row: S.No='S.No', Name='Organisation Name'
+2025-09-22 14:56:33,118 - INFO - [MainThread:fetch_department_list_from_site_v2] Worker: Processed 42 rows. Found 42 depts. Est tenders: 1328
+2025-09-22 14:56:33,119 - INFO - [MainThread:safe_quit_driver] Closing WebDriver instance...
+2025-09-22 14:56:33,119 - INFO - [MainThread:safe_quit_driver] Closing WebDriver instance...
+2025-09-22 14:56:35,281 - INFO - [MainThread:safe_quit_driver] WebDriver quit successfully.
+2025-09-22 14:56:35,282 - INFO - [MainThread:run_department_scraping] Found 42 departments to process
+2025-09-22 14:56:35,285 - INFO - [MainThread:run_department_scraping] Starting scraping of 42 departments...
+2025-09-22 14:56:35,285 - INFO - [MainThread:run_scraping_logic] Navigating to organization list...
+2025-09-22 14:56:35,857 - INFO - [MainThread:navigate_to_org_list] Worker: Current URL: https://hptenders.gov.in/nicgep/app?page=FrontEndTendersByOrganisation&service=page
+2025-09-22 14:56:35,857 - INFO - [MainThread:navigate_to_org_list] ✓ Already on 'Tenders by Organisation' page
+2025-09-22 14:56:37,367 - INFO - [MainThread:run_scraping_logic] Starting to process 42 departments...
+2025-09-22 14:56:37,367 - INFO - [MainThread:run_scraping_logic] 
+Processing department 1/42: Baddi Barotiwala Nalagarh Development Authority
+2025-09-22 14:56:37,372 - INFO - [MainThread:run_scraping_logic] Current URL before processing: https://hptenders.gov.in/nicgep/app?page=FrontEndTendersByOrganisation&service=page
+2025-09-22 14:56:37,373 - INFO - [MainThread:_find_and_click_dept_link]   Finding link for Dept S.No: 1 - Baddi Barotiwala Nalagarh Deve...
+2025-09-22 14:56:37,394 - INFO - [MainThread:_find_target_row]     Attempt 1: Check 44 rows for S.No '1'...
+2025-09-22 14:56:37,415 - INFO - [MainThread:_find_target_row]     Skip header-like row 0: 'S.No'
+2025-09-22 14:56:37,429 - INFO - [MainThread:_find_target_row]     Found match row index 1.
+2025-09-22 14:56:37,460 - INFO - [MainThread:_click_department_link]     Link found S.No '1'. Clicking...
+2025-09-22 14:56:38,246 - INFO - [MainThread:click_element] Standard click successful for 'Dept Link 'Baddi Barotiwala Nal' (SNo:1)'.
+2025-09-22 14:56:41,859 - INFO - [MainThread:_scrape_tender_details]   Scraping details for: Baddi Barotiwala Nalagarh Development Authority...
+2025-09-22 14:56:41,874 - INFO - [MainThread:_scrape_tender_details]     Details table located.
+2025-09-22 14:56:42,682 - INFO - [MainThread:_scrape_tender_details]     Skipping header row (content match: ['s.no', 'published date', 'closing date', 'opening date', 'title']).
+2025-09-22 14:56:42,682 - INFO - [MainThread:_scrape_tender_details]     Found 6 data rows for Baddi Barotiwala Nalagarh Development Authority.
+2025-09-22 14:56:43,007 - INFO - [MainThread:_scrape_tender_details]   Successfully extracted details for 5 tenders from Baddi Barotiwala Nalagarh Development Authority.
+2025-09-22 14:56:43,008 - INFO - [MainThread:run_scraping_logic] Found 5 tenders in department Baddi Barotiwala Nalagarh Development Authority
+2025-09-22 14:56:43,015 - INFO - [MainThread:_click_on_page_back_button]   Attempting site 'Back' button click...
+2025-09-22 14:56:43,973 - INFO - [MainThread:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-22 14:56:44,574 - INFO - [MainThread:_click_on_page_back_button]     Site 'Back' button clicked.
+2025-09-22 14:56:46,839 - INFO - [MainThread:_click_on_page_back_button]     ✓ Back navigation successful, URL: https://hptenders.gov.in/nicgep/app?page=FrontEndTendersByOrganisation&service=page
+2025-09-22 14:56:46,840 - INFO - [MainThread:run_scraping_logic] 
+Processing department 2/42: Chief Project Director IDP Solan
+2025-09-22 14:56:46,846 - INFO - [MainThread:run_scraping_logic] Current URL before processing: https://hptenders.gov.in/nicgep/app?page=FrontEndTendersByOrganisation&service=page
+2025-09-22 14:56:46,846 - INFO - [MainThread:_find_and_click_dept_link]   Finding link for Dept S.No: 2 - Chief Project Director IDP Sol...
+2025-09-22 14:56:46,865 - INFO - [MainThread:_find_target_row]     Attempt 1: Check 44 rows for S.No '2'...
+2025-09-22 14:56:46,883 - INFO - [MainThread:_find_target_row]     Skip header-like row 0: 'S.No'
+2025-09-22 14:56:46,914 - INFO - [MainThread:_find_target_row]     Found match row index 2.
+2025-09-22 14:56:46,943 - INFO - [MainThread:_click_department_link]     Link found S.No '2'. Clicking...
+2025-09-22 14:56:47,722 - INFO - [MainThread:click_element] Standard click successful for 'Dept Link 'Chief Project Direct' (SNo:2)'.
+2025-09-22 14:56:51,335 - INFO - [MainThread:_scrape_tender_details]   Scraping details for: Chief Project Director IDP Solan...
+2025-09-22 14:56:51,347 - INFO - [MainThread:_scrape_tender_details]     Details table located.
+2025-09-22 14:56:52,177 - INFO - [MainThread:_scrape_tender_details]     Skipping header row (content match: ['s.no', 'published date', 'closing date', 'opening date', 'title']).
+2025-09-22 14:56:52,177 - INFO - [MainThread:_scrape_tender_details]     Found 24 data rows for Chief Project Director IDP Solan.
+2025-09-22 14:56:53,166 - INFO - [MainThread:_scrape_tender_details]   Successfully extracted details for 23 tenders from Chief Project Director IDP Solan.
+2025-09-22 14:56:53,167 - INFO - [MainThread:run_scraping_logic] Found 23 tenders in department Chief Project Director IDP Solan
+2025-09-22 14:56:53,171 - INFO - [MainThread:_click_on_page_back_button]   Attempting site 'Back' button click...
+2025-09-22 14:56:54,272 - INFO - [MainThread:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-22 14:56:54,873 - INFO - [MainThread:_click_on_page_back_button]     Site 'Back' button clicked.
+2025-09-22 14:56:57,138 - INFO - [MainThread:_click_on_page_back_button]     ✓ Back navigation successful, URL: https://hptenders.gov.in/nicgep/app?page=FrontEndTendersByOrganisation&service=page
+2025-09-22 14:56:57,139 - INFO - [MainThread:run_scraping_logic] 
+Processing department 3/42: DC Office Kullu
+2025-09-22 14:56:57,150 - INFO - [MainThread:run_scraping_logic] Current URL before processing: https://hptenders.gov.in/nicgep/app?page=FrontEndTendersByOrganisation&service=page
+2025-09-22 14:56:57,150 - INFO - [MainThread:_find_and_click_dept_link]   Finding link for Dept S.No: 3 - DC Office Kullu...
+2025-09-22 14:56:57,170 - INFO - [MainThread:_find_target_row]     Attempt 1: Check 44 rows for S.No '3'...
+2025-09-22 14:56:57,189 - INFO - [MainThread:_find_target_row]     Skip header-like row 0: 'S.No'
+2025-09-22 14:56:57,255 - INFO - [MainThread:_find_target_row]     Found match row index 3.
+2025-09-22 14:56:57,289 - INFO - [MainThread:_click_department_link]     Link found S.No '3'. Clicking...
+2025-09-22 14:56:58,045 - INFO - [MainThread:click_element] Standard click successful for 'Dept Link 'DC Office Kullu' (SNo:3)'.
+2025-09-22 14:57:01,654 - INFO - [MainThread:_scrape_tender_details]   Scraping details for: DC Office Kullu...
+2025-09-22 14:57:01,668 - INFO - [MainThread:_scrape_tender_details]     Details table located.
+2025-09-22 14:57:02,515 - INFO - [MainThread:_scrape_tender_details]     Skipping header row (content match: ['s.no', 'published date', 'closing date', 'opening date', 'title']).
+2025-09-22 14:57:02,516 - INFO - [MainThread:_scrape_tender_details]     Found 2 data rows for DC Office Kullu.
+2025-09-22 14:57:02,584 - INFO - [MainThread:_scrape_tender_details]   Successfully extracted details for 1 tenders from DC Office Kullu.
+2025-09-22 14:57:02,584 - INFO - [MainThread:run_scraping_logic] Found 1 tenders in department DC Office Kullu
+2025-09-22 14:57:02,588 - INFO - [MainThread:_click_on_page_back_button]   Attempting site 'Back' button click...
+2025-09-22 14:57:03,534 - INFO - [MainThread:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-22 14:57:04,137 - INFO - [MainThread:_click_on_page_back_button]     Site 'Back' button clicked.
+2025-09-22 14:57:06,402 - INFO - [MainThread:_click_on_page_back_button]     ✓ Back navigation successful, URL: https://hptenders.gov.in/nicgep/app?page=FrontEndTendersByOrganisation&service=page
+2025-09-22 14:57:06,403 - INFO - [MainThread:run_scraping_logic] 
+Processing department 4/42: Department of Health and Family Welfare
+2025-09-22 14:57:06,407 - INFO - [MainThread:run_scraping_logic] Current URL before processing: https://hptenders.gov.in/nicgep/app?page=FrontEndTendersByOrganisation&service=page
+2025-09-22 14:57:06,407 - INFO - [MainThread:_find_and_click_dept_link]   Finding link for Dept S.No: 4 - Department of Health and Famil...
+2025-09-22 14:57:06,426 - INFO - [MainThread:_find_target_row]     Attempt 1: Check 44 rows for S.No '4'...
+2025-09-22 14:57:06,441 - INFO - [MainThread:_find_target_row]     Skip header-like row 0: 'S.No'
+2025-09-22 14:57:06,493 - INFO - [MainThread:_find_target_row]     Found match row index 4.
+2025-09-22 14:57:06,513 - INFO - [MainThread:_click_department_link]     Link found S.No '4'. Clicking...
+2025-09-22 14:57:07,243 - INFO - [MainThread:click_element] Standard click successful for 'Dept Link 'Department of Health' (SNo:4)'.
+2025-09-22 14:57:10,857 - INFO - [MainThread:_scrape_tender_details]   Scraping details for: Department of Health and Family Welfare...
+2025-09-22 14:57:10,875 - INFO - [MainThread:_scrape_tender_details]     Details table located.
+2025-09-22 14:57:11,780 - INFO - [MainThread:_scrape_tender_details]     Skipping header row (content match: ['s.no', 'published date', 'closing date', 'opening date', 'title']).
+2025-09-22 14:57:11,782 - INFO - [MainThread:_scrape_tender_details]     Found 7 data rows for Department of Health and Family Welfare.
+2025-09-22 14:57:12,148 - INFO - [MainThread:_scrape_tender_details]   Successfully extracted details for 6 tenders from Department of Health and Family Welfare.
+2025-09-22 14:57:12,148 - INFO - [MainThread:run_scraping_logic] Found 6 tenders in department Department of Health and Family Welfare
+2025-09-22 14:57:12,151 - INFO - [MainThread:_click_on_page_back_button]   Attempting site 'Back' button click...
+2025-09-22 14:57:13,001 - INFO - [MainThread:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-22 14:57:13,604 - INFO - [MainThread:_click_on_page_back_button]     Site 'Back' button clicked.
+2025-09-22 14:57:15,871 - INFO - [MainThread:_click_on_page_back_button]     ✓ Back navigation successful, URL: https://hptenders.gov.in/nicgep/app?page=FrontEndTendersByOrganisation&service=page
+2025-09-22 14:57:15,873 - INFO - [MainThread:run_scraping_logic] 
+Processing department 5/42: Department of Information Technology
+2025-09-22 14:57:15,883 - INFO - [MainThread:run_scraping_logic] Current URL before processing: https://hptenders.gov.in/nicgep/app?page=FrontEndTendersByOrganisation&service=page
+2025-09-22 14:57:15,883 - INFO - [MainThread:_find_and_click_dept_link]   Finding link for Dept S.No: 5 - Department of Information Tech...
+2025-09-22 14:57:15,899 - INFO - [MainThread:_find_target_row]     Attempt 1: Check 44 rows for S.No '5'...
+2025-09-22 14:57:15,916 - INFO - [MainThread:_find_target_row]     Skip header-like row 0: 'S.No'
+2025-09-22 14:57:15,985 - INFO - [MainThread:_find_target_row]     Found match row index 5.
+2025-09-22 14:57:16,001 - INFO - [MainThread:_click_department_link]     Link found S.No '5'. Clicking...
+2025-09-22 14:57:16,725 - INFO - [MainThread:click_element] Standard click successful for 'Dept Link 'Department of Inform' (SNo:5)'.
+2025-09-22 14:57:20,335 - INFO - [MainThread:_scrape_tender_details]   Scraping details for: Department of Information Technology...
+2025-09-22 14:57:20,346 - INFO - [MainThread:_scrape_tender_details]     Details table located.
+2025-09-22 14:57:21,239 - INFO - [MainThread:_scrape_tender_details]     Skipping header row (content match: ['s.no', 'published date', 'closing date', 'opening date', 'title']).
+2025-09-22 14:57:21,240 - INFO - [MainThread:_scrape_tender_details]     Found 2 data rows for Department of Information Technology.
+2025-09-22 14:57:21,318 - INFO - [MainThread:_scrape_tender_details]   Successfully extracted details for 1 tenders from Department of Information Technology.
+2025-09-22 14:57:21,320 - INFO - [MainThread:run_scraping_logic] Found 1 tenders in department Department of Information Technology
+2025-09-22 14:57:21,324 - INFO - [MainThread:_click_on_page_back_button]   Attempting site 'Back' button click...
+2025-09-22 14:57:22,196 - INFO - [MainThread:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-22 14:57:22,797 - INFO - [MainThread:_click_on_page_back_button]     Site 'Back' button clicked.
+2025-09-22 14:57:25,060 - INFO - [MainThread:_click_on_page_back_button]     ✓ Back navigation successful, URL: https://hptenders.gov.in/nicgep/app?page=FrontEndTendersByOrganisation&service=page
+2025-09-22 14:57:25,062 - INFO - [MainThread:run_scraping_logic] 
+Processing department 6/42: DHARAMSHALA SMART CITY LIMITED
+2025-09-22 14:57:25,068 - INFO - [MainThread:run_scraping_logic] Current URL before processing: https://hptenders.gov.in/nicgep/app?page=FrontEndTendersByOrganisation&service=page
+2025-09-22 14:57:25,068 - INFO - [MainThread:_find_and_click_dept_link]   Finding link for Dept S.No: 6 - DHARAMSHALA SMART CITY LIMITED...
+2025-09-22 14:57:25,089 - INFO - [MainThread:_find_target_row]     Attempt 1: Check 44 rows for S.No '6'...
+2025-09-22 14:57:25,107 - INFO - [MainThread:_find_target_row]     Skip header-like row 0: 'S.No'
+2025-09-22 14:57:25,215 - INFO - [MainThread:_find_target_row]     Found match row index 6.
+2025-09-22 14:57:25,243 - INFO - [MainThread:_click_department_link]     Link found S.No '6'. Clicking...
+2025-09-22 14:57:25,982 - INFO - [MainThread:click_element] Standard click successful for 'Dept Link 'DHARAMSHALA SMART CI' (SNo:6)'.
+2025-09-22 14:57:29,595 - INFO - [MainThread:_scrape_tender_details]   Scraping details for: DHARAMSHALA SMART CITY LIMITED...
+2025-09-22 14:57:29,619 - INFO - [MainThread:_scrape_tender_details]     Details table located.
+2025-09-22 14:57:30,441 - INFO - [MainThread:_scrape_tender_details]     Skipping header row (content match: ['s.no', 'published date', 'closing date', 'opening date', 'title']).
+2025-09-22 14:57:30,441 - INFO - [MainThread:_scrape_tender_details]     Found 2 data rows for DHARAMSHALA SMART CITY LIMITED.
+2025-09-22 14:57:30,495 - INFO - [MainThread:_scrape_tender_details]   Successfully extracted details for 1 tenders from DHARAMSHALA SMART CITY LIMITED.
+2025-09-22 14:57:30,495 - INFO - [MainThread:run_scraping_logic] Found 1 tenders in department DHARAMSHALA SMART CITY LIMITED
+2025-09-22 14:57:30,500 - INFO - [MainThread:_click_on_page_back_button]   Attempting site 'Back' button click...
+2025-09-22 14:57:31,435 - INFO - [MainThread:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-22 14:57:32,037 - INFO - [MainThread:_click_on_page_back_button]     Site 'Back' button clicked.
+2025-09-22 14:57:34,296 - INFO - [MainThread:_click_on_page_back_button]     ✓ Back navigation successful, URL: https://hptenders.gov.in/nicgep/app?page=FrontEndTendersByOrganisation&service=page
+2025-09-22 14:57:34,297 - INFO - [MainThread:run_scraping_logic] 
+Processing department 7/42: Directorate Animal Husbandry
+2025-09-22 14:57:34,301 - INFO - [MainThread:run_scraping_logic] Current URL before processing: https://hptenders.gov.in/nicgep/app?page=FrontEndTendersByOrganisation&service=page
+2025-09-22 14:57:34,301 - INFO - [MainThread:_find_and_click_dept_link]   Finding link for Dept S.No: 7 - Directorate Animal Husbandry...
+2025-09-22 14:57:34,312 - INFO - [MainThread:_find_target_row]     Attempt 1: Check 44 rows for S.No '7'...
+2025-09-22 14:57:34,323 - INFO - [MainThread:_find_target_row]     Skip header-like row 0: 'S.No'
+2025-09-22 14:57:34,399 - INFO - [MainThread:_find_target_row]     Found match row index 7.
+2025-09-22 14:57:34,414 - INFO - [MainThread:_click_department_link]     Link found S.No '7'. Clicking...
+2025-09-22 14:57:35,116 - INFO - [MainThread:click_element] Standard click successful for 'Dept Link 'Directorate Animal H' (SNo:7)'.
+2025-09-22 14:57:38,728 - INFO - [MainThread:_scrape_tender_details]   Scraping details for: Directorate Animal Husbandry...
+2025-09-22 14:57:38,741 - INFO - [MainThread:_scrape_tender_details]     Details table located.
+2025-09-22 14:57:39,577 - INFO - [MainThread:_scrape_tender_details]     Skipping header row (content match: ['s.no', 'published date', 'closing date', 'opening date', 'title']).
+2025-09-22 14:57:39,578 - INFO - [MainThread:_scrape_tender_details]     Found 6 data rows for Directorate Animal Husbandry.
+2025-09-22 14:57:39,819 - INFO - [MainThread:_scrape_tender_details]   Successfully extracted details for 5 tenders from Directorate Animal Husbandry.
+2025-09-22 14:57:39,819 - INFO - [MainThread:run_scraping_logic] Found 5 tenders in department Directorate Animal Husbandry
+2025-09-22 14:57:39,822 - INFO - [MainThread:_click_on_page_back_button]   Attempting site 'Back' button click...
+2025-09-22 14:57:40,735 - INFO - [MainThread:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-22 14:57:41,336 - INFO - [MainThread:_click_on_page_back_button]     Site 'Back' button clicked.
+2025-09-22 14:57:43,604 - INFO - [MainThread:_click_on_page_back_button]     ✓ Back navigation successful, URL: https://hptenders.gov.in/nicgep/app?page=FrontEndTendersByOrganisation&service=page
+2025-09-22 14:57:43,605 - INFO - [MainThread:run_scraping_logic] 
+Processing department 8/42: Directorate of Food Civil Supplies and Consumer Affairs
+2025-09-22 14:57:43,612 - INFO - [MainThread:run_scraping_logic] Current URL before processing: https://hptenders.gov.in/nicgep/app?page=FrontEndTendersByOrganisation&service=page
+2025-09-22 14:57:43,612 - INFO - [MainThread:_find_and_click_dept_link]   Finding link for Dept S.No: 8 - Directorate of Food Civil Supp...
+2025-09-22 14:57:43,625 - INFO - [MainThread:_find_target_row]     Attempt 1: Check 44 rows for S.No '8'...
+2025-09-22 14:57:43,639 - INFO - [MainThread:_find_target_row]     Skip header-like row 0: 'S.No'
+2025-09-22 14:57:43,757 - INFO - [MainThread:_find_target_row]     Found match row index 8.
+2025-09-22 14:57:43,776 - INFO - [MainThread:_click_department_link]     Link found S.No '8'. Clicking...
+2025-09-22 14:57:44,643 - INFO - [MainThread:click_element] Standard click successful for 'Dept Link 'Directorate of Food ' (SNo:8)'.
+2025-09-22 14:57:48,254 - INFO - [MainThread:_scrape_tender_details]   Scraping details for: Directorate of Food Civil Supplies and Consumer Affairs...
+2025-09-22 14:57:48,268 - INFO - [MainThread:_scrape_tender_details]     Details table located.
+2025-09-22 14:57:49,120 - INFO - [MainThread:_scrape_tender_details]     Skipping header row (content match: ['s.no', 'published date', 'closing date', 'opening date', 'title']).
+2025-09-22 14:57:49,120 - INFO - [MainThread:_scrape_tender_details]     Found 4 data rows for Directorate of Food Civil Supplies and Consumer Affairs.
+2025-09-22 14:57:49,368 - INFO - [MainThread:_scrape_tender_details]   Successfully extracted details for 3 tenders from Directorate of Food Civil Supplies and Consumer Affairs.
+2025-09-22 14:57:49,369 - INFO - [MainThread:run_scraping_logic] Found 3 tenders in department Directorate of Food Civil Supplies and Consumer Affairs
+2025-09-22 14:57:49,374 - INFO - [MainThread:_click_on_page_back_button]   Attempting site 'Back' button click...
+2025-09-22 14:57:50,553 - INFO - [MainThread:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-22 14:57:51,154 - INFO - [MainThread:_click_on_page_back_button]     Site 'Back' button clicked.
+2025-09-22 14:57:53,419 - INFO - [MainThread:_click_on_page_back_button]     ✓ Back navigation successful, URL: https://hptenders.gov.in/nicgep/app?page=FrontEndTendersByOrganisation&service=page
+2025-09-22 14:57:53,420 - INFO - [MainThread:run_scraping_logic] 
+Processing department 9/42: Directorate of Forensics Services Himachal Pradesh
+2025-09-22 14:57:53,425 - INFO - [MainThread:run_scraping_logic] Current URL before processing: https://hptenders.gov.in/nicgep/app?page=FrontEndTendersByOrganisation&service=page
+2025-09-22 14:57:53,425 - INFO - [MainThread:_find_and_click_dept_link]   Finding link for Dept S.No: 9 - Directorate of Forensics Servi...
+2025-09-22 14:57:53,446 - INFO - [MainThread:_find_target_row]     Attempt 1: Check 44 rows for S.No '9'...
+2025-09-22 14:57:53,461 - INFO - [MainThread:_find_target_row]     Skip header-like row 0: 'S.No'
+2025-09-22 14:57:53,593 - INFO - [MainThread:_find_target_row]     Found match row index 9.
+2025-09-22 14:57:53,618 - INFO - [MainThread:_click_department_link]     Link found S.No '9'. Clicking...
+2025-09-22 14:57:55,022 - INFO - [MainThread:click_element] Standard click successful for 'Dept Link 'Directorate of Foren' (SNo:9)'.
+2025-09-22 14:57:58,638 - INFO - [MainThread:_scrape_tender_details]   Scraping details for: Directorate of Forensics Services Himachal Pradesh...
+2025-09-22 14:57:58,653 - INFO - [MainThread:_scrape_tender_details]     Details table located.
+2025-09-22 14:57:59,483 - INFO - [MainThread:_scrape_tender_details]     Skipping header row (content match: ['s.no', 'published date', 'closing date', 'opening date', 'title']).
+2025-09-22 14:57:59,484 - INFO - [MainThread:_scrape_tender_details]     Found 9 data rows for Directorate of Forensics Services Himachal Pradesh.
+2025-09-22 14:57:59,861 - INFO - [MainThread:_scrape_tender_details]   Successfully extracted details for 8 tenders from Directorate of Forensics Services Himachal Pradesh.
+2025-09-22 14:57:59,862 - INFO - [MainThread:run_scraping_logic] Found 8 tenders in department Directorate of Forensics Services Himachal Pradesh
+2025-09-22 14:57:59,865 - INFO - [MainThread:_click_on_page_back_button]   Attempting site 'Back' button click...
+2025-09-22 14:58:00,785 - INFO - [MainThread:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-22 14:58:01,387 - INFO - [MainThread:_click_on_page_back_button]     Site 'Back' button clicked.
+2025-09-22 14:58:03,652 - INFO - [MainThread:_click_on_page_back_button]     ✓ Back navigation successful, URL: https://hptenders.gov.in/nicgep/app?page=FrontEndTendersByOrganisation&service=page
+2025-09-22 14:58:03,653 - INFO - [MainThread:run_scraping_logic] 
+Processing department 10/42: Directorate of Horticulture
+2025-09-22 14:58:03,660 - INFO - [MainThread:run_scraping_logic] Current URL before processing: https://hptenders.gov.in/nicgep/app?page=FrontEndTendersByOrganisation&service=page
+2025-09-22 14:58:03,660 - INFO - [MainThread:_find_and_click_dept_link]   Finding link for Dept S.No: 10 - Directorate of Horticulture...
+2025-09-22 14:58:03,672 - INFO - [MainThread:_find_target_row]     Attempt 1: Check 44 rows for S.No '10'...
+2025-09-22 14:58:03,681 - INFO - [MainThread:_find_target_row]     Skip header-like row 0: 'S.No'
+2025-09-22 14:58:03,773 - INFO - [MainThread:_find_target_row]     Found match row index 10.
+2025-09-22 14:58:03,799 - INFO - [MainThread:_click_department_link]     Link found S.No '10'. Clicking...
+2025-09-22 14:58:04,548 - INFO - [MainThread:click_element] Standard click successful for 'Dept Link 'Directorate of Horti' (SNo:10)'.
+2025-09-22 14:58:08,163 - INFO - [MainThread:_scrape_tender_details]   Scraping details for: Directorate of Horticulture...
+2025-09-22 14:58:08,186 - INFO - [MainThread:_scrape_tender_details]     Details table located.
+2025-09-22 14:58:09,028 - INFO - [MainThread:_scrape_tender_details]     Skipping header row (content match: ['s.no', 'published date', 'closing date', 'opening date', 'title']).
+2025-09-22 14:58:09,029 - INFO - [MainThread:_scrape_tender_details]     Found 2 data rows for Directorate of Horticulture.
+2025-09-22 14:58:09,078 - INFO - [MainThread:_scrape_tender_details]   Successfully extracted details for 1 tenders from Directorate of Horticulture.
+2025-09-22 14:58:09,079 - INFO - [MainThread:run_scraping_logic] Found 1 tenders in department Directorate of Horticulture
+2025-09-22 14:58:09,082 - INFO - [MainThread:_click_on_page_back_button]   Attempting site 'Back' button click...
+2025-09-22 14:58:09,969 - INFO - [MainThread:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-22 14:58:10,570 - INFO - [MainThread:_click_on_page_back_button]     Site 'Back' button clicked.
+2025-09-22 14:58:12,835 - INFO - [MainThread:_click_on_page_back_button]     ✓ Back navigation successful, URL: https://hptenders.gov.in/nicgep/app?page=FrontEndTendersByOrganisation&service=page
+2025-09-22 14:58:12,836 - INFO - [MainThread:run_scraping_logic] 
+Processing department 11/42: Directorate of Medical Education and Research
+2025-09-22 14:58:12,844 - INFO - [MainThread:run_scraping_logic] Current URL before processing: https://hptenders.gov.in/nicgep/app?page=FrontEndTendersByOrganisation&service=page
+2025-09-22 14:58:12,844 - INFO - [MainThread:_find_and_click_dept_link]   Finding link for Dept S.No: 11 - Directorate of Medical Educati...
+2025-09-22 14:58:12,859 - INFO - [MainThread:_find_target_row]     Attempt 1: Check 44 rows for S.No '11'...
+2025-09-22 14:58:12,879 - INFO - [MainThread:_find_target_row]     Skip header-like row 0: 'S.No'
+2025-09-22 14:58:13,051 - INFO - [MainThread:_find_target_row]     Found match row index 11.
+2025-09-22 14:58:13,069 - INFO - [MainThread:_click_department_link]     Link found S.No '11'. Clicking...
+2025-09-22 14:58:13,795 - INFO - [MainThread:click_element] Standard click successful for 'Dept Link 'Directorate of Medic' (SNo:11)'.
+2025-09-22 14:58:17,409 - INFO - [MainThread:_scrape_tender_details]   Scraping details for: Directorate of Medical Education and Research...
+2025-09-22 14:58:17,432 - INFO - [MainThread:_scrape_tender_details]     Details table located.
+2025-09-22 14:58:18,264 - INFO - [MainThread:_scrape_tender_details]     Skipping header row (content match: ['s.no', 'published date', 'closing date', 'opening date', 'title']).
+2025-09-22 14:58:18,265 - INFO - [MainThread:_scrape_tender_details]     Found 6 data rows for Directorate of Medical Education and Research.
+2025-09-22 14:58:18,686 - INFO - [MainThread:_scrape_tender_details]   Successfully extracted details for 5 tenders from Directorate of Medical Education and Research.
+2025-09-22 14:58:18,687 - INFO - [MainThread:run_scraping_logic] Found 5 tenders in department Directorate of Medical Education and Research
+2025-09-22 14:58:18,692 - INFO - [MainThread:_click_on_page_back_button]   Attempting site 'Back' button click...
+2025-09-22 14:58:19,509 - INFO - [MainThread:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-22 14:58:20,110 - INFO - [MainThread:_click_on_page_back_button]     Site 'Back' button clicked.
+2025-09-22 14:58:22,370 - INFO - [MainThread:_click_on_page_back_button]     ✓ Back navigation successful, URL: https://hptenders.gov.in/nicgep/app?page=FrontEndTendersByOrganisation&service=page
+2025-09-22 14:58:22,371 - INFO - [MainThread:run_scraping_logic] 
+Processing department 12/42: Directorate of Technical Education
+2025-09-22 14:58:22,375 - INFO - [MainThread:run_scraping_logic] Current URL before processing: https://hptenders.gov.in/nicgep/app?page=FrontEndTendersByOrganisation&service=page
+2025-09-22 14:58:22,375 - INFO - [MainThread:_find_and_click_dept_link]   Finding link for Dept S.No: 12 - Directorate of Technical Educa...
+2025-09-22 14:58:22,394 - INFO - [MainThread:_find_target_row]     Attempt 1: Check 44 rows for S.No '12'...
+2025-09-22 14:58:22,407 - INFO - [MainThread:_find_target_row]     Skip header-like row 0: 'S.No'
+2025-09-22 14:58:22,577 - INFO - [MainThread:_find_target_row]     Found match row index 12.
+2025-09-22 14:58:22,606 - INFO - [MainThread:_click_department_link]     Link found S.No '12'. Clicking...
+2025-09-22 14:58:23,352 - INFO - [MainThread:click_element] Standard click successful for 'Dept Link 'Directorate of Techn' (SNo:12)'.
+2025-09-22 14:58:26,963 - INFO - [MainThread:_scrape_tender_details]   Scraping details for: Directorate of Technical Education...
+2025-09-22 14:58:26,980 - INFO - [MainThread:_scrape_tender_details]     Details table located.
+2025-09-22 14:58:27,819 - INFO - [MainThread:_scrape_tender_details]     Skipping header row (content match: ['s.no', 'published date', 'closing date', 'opening date', 'title']).
+2025-09-22 14:58:27,819 - INFO - [MainThread:_scrape_tender_details]     Found 3 data rows for Directorate of Technical Education.
+2025-09-22 14:58:27,988 - INFO - [MainThread:_scrape_tender_details]   Successfully extracted details for 2 tenders from Directorate of Technical Education.
+2025-09-22 14:58:27,989 - INFO - [MainThread:run_scraping_logic] Found 2 tenders in department Directorate of Technical Education
+2025-09-22 14:58:27,995 - INFO - [MainThread:_click_on_page_back_button]   Attempting site 'Back' button click...
+2025-09-22 14:58:29,092 - INFO - [MainThread:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-22 14:58:29,693 - INFO - [MainThread:_click_on_page_back_button]     Site 'Back' button clicked.
+2025-09-22 14:58:31,952 - INFO - [MainThread:_click_on_page_back_button]     ✓ Back navigation successful, URL: https://hptenders.gov.in/nicgep/app?page=FrontEndTendersByOrganisation&service=page
+2025-09-22 14:58:31,952 - INFO - [MainThread:run_scraping_logic] 
+Processing department 13/42: Directorate of Urban Development
+2025-09-22 14:58:31,958 - INFO - [MainThread:run_scraping_logic] Current URL before processing: https://hptenders.gov.in/nicgep/app?page=FrontEndTendersByOrganisation&service=page
+2025-09-22 14:58:31,958 - INFO - [MainThread:_find_and_click_dept_link]   Finding link for Dept S.No: 13 - Directorate of Urban Developme...
+2025-09-22 14:58:31,978 - INFO - [MainThread:_find_target_row]     Attempt 1: Check 44 rows for S.No '13'...
+2025-09-22 14:58:32,014 - INFO - [MainThread:_find_target_row]     Skip header-like row 0: 'S.No'
+2025-09-22 14:58:32,248 - INFO - [MainThread:_find_target_row]     Found match row index 13.
+2025-09-22 14:58:32,279 - INFO - [MainThread:_click_department_link]     Link found S.No '13'. Clicking...
+2025-09-22 14:58:33,076 - INFO - [MainThread:click_element] Standard click successful for 'Dept Link 'Directorate of Urban' (SNo:13)'.
+2025-09-22 14:58:36,692 - INFO - [MainThread:_scrape_tender_details]   Scraping details for: Directorate of Urban Development...
+2025-09-22 14:58:36,710 - INFO - [MainThread:_scrape_tender_details]     Details table located.
+2025-09-22 14:58:37,559 - INFO - [MainThread:_scrape_tender_details]     Skipping header row (content match: ['s.no', 'published date', 'closing date', 'opening date', 'title']).
+2025-09-22 14:58:37,559 - INFO - [MainThread:_scrape_tender_details]     Found 23 data rows for Directorate of Urban Development.
+2025-09-22 14:58:39,329 - INFO - [MainThread:_scrape_tender_details]   Successfully extracted details for 22 tenders from Directorate of Urban Development.
+2025-09-22 14:58:39,329 - INFO - [MainThread:run_scraping_logic] Found 22 tenders in department Directorate of Urban Development
+2025-09-22 14:58:39,335 - INFO - [MainThread:_click_on_page_back_button]   Attempting site 'Back' button click...
+2025-09-22 14:58:40,277 - INFO - [MainThread:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-22 14:58:40,877 - INFO - [MainThread:_click_on_page_back_button]     Site 'Back' button clicked.
+2025-09-22 14:58:43,136 - INFO - [MainThread:_click_on_page_back_button]     ✓ Back navigation successful, URL: https://hptenders.gov.in/nicgep/app?page=FrontEndTendersByOrganisation&service=page
+2025-09-22 14:58:43,136 - INFO - [MainThread:run_scraping_logic] 
+Processing department 14/42: Directorate Rural Development and Panchayati Ra
+2025-09-22 14:58:43,141 - INFO - [MainThread:run_scraping_logic] Current URL before processing: https://hptenders.gov.in/nicgep/app?page=FrontEndTendersByOrganisation&service=page
+2025-09-22 14:58:43,143 - INFO - [MainThread:_find_and_click_dept_link]   Finding link for Dept S.No: 14 - Directorate Rural Development ...
+2025-09-22 14:58:43,165 - INFO - [MainThread:_find_target_row]     Attempt 1: Check 44 rows for S.No '14'...
+2025-09-22 14:58:43,192 - INFO - [MainThread:_find_target_row]     Skip header-like row 0: 'S.No'
+2025-09-22 14:58:43,428 - INFO - [MainThread:_find_target_row]     Found match row index 14.
+2025-09-22 14:58:43,459 - INFO - [MainThread:_click_department_link]     Link found S.No '14'. Clicking...
+2025-09-22 14:58:44,184 - INFO - [MainThread:click_element] Standard click successful for 'Dept Link 'Directorate Rural De' (SNo:14)'.
+2025-09-22 14:58:47,794 - INFO - [MainThread:_scrape_tender_details]   Scraping details for: Directorate Rural Development and Panchayati Ra...
+2025-09-22 14:58:47,808 - INFO - [MainThread:_scrape_tender_details]     Details table located.
+2025-09-22 14:58:48,689 - INFO - [MainThread:_scrape_tender_details]     Skipping header row (content match: ['s.no', 'published date', 'closing date', 'opening date', 'title']).
+2025-09-22 14:58:48,690 - INFO - [MainThread:_scrape_tender_details]     Found 4 data rows for Directorate Rural Development and Panchayati Ra.
+2025-09-22 14:58:48,973 - INFO - [MainThread:_scrape_tender_details]   Successfully extracted details for 3 tenders from Directorate Rural Development and Panchayati Ra.
+2025-09-22 14:58:48,974 - INFO - [MainThread:run_scraping_logic] Found 3 tenders in department Directorate Rural Development and Panchayati Ra
+2025-09-22 14:58:48,985 - INFO - [MainThread:_click_on_page_back_button]   Attempting site 'Back' button click...
+2025-09-22 14:58:49,834 - INFO - [MainThread:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-22 14:58:50,435 - INFO - [MainThread:_click_on_page_back_button]     Site 'Back' button clicked.
+2025-09-22 14:58:52,692 - INFO - [MainThread:_click_on_page_back_button]     ✓ Back navigation successful, URL: https://hptenders.gov.in/nicgep/app?page=FrontEndTendersByOrganisation&service=page
+2025-09-22 14:58:52,693 - INFO - [MainThread:run_scraping_logic] 
+Processing department 15/42: Director of Agriculture
+2025-09-22 14:58:52,699 - INFO - [MainThread:run_scraping_logic] Current URL before processing: https://hptenders.gov.in/nicgep/app?page=FrontEndTendersByOrganisation&service=page
+2025-09-22 14:58:52,699 - INFO - [MainThread:_find_and_click_dept_link]   Finding link for Dept S.No: 15 - Director of Agriculture...
+2025-09-22 14:58:52,720 - INFO - [MainThread:_find_target_row]     Attempt 1: Check 44 rows for S.No '15'...
+2025-09-22 14:58:52,737 - INFO - [MainThread:_find_target_row]     Skip header-like row 0: 'S.No'
+2025-09-22 14:58:53,012 - INFO - [MainThread:_find_target_row]     Found match row index 15.
+2025-09-22 14:58:53,048 - INFO - [MainThread:_click_department_link]     Link found S.No '15'. Clicking...
+2025-09-22 14:58:53,748 - INFO - [MainThread:click_element] Standard click successful for 'Dept Link 'Director of Agricult' (SNo:15)'.
+2025-09-22 14:58:57,358 - INFO - [MainThread:_scrape_tender_details]   Scraping details for: Director of Agriculture...
+2025-09-22 14:58:57,375 - INFO - [MainThread:_scrape_tender_details]     Details table located.
+2025-09-22 14:58:58,237 - INFO - [MainThread:_scrape_tender_details]     Skipping header row (content match: ['s.no', 'published date', 'closing date', 'opening date', 'title']).
+2025-09-22 14:58:58,238 - INFO - [MainThread:_scrape_tender_details]     Found 2 data rows for Director of Agriculture.
+2025-09-22 14:58:58,342 - INFO - [MainThread:_scrape_tender_details]   Successfully extracted details for 1 tenders from Director of Agriculture.
+2025-09-22 14:58:58,343 - INFO - [MainThread:run_scraping_logic] Found 1 tenders in department Director of Agriculture
+2025-09-22 14:58:58,349 - INFO - [MainThread:_click_on_page_back_button]   Attempting site 'Back' button click...
+2025-09-22 14:58:59,295 - INFO - [MainThread:click_element] Standard click successful for 'Dept List Back Button'.
+2025-09-22 14:58:59,896 - INFO - [MainThread:_click_on_page_back_button]     Site 'Back' button clicked.
+2025-09-22 14:59:02,157 - INFO - [MainThread:_click_on_page_back_button]     ✓ Back navigation successful, URL: https://hptenders.gov.in/nicgep/app?page=FrontEndTendersByOrganisation&service=page
+2025-09-22 14:59:02,157 - INFO - [MainThread:run_scraping_logic] 
+Processing department 16/42: Disaster Management Cell
+2025-09-22 14:59:02,162 - INFO - [MainThread:run_scraping_logic] Current URL before processing: https://hptenders.gov.in/nicgep/app?page=FrontEndTendersByOrganisation&service=page
+2025-09-22 14:59:02,163 - INFO - [MainThread:_find_and_click_dept_link]   Finding link for Dept S.No: 16 - Disaster Management Cell...
+2025-09-22 14:59:02,180 - INFO - [MainThread:_find_target_row]     Attempt 1: Check 44 rows for S.No '16'...
+2025-09-22 14:59:02,195 - INFO - [MainThread:_find_target_row]     Skip header-like row 0: 'S.No'
+2025-09-22 14:59:02,445 - INFO - [MainThread:_find_target_row]     Found match row index 16.
+2025-09-22 14:59:02,478 - INFO - [MainThread:_click_department_link]     Link found S.No '16'. Clicking...
+2025-09-22 14:59:03,263 - INFO - [MainThread:click_element] Standard click successful for 'Dept Link 'Disaster Management ' (SNo:16)'.
+2025-09-22 14:59:06,875 - INFO - [MainThread:_scrape_tender_details]   Scraping details for: Disaster Management Cell...
+2025-09-22 14:59:06,894 - INFO - [MainThread:_scrape_tender_details]     Details table located.
+2025-09-22 14:59:07,669 - INFO - [MainThread:_scrape_tender_details]   ERROR: Unexpected error scraping Disaster Management Cell: 'NoneType' object has no attribute 'find_elements'
+2025-09-22 14:59:07,670 - ERROR - [MainThread:_scrape_tender_details] Unexpected error scraping details Disaster Management Cell
+Traceback (most recent call last):
+  File "d:\Dev84\BF 2.1.4\scraper\logic.py", line 350, in _scrape_tender_details
+    rows = body.find_elements(By.TAG_NAME, "tr")
+           ^^^^^^^^^^^^^^^^^^
+AttributeError: 'NoneType' object has no attribute 'find_elements'
+2025-09-22 14:59:07,674 - INFO - [MainThread:run_scraping_logic] No tenders found/extracted from department Disaster Management Cell
+2025-09-22 14:59:07,678 - INFO - [MainThread:run_scraping_logic] Driver session lost before back navigation for Disaster Management Cell: Message: no such window: target window already closed
+from unknown error: web view not found
+  (Session info: chrome=140.0.7339.128)
+Stacktrace:
+	GetHandleVerifier [0x0x10d0c13+66051]
+	GetHandleVerifier [0x0x10d0c54+66116]
+	(No symbol) [0x0xeadb33]
+	(No symbol) [0x0xe8c3bd]
+	(No symbol) [0x0xf207de]
+	(No symbol) [0x0xf3b109]
+	(No symbol) [0x0xf19d86]
+	(No symbol) [0x0xeeb53e]
+	(No symbol) [0x0xeec414]
+	GetHandleVerifier [0x0x1318a13+2457603]
+	GetHandleVerifier [0x0x13139d2+2437058]
+	GetHandleVerifier [0x0x10f97f2+232930]
+	GetHandleVerifier [0x0x10e9a18+167944]
+	GetHandleVerifier [0x0x10f092d+196381]
+	GetHandleVerifier [0x0x10d8ee8+99544]
+	GetHandleVerifier [0x0x10d9082+99954]
+	GetHandleVerifier [0x0x10c322a+10266]
+	BaseThreadInitThunk [0x0x76f15d49+25]
+	RtlInitializeExceptionChain [0x0x77e8d1ab+107]
+	RtlGetAppContainerNamedObjectPath [0x0x77e8d131+561]
+
+2025-09-22 14:59:07,758 - INFO - [MainThread:run_scraping_logic] 
+Saved 87 tender details to: hptenders_gov_in_tenders_20250922_145907.xlsx
+2025-09-22 14:59:07,759 - INFO - [MainThread:run_scraping_logic] 
+=== Scraping completed ===
+2025-09-22 14:59:07,759 - INFO - [MainThread:run_scraping_logic] Processed 16 departments
+2025-09-22 14:59:07,760 - INFO - [MainThread:run_scraping_logic] Total tenders found: 87
+2025-09-22 14:59:07,760 - INFO - [MainThread:<lambda>] STATUS: Scraping completed
+2025-09-22 14:59:07,766 - INFO - [MainThread:run_department_scraping] .1f
+2025-09-22 14:59:07,768 - INFO - [MainThread:safe_quit_driver] Closing WebDriver instance...
+2025-09-22 14:59:07,768 - INFO - [MainThread:safe_quit_driver] Closing WebDriver instance...
+2025-09-22 14:59:09,917 - INFO - [MainThread:safe_quit_driver] WebDriver quit successfully.
+2025-09-22 15:00:05,603 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility v2.1.4 Starting ---
+2025-09-22 15:00:05,604 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2025-09-22 15:00:05,604 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2025-09-22 15:00:05,604 - INFO - [MainThread:setup_logging] Script Directory: D:\Dev84\BF 2.1.4
+2025-09-22 15:00:05,604 - INFO - [MainThread:setup_logging] Working Directory: d:\Dev84\BF 2.1.4
+2025-09-22 15:00:05,604 - INFO - [MainThread:check_package_versions] ✓ selenium 4.34.2 is available
+2025-09-22 15:00:06,108 - INFO - [MainThread:check_package_versions] ✓ pandas 2.3.1 is available
+2025-09-22 15:00:06,291 - INFO - [MainThread:check_package_versions] ✓ openpyxl 3.1.5 is available
+2025-09-22 15:00:06,532 - INFO - [MainThread:check_package_versions] ✓ requests 2.32.4 is available
+2025-09-22 15:00:06,542 - INFO - [MainThread:check_package_versions] ✓ pytesseract 0.3.13 is available
+2025-09-22 15:00:06,707 - INFO - [MainThread:check_package_versions] ✓ undetected_chromedriver 3.5.5 (optional) is available
+2025-09-22 15:00:06,708 - INFO - [MainThread:check_package_versions] ✓ webdriver_manager 4.0.2 (optional) is available
+2025-09-22 15:00:06,708 - INFO - [MainThread:import_application_components] Importing application components...
+2025-09-22 15:00:06,850 - INFO - [MainThread:import_application_components] Application components imported successfully
+2025-09-22 15:00:06,851 - INFO - [MainThread:run_cli_mode] 🔧 Starting CLI mode...
+2025-09-22 15:02:59,178 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility v2.1.4 Starting ---
+2025-09-22 15:02:59,179 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2025-09-22 15:02:59,179 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2025-09-22 15:02:59,179 - INFO - [MainThread:setup_logging] Script Directory: D:\Dev84\BF 2.1.4
+2025-09-22 15:02:59,179 - INFO - [MainThread:setup_logging] Working Directory: d:\Dev84\BF 2.1.4
+2025-09-22 15:02:59,179 - INFO - [MainThread:check_package_versions] ✓ selenium 4.34.2 is available
+2025-09-22 15:02:59,685 - INFO - [MainThread:check_package_versions] ✓ pandas 2.3.1 is available
+2025-09-22 15:02:59,881 - INFO - [MainThread:check_package_versions] ✓ openpyxl 3.1.5 is available
+2025-09-22 15:03:00,121 - INFO - [MainThread:check_package_versions] ✓ requests 2.32.4 is available
+2025-09-22 15:03:00,132 - INFO - [MainThread:check_package_versions] ✓ pytesseract 0.3.13 is available
+2025-09-22 15:03:00,306 - INFO - [MainThread:check_package_versions] ✓ undetected_chromedriver 3.5.5 (optional) is available
+2025-09-22 15:03:00,307 - INFO - [MainThread:check_package_versions] ✓ webdriver_manager 4.0.2 (optional) is available
+2025-09-22 15:03:00,307 - INFO - [MainThread:import_application_components] Importing application components...
+2025-09-22 15:03:00,412 - INFO - [MainThread:import_application_components] Application components imported successfully
+2025-09-22 15:03:00,413 - INFO - [MainThread:run_cli_mode] 🔧 Starting CLI mode...

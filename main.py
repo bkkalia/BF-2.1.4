@@ -355,11 +355,34 @@ def is_cli_mode():
     # Check for CLI arguments (skip the script name)
     args = sys.argv[1:]
     if not args:
-        return False
+        # No arguments - check if we should run interactive CLI
+        # This happens when launched from GUI CLI button
+        return should_run_interactive_cli()
 
     # Check for CLI commands
     cli_commands = ['department', 'tender-id', 'url', 'help', '--help', '-h']
     return any(cmd in args for cmd in cli_commands)
+
+def should_run_interactive_cli():
+    """Check if we should run in interactive CLI mode."""
+    # Check for environment variable set by GUI
+    if os.environ.get('BLACKFOREST_CLI_MODE') == 'interactive':
+        return True
+
+    # Check if executable name suggests CLI mode
+    exe_name = os.path.basename(sys.executable or sys.argv[0]).lower()
+    if 'cli' in exe_name:
+        return True
+
+    # Check if launched from a console (basic heuristic)
+    try:
+        # Try to get terminal size - if it fails, might be GUI launch
+        import shutil
+        columns, rows = shutil.get_terminal_size()
+        return columns > 0 and rows > 0
+    except Exception:
+        # If we can't get terminal size, assume GUI launch wants CLI
+        return True
 
 # --- CLI Mode Handler ---
 def run_cli_mode():
@@ -367,16 +390,97 @@ def run_cli_mode():
     try:
         logging.info("🔧 Starting CLI mode...")
 
-        # Import CLI components
-        from cli_runner import main as cli_main
+        # Check if any arguments were provided
+        args = sys.argv[1:]  # Skip script name
 
-        # Run CLI
-        cli_main()
+        if not args:
+            # Interactive mode - show banner and wait for commands
+            show_interactive_banner()
+            print("\nType 'help' for available commands, or 'exit' to quit.")
+            print("Example: department --all")
+            print("-" * 60)
+
+            # Import CLI components
+            from cli_parser import CLIParser
+
+            parser = CLIParser()
+            while True:
+                try:
+                    # Get user input
+                    user_input = input("\nBlackForest> ").strip()
+                    if not user_input:
+                        continue
+
+                    if user_input.lower() in ['exit', 'quit', 'q']:
+                        print("Goodbye!")
+                        break
+
+                    if user_input.lower() in ['help', 'h', '?']:
+                        print("\nAvailable commands:")
+                        print("  department --all              - Scrape all departments")
+                        print("  department --filter 'term'    - Scrape departments matching filter")
+                        print("  urls                          - List available portals")
+                        print("  help                          - Show this help")
+                        print("  exit                          - Exit CLI mode")
+                        continue
+
+                    # Parse and execute command
+                    try:
+                        # Split input into arguments
+                        cmd_args = user_input.split()
+                        parsed_args = parser.parse_args(cmd_args)
+
+                        # Execute command
+                        from cli_runner import CLIRunner
+                        runner = CLIRunner(parsed_args)
+
+                        if parsed_args.command == 'urls':
+                            runner.list_available_portals()
+                        elif parsed_args.command == 'department':
+                            runner.run_department_scraping()
+                        else:
+                            print(f"Unknown command: {parsed_args.command}")
+
+                    except SystemExit:
+                        # argparse error, continue
+                        pass
+                    except Exception as cmd_err:
+                        print(f"Command error: {cmd_err}")
+
+                except KeyboardInterrupt:
+                    print("\nGoodbye!")
+                    break
+                except EOFError:
+                    print("\nGoodbye!")
+                    break
+
+        else:
+            # Command mode - execute provided arguments
+            from cli_runner import main as cli_main
+            cli_main()
 
     except Exception as cli_err:
         logging.error(f"CLI mode error: {cli_err}", exc_info=True)
         print(f"CLI Error: {cli_err}")
         sys.exit(1)
+
+def show_interactive_banner():
+    """Show interactive CLI banner with large, stylish ASCII art."""
+    from config import APP_VERSION
+    print("""
+╔══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
+║                                                                                                                                                              ║
+║        ██████╗ ██╗      █████╗  ██████╗██╗  ██╗    ███████╗ ██████╗ ██████╗ ███████╗███████╗████████╗                                                                 ║
+║        ██╔══██╗██║     ██╔══██╗██╔════╝██║ ██╔╝    ██╔════╝██╔═══██╗██╔══██╗██╔════╝██╔════╝╚══██╔══╝                                                                 ║
+║        ██████╔╝██║     ███████║██║     █████╔╝     █████╗  ██║   ██║██████╔╝█████╗  ███████╗   ██║                                                                    ║
+║        ██╔══██╗██║     ██╔══██║██║     ██╔═██╗     ██╔══╝  ██║   ██║██╔══██╗██╔══╝  ╚════██║   ██║                                                                    ║
+║        ██████╔╝███████╗██║  ██║╚██████╗██║  ██╗    ██║     ╚██████╔╝██║  ██║███████╗███████║   ██║                                                                    ║
+║        ╚═════╝ ╚══════╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝    ╚═╝      ╚═════╝ ╚═╝  ╚═╝╚══════╝╚══════╝   ╚═╝                                                                    ║
+║                                                                                                                                                              ║
+╚══════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
+""")
+    print(f"{'Black Forest v' + APP_VERSION + ' - CLI Mode - Interactive Prompt':^134}")
+    print("=" * 134)
 
 # --- Main Execution Block ---
 if __name__ == "__main__":
