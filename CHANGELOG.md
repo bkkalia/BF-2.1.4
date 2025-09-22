@@ -29,6 +29,9 @@ The tool makes a backup of CHANGELOG.md (CHANGELOG.md.bak.TIMESTAMP) before edit
 - Resolved parameter passing issues between GUI and scraper modules
 - Fixed CAPTCHA popup handling timing
 - Improved WebDriver stability and cleanup
+- Fixed Pylance type error in `cli_runner.py` list iteration
+- Fixed CLI mode launch issues with readline compatibility
+- Resolved CLI mode not displaying ASCII banner when launched from GUI
 
 ### 📦 Distribution
 - **Professional Installer**: Single EXE installer with all dependencies

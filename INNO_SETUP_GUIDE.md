@@ -45,7 +45,7 @@ dir dist\
 
 ```bash
 # Navigate to project directory
-cd "g:\My Drive\0dev\BF 2.1.4"
+cd "d:\Dev84\BF 2.1.4"
 
 # Compile using command line
 "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" setup.iss
@@ -360,6 +360,6 @@ iscc /O- setup.iss
 
 ---
 
-**Last Updated**: January 15, 2025
+**Last Updated**: September 22, 2025
 **Inno Setup Version**: 6.x recommended
 **Compatibility**: Windows 7 SP1 and later

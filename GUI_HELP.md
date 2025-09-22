@@ -336,6 +336,6 @@ Output_Directory/
 
 ---
 
-**Last Updated**: January 15, 2025
+**Last Updated**: September 22, 2025
 **Version**: 2.1.4
 **GUI Mode**: Interactive tender scraping with visual progress monitoring

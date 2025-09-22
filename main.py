@@ -20,13 +20,13 @@ except AttributeError as e:
         # Create dummy readline module to prevent interactive hook errors
         import types
         dummy_readline = types.ModuleType('readline')
-        dummy_readline.backend = type('DummyBackend', (), {})()
+        setattr(dummy_readline, 'backend', type('DummyBackend', (), {})())
         sys.modules['readline'] = dummy_readline
     else:
         raise
 
 # Disable interactive hook to prevent readline setup errors
-sys.__interactivehook__ = lambda: None
+setattr(sys, '__interactivehook__', lambda: None)
 
 import tkinter as tk
 import tkinter.messagebox

@@ -20,7 +20,7 @@ This is a **Python desktop application** for web scraping tender/bid data from g
 
 ## PROJECT STRUCTURE
 ```
-g:\My Drive\0dev\BF 2.1.4\
+d:\Dev84\BF 2.1.4\
 ├── main.py                           # Application entry point
 ├── config.py                         # Configuration constants
 ├── app_settings.py                   # Settings management
