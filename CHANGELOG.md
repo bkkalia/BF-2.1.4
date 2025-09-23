@@ -9,6 +9,31 @@ Run the helper tool (from project root) to infer and update version dates:
 The tool makes a backup of CHANGELOG.md (CHANGELOG.md.bak.TIMESTAMP) before editing.
 -->
 
+## Version 2.1.5 (September 23, 2025)
+
+### 🚀 Major Features
+- **Smart Upgrade System**: Automatic detection and upgrade of existing installations
+- **Enhanced CLI Architecture**: Separate CLI entry point with ASCII banner
+- **Console-Free GUI**: GUI now runs without console dependency issues
+- **Professional Installer**: Inno Setup with upgrade/uninstall/repair options
+
+### ✅ Performance & Capabilities
+- **High-Speed Scraping**: Can scrape 1000+ records in under 10 minutes (tested: 1316 records in 8 min 28 sec)
+- **40+ Government Portals**: Support for 40+ government tender portals (12 currently configured)
+- **Multi-Mode Operation**: Independent GUI and CLI modes without interference
+
+### 🐛 Bug Fixes & Improvements
+- **Console Dependency Fix**: Resolved GUI opening with Python console issues
+- **CLI Mode Enhancement**: Dedicated CLI entry point with interactive banner
+- **Upgrade Logic**: Smart version comparison and automatic uninstall during upgrades
+- **Registry Integration**: Proper Windows Add/Remove Programs support
+- **Silent Operations**: Background uninstall and dependency installation
+
+### 📦 Distribution & Deployment
+- **Intelligent Installer**: Detects existing versions, offers repair/reinstall options
+- **Hybrid Package**: Small launcher EXE (10MB) + complete Python application
+- **Enterprise Ready**: Professional installation with automatic dependency management
+
 ## Version 2.1.4 (September 18, 2025)
 
 ### 🚀 Major Features

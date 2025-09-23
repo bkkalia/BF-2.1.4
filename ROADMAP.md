@@ -84,7 +84,7 @@ Transform Black Forest Tender Scraper into the most comprehensive and user-frien
 
 ### User Adoption
 - **Active Users**: 10,000+ active installations
-- **Portal Coverage**: Support for 50+ tender portals worldwide
+- **Portal Coverage**: Support for 40+ government tender portals (12 currently configured)
 - **Data Volume**: Processing 1M+ tenders monthly
 - **Uptime**: 99.9% system availability
 
