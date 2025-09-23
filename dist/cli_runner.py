@@ -136,7 +136,7 @@ class CLIRunner:
             }
 
     def list_available_portals(self):
-        """List all available portals from base_urls.csv."""
+        """List all available portals from base_urls.csv with serial numbers for selection."""
         try:
             base_urls_file = self.paths['base_urls_file']
             if not base_urls_file.exists():
@@ -145,12 +145,20 @@ class CLIRunner:
 
             df = pd.read_csv(base_urls_file)
             print("\n📋 Available Portals:")
-            print("=" * 50)
-            for idx, row in df.iterrows():
-                print("2d")
-            print("=" * 50)
+            print("=" * 80)
+            print(f"{'Sr.No':<5} {'Portal Name':<30} {'Base URL':<40} {'Keyword'}")
+            print("=" * 80)
+            for sr_no, (idx, row) in enumerate(df.iterrows(), 1):
+                name = str(row.get('Name', 'Unknown')).strip()
+                base_url = str(row.get('BaseURL', '')).strip()
+                keyword = str(row.get('Keyword', '')).strip()
+                print(f"{sr_no:<5} {name:<30} {base_url:<40} {keyword}")
+            print("=" * 80)
             print(f"Total: {len(df)} portals available")
-            print("\nUsage: python main.py --url 'Portal Name' department --all")
+            print("\nUsage Examples:")
+            print("  python main.py --url 'HP Tenders' department --all")
+            print("  python main.py --url '2' department --all  (using serial number)")
+            print("  python main.py urls  (shows this list)")
 
         except Exception as e:
             self.logger.error(f"Error reading portals: {e}")
@@ -310,6 +318,7 @@ def main():
     # Handle URLs command
     if args.command == 'urls':
         runner = CLIRunner(args)
+        runner.show_banner()
         runner.list_available_portals()
         return
 
