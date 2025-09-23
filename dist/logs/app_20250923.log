@@ -1,0 +1,18 @@
+2025-09-23 08:58:00,001 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility v2.1.4 Starting ---
+2025-09-23 08:58:00,001 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2025-09-23 08:58:00,001 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2025-09-23 08:58:00,001 - INFO - [MainThread:setup_logging] Script Directory: D:\Dev84\BF 2.1.4\dist
+2025-09-23 08:58:00,001 - INFO - [MainThread:setup_logging] Working Directory: D:\Dev84\BF 2.1.4\dist
+2025-09-23 08:58:00,001 - INFO - [MainThread:check_package_versions] ✓ selenium 4.34.2 is available
+2025-09-23 08:58:00,248 - INFO - [MainThread:check_package_versions] ✓ pandas 2.3.1 is available
+2025-09-23 08:58:00,371 - INFO - [MainThread:check_package_versions] ✓ openpyxl 3.1.5 is available
+2025-09-23 08:58:00,592 - INFO - [MainThread:check_package_versions] ✓ requests 2.32.4 is available
+2025-09-23 08:58:00,596 - INFO - [MainThread:check_package_versions] ✓ pytesseract 0.3.13 is available
+2025-09-23 08:58:00,662 - INFO - [MainThread:check_package_versions] ✓ undetected_chromedriver 3.5.5 (optional) is available
+2025-09-23 08:58:00,663 - INFO - [MainThread:check_package_versions] ✓ webdriver_manager 4.0.2 (optional) is available
+2025-09-23 08:58:00,663 - INFO - [MainThread:import_application_components] Importing application components...
+2025-09-23 08:58:00,663 - ERROR - [MainThread:import_application_components] Import error: No module named 'app_settings'
+Traceback (most recent call last):
+  File "D:\Dev84\BF 2.1.4\dist\main.py", line 239, in import_application_components
+    from app_settings import load_settings, save_settings, load_base_urls
+ModuleNotFoundError: No module named 'app_settings'

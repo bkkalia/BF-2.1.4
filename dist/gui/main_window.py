@@ -1011,41 +1011,28 @@ class MainWindow:
             if getattr(sys, 'frozen', False):
                 # Running as packaged EXE
                 app_dir = os.path.dirname(sys.executable)
-                exe_path = os.path.join(app_dir, 'BlackForest.exe')
-
-                if os.path.exists(exe_path):
-                    # Launch the EXE directly
-                    cmd = [exe_path]
+                cli_main_py = os.path.join(app_dir, 'cli_main.py')
+                if os.path.exists(cli_main_py):
+                    cmd = ['cmd.exe', '/k', f'title "BlackForest CLI v{self.app_version}" && python cli_main.py']
                     cwd = app_dir
                 else:
-                    # Fallback to python with main.py if EXE not found
-                    main_py = os.path.join(app_dir, 'main.py')
-                    if os.path.exists(main_py):
-                        cmd = ['python', main_py]
-                        cwd = app_dir
-                    else:
-                        raise FileNotFoundError(f"Neither BlackForest.exe nor main.py found in {app_dir}")
+                    raise FileNotFoundError(f"cli_main.py not found in {app_dir}")
             else:
                 # Running as Python script - could be source or dist folder
                 current_file_dir = os.path.dirname(os.path.abspath(__file__))  # gui/
                 parent_dir = os.path.dirname(current_file_dir)  # Should be the app directory
 
-                # Check if we're in a dist-like folder (has main.py in parent directory)
-                main_py_path = os.path.join(parent_dir, 'main.py')
-                exe_path = os.path.join(parent_dir, 'BlackForest.exe')
+                # Check if we're in a dist-like folder (has cli_main.py in parent directory)
+                cli_main_path = os.path.join(parent_dir, 'cli_main.py')
 
-                if os.path.exists(exe_path):
-                    # Dist folder with EXE - use EXE
-                    cmd = [exe_path]
-                    cwd = parent_dir
-                elif os.path.exists(main_py_path):
-                    # Dist folder or source folder with main.py - use python
-                    cmd = ['cmd.exe', '/k', f'title "BlackForest CLI v{self.app_version}" && python main.py']
+                if os.path.exists(cli_main_path):
+                    # Dist folder or source folder with cli_main.py - use python
+                    cmd = ['cmd.exe', '/k', f'title "BlackForest CLI v{self.app_version}" && python cli_main.py']
                     cwd = parent_dir
                 else:
                     # Fallback to source directory structure
                     project_dir = os.path.dirname(parent_dir)  # Go up one more level
-                    cmd = ['cmd.exe', '/k', f'title "BlackForest CLI v{self.app_version}" && python main.py']
+                    cmd = ['cmd.exe', '/k', f'title "BlackForest CLI v{self.app_version}" && python cli_main.py']
                     cwd = project_dir
 
             # Set environment variable to indicate interactive CLI mode

@@ -503,17 +503,13 @@ def show_interactive_banner():
 
 # --- Main Execution Block ---
 if __name__ == "__main__":
-    # Prevent running GUI with console visible
-    if not is_cli_mode() and sys.stdout.isatty():
-        print("GUI mode requires running without console.")
-        print("Use: pythonw main.py")
-        print("Or use the BlackForest.exe executable")
-        sys.exit(0)
-
-    # Check if running in CLI mode
+    # Check if explicitly running in CLI mode (via arguments or environment)
     if is_cli_mode():
         run_cli_mode()
         sys.exit(0)
+
+    # Default: Run GUI mode
+    # Note: GUI can be run from console, but for production use pythonw.exe or executable
 
     root = None
     app = None

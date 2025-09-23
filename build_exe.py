@@ -163,6 +163,7 @@ def build_hybrid():
     files_to_copy = [
         # Core files (for CLI and additional functionality)
         'main.py',
+        'cli_main.py',  # New separate CLI entry point
         'cli_parser.py',
         'cli_runner.py',
         'config.py',
@@ -295,7 +296,8 @@ BlackForest.exe department --all --output "C:\\Tenders\\HP" --log "C:\\Logs\\ten
 ```
 BlackForest/
 ├── BlackForest.exe          # Launcher executable
-├── main.py                  # Main application
+├── main.py                  # GUI application entry point
+├── cli_main.py              # CLI application entry point
 ├── cli_parser.py           # CLI argument parser
 ├── cli_runner.py           # CLI execution logic
 ├── base_urls.csv           # Portal configurations
