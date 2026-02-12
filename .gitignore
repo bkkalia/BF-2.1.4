@@ -11,6 +11,9 @@ dist/logs/*.log
 
 # Local runtime state
 portal_config_history.json
+batch_scrape_profiles.json
+batch_tender_manifest.json
+Tender_Downloads/*.xlsx
 
 # OS/editor noise
 .DS_Store

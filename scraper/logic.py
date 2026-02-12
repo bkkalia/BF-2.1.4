@@ -334,9 +334,11 @@ def _find_and_click_dept_link(driver, dept_info, log_callback):
     return False
 
 
-def _scrape_tender_details(driver, department_name, base_url, log_callback):
+def _scrape_tender_details(driver, department_name, base_url, log_callback, existing_tender_ids=None):
     """ Scrapes tender details from the department's tender list page with enhanced retry logic for large tables."""
     tender_data = []
+    existing_tender_ids = existing_tender_ids or set()
+    skipped_existing_count = 0
     log_callback(f"  Scraping details for: {department_name}...")
     
     # Check session before starting
@@ -344,7 +346,7 @@ def _scrape_tender_details(driver, department_name, base_url, log_callback):
         driver.current_url
     except Exception as session_err:
         log_callback(f"  ERROR: Driver session invalid before scraping {department_name}: {session_err}")
-        return []
+        return [], 0
     
     # Maximum retries for stale element issues
     MAX_TABLE_REFETCH_RETRIES = 3
@@ -369,7 +371,7 @@ def _scrape_tender_details(driver, department_name, base_url, log_callback):
             rows = body.find_elements(By.TAG_NAME, "tr")
             if not rows: 
                 log_callback(f"    No rows found in details table for {department_name}.")
-                return []
+                return [], 0
 
             first_row_cells = rows[0].find_elements(By.XPATH, ".//th|.//td")
             if first_row_cells:
@@ -387,7 +389,7 @@ def _scrape_tender_details(driver, department_name, base_url, log_callback):
                         
             if not rows: 
                 log_callback(f"    No data rows after header check for {department_name}.")
-                return []
+                return [], 0
                 
             total_rows = len(rows)
             log_callback(f"    Found {total_rows} data rows for {department_name}.")
@@ -503,6 +505,11 @@ def _scrape_tender_details(driver, department_name, base_url, log_callback):
                                 if TITLE_REF_KEY not in data:
                                     data[TITLE_REF_KEY] = "Error"
 
+                        if t_id and t_id in existing_tender_ids:
+                            skipped_existing_count += 1
+                            row_processed = True
+                            break
+
                         data["Tender ID (Extracted)"] = t_id
                         data["Direct URL"] = direct_url
                         data["Status URL"] = status_url
@@ -539,13 +546,15 @@ def _scrape_tender_details(driver, department_name, base_url, log_callback):
                         break
             
             log_callback(f"  Successfully extracted {processed_count} tenders from {department_name}.")
+            if skipped_existing_count > 0:
+                log_callback(f"  Skipped {skipped_existing_count} already-known tenders from {department_name}.")
             if skipped_count > 0:
                 log_callback(f"  Skipped {skipped_count} rows due to errors or insufficient data.")
             log_callback("")  # Blank line for readability
             log_callback("*" * 80)  # Department completion separator
             log_callback("")  # Blank line
             
-            return tender_data
+            return tender_data, skipped_existing_count
             
         except (TimeoutException, NoSuchElementException) as table_err:
             if table_attempt < MAX_TABLE_REFETCH_RETRIES - 1:
@@ -554,7 +563,7 @@ def _scrape_tender_details(driver, department_name, base_url, log_callback):
                 continue
             else:
                 log_callback(f"  ERROR: Details table ({DETAILS_TABLE_LOCATOR}) not found after {MAX_TABLE_REFETCH_RETRIES} attempts for {department_name}: {table_err}")
-                return []
+                return [], 0
         except WebDriverException as wde: 
             # Check if it's a session error
             if "invalid session id" in str(wde).lower() or "session deleted" in str(wde).lower():
@@ -562,11 +571,11 @@ def _scrape_tender_details(driver, department_name, base_url, log_callback):
             else:
                 log_callback(f"  ERROR: WebDriverException scraping {department_name}: {wde}")
             logger.error(f"WebDriverException scraping details {department_name}", exc_info=True)
-            return []
+            return [], 0
         except Exception as e: 
             log_callback(f"  ERROR: Unexpected error scraping {department_name}: {e}")
             logger.error(f"Unexpected error scraping details {department_name}", exc_info=True)
-            return []
+            return [], 0
 
 
 def _click_on_page_back_button(driver, log_callback):
@@ -675,10 +684,119 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
     status_callback = status_callback or (lambda x: None)
         
     start_time = datetime.now()
+    total_tenders = 0
+    all_tender_details = []
+    processed_depts = 0
+    existing_tender_ids = set(kwargs.get("existing_tender_ids") or [])
+    existing_department_names = {
+        str(name).strip().lower()
+        for name in (kwargs.get("existing_department_names") or [])
+        if str(name).strip()
+    }
+    skipped_existing_total = 0
+    skipped_resume_departments = 0
+    expected_total_tenders = 0
+    department_summaries = []
+    processed_department_names = set()
+
+    def _save_tender_data_snapshot(data_to_save, mark_partial=False):
+        """Save extracted tenders to Excel (or CSV fallback) and return save metadata."""
+        if not data_to_save:
+            return None, None
+        try:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            website_keyword = get_website_keyword_from_url(base_url_config['BaseURL'])
+            suffix = "_partial" if mark_partial else ""
+            excel_filename = EXCEL_FILENAME_FORMAT.format(
+                website_keyword=f"{website_keyword}{suffix}",
+                timestamp=timestamp
+            )
+            target_dir = download_dir
+            excel_path = os.path.join(target_dir, excel_filename)
+
+            try:
+                os.makedirs(target_dir, exist_ok=True)
+            except Exception as dir_err:
+                log_callback(f"ERROR: Cannot create download directory: {dir_err}")
+                fallback_dir = os.path.join(os.path.expanduser("~"), "Downloads", "Tender_Downloads")
+                log_callback(f"Using fallback directory: {fallback_dir}")
+                os.makedirs(fallback_dir, exist_ok=True)
+                target_dir = fallback_dir
+                excel_path = os.path.join(target_dir, excel_filename)
+
+            try:
+                test_file = os.path.join(target_dir, '.write_test')
+                with open(test_file, 'w') as f:
+                    f.write('test')
+                os.remove(test_file)
+            except PermissionError:
+                log_callback(f"ERROR: No write permission for {target_dir}")
+                import tempfile
+                fallback_dir = os.path.join(tempfile.gettempdir(), "Tender_Downloads")
+                os.makedirs(fallback_dir, exist_ok=True)
+                log_callback(f"Using temp directory: {fallback_dir}")
+                target_dir = fallback_dir
+                excel_path = os.path.join(target_dir, excel_filename)
+
+            prepared_rows = []
+            for tender in data_to_save:
+                row = dict(tender)
+                try:
+                    if EMD_AMOUNT_KEY in row:
+                        row['EMD Amount (Numeric)'] = float(
+                            re.sub(r'[^\\d.]', '', row[EMD_AMOUNT_KEY]) or 0
+                        )
+                except Exception:
+                    pass
+                prepared_rows.append(row)
+
+            df = pd.DataFrame(prepared_rows)
+            if DEPARTMENT_NAME_KEY in df.columns:
+                df = df.sort_values(DEPARTMENT_NAME_KEY)
+
+            try:
+                df.to_excel(excel_path, index=False, engine='openpyxl')
+                label = "PARTIAL" if mark_partial else "FINAL"
+                log_callback(f"\\n[{label}] Saved {len(data_to_save)} tender details to: {os.path.basename(excel_path)}")
+                log_callback(f"[{label}] Full path: {excel_path}")
+                return excel_path, "excel"
+            except PermissionError:
+                timestamp_ms = datetime.now().strftime("%Y%m%d_%H%M%S_%f")[:-3]
+                excel_filename_alt = EXCEL_FILENAME_FORMAT.format(
+                    website_keyword=f"{website_keyword}{suffix}",
+                    timestamp=timestamp_ms
+                )
+                excel_path_alt = os.path.join(target_dir, excel_filename_alt)
+                log_callback(f"File locked or permission denied. Trying alternate name: {excel_filename_alt}")
+                df.to_excel(excel_path_alt, index=False, engine='openpyxl')
+                label = "PARTIAL" if mark_partial else "FINAL"
+                log_callback(f"\\n[{label}] Saved {len(data_to_save)} tender details to: {os.path.basename(excel_path_alt)}")
+                log_callback(f"[{label}] Full path: {excel_path_alt}")
+                return excel_path_alt, "excel"
+            except Exception as save_err:
+                log_callback(f"ERROR saving Excel file: {save_err}")
+                csv_filename = excel_filename.replace('.xlsx', '.csv')
+                csv_path = os.path.join(target_dir, csv_filename)
+                log_callback(f"Attempting to save as CSV instead: {csv_filename}")
+                df.to_csv(csv_path, index=False, encoding='utf-8-sig')
+                label = "PARTIAL" if mark_partial else "FINAL"
+                log_callback(f"\\n[{label}] Saved {len(data_to_save)} tender details to CSV: {os.path.basename(csv_path)}")
+                log_callback(f"[{label}] Full path: {csv_path}")
+                return csv_path, "csv"
+        except Exception as save_outer_err:
+            log_callback(f"CRITICAL ERROR in snapshot save: {save_outer_err}")
+            logger.error(f"Snapshot save error: {save_outer_err}", exc_info=True)
+            return None, None
+
+    saved_output_path = None
+    saved_output_type = None
+
     try:
-        total_tenders = 0
-        all_tender_details = []
-        processed_depts = 0
+
+        for dept in departments_to_scrape:
+            count_text = str(dept.get("count_text", "")).strip()
+            if count_text.isdigit():
+                expected_total_tenders += int(count_text)
 
         # Navigate to org list and ensure initial page load
         log_callback("Navigating to organization list...")
@@ -708,10 +826,24 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
             if stop_event and stop_event.is_set():
                 break
 
-            processed_depts += 1
-            pending_depts = max(0, total_depts - processed_depts)
             dept_name = dept_info.get('name', 'Unknown')
             dept_sno = dept_info.get('s_no', 'Unknown')
+            dept_name_norm = str(dept_name).strip().lower()
+
+            if dept_name_norm and dept_name_norm in existing_department_names:
+                skipped_resume_departments += 1
+                expected_for_dept = int(str(dept_info.get('count_text', '0')).strip()) if str(dept_info.get('count_text', '')).strip().isdigit() else None
+                department_summaries.append({
+                    "department": dept_name,
+                    "expected": expected_for_dept,
+                    "scraped": 0,
+                    "resume_skipped": True
+                })
+                log_callback(f"RESUME: Skipping already-processed department: {dept_name}")
+                continue
+
+            processed_depts += 1
+            pending_depts = max(0, total_depts - processed_depts)
             
             log_callback(f"\nProcessing department {processed_depts}/{total_depts}: {dept_name}")
             
@@ -753,12 +885,16 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
                 log_callback(f"Driver session lost after clicking dept {dept_name}: {session_err}")
                 break
             
-            tender_data = _scrape_tender_details(
+            tender_data, skipped_existing = _scrape_tender_details(
                 driver=driver,
                 department_name=dept_name,
                 base_url=base_url_config['BaseURL'],
-                log_callback=log_callback
+                log_callback=log_callback,
+                existing_tender_ids=existing_tender_ids
             )
+            skipped_existing_total += skipped_existing
+            if dept_name_norm:
+                processed_department_names.add(dept_name_norm)
             
             if tender_data:
                 dept_tender_count = len(tender_data)
@@ -767,6 +903,21 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
                 dept_info['processed'] = True
                 dept_info['tenders_found'] = dept_tender_count
                 log_callback(f"Found {dept_tender_count} tenders in department {dept_name}")
+
+                new_ids = {
+                    str(item.get("Tender ID (Extracted)")).strip()
+                    for item in tender_data
+                    if str(item.get("Tender ID (Extracted)", "")).strip()
+                }
+                existing_tender_ids.update(new_ids)
+
+                expected_for_dept = int(str(dept_info.get('count_text', '0')).strip()) if str(dept_info.get('count_text', '')).strip().isdigit() else None
+                department_summaries.append({
+                    "department": dept_name,
+                    "expected": expected_for_dept,
+                    "scraped": dept_tender_count,
+                    "resume_skipped": False
+                })
                 
                 # Update progress with detailed tender info
                 if progress_callback:
@@ -779,6 +930,13 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
                 log_callback(f"No tenders found/extracted from department {dept_name}")
                 dept_info['processed'] = True
                 dept_info['tenders_found'] = 0
+                expected_for_dept = int(str(dept_info.get('count_text', '0')).strip()) if str(dept_info.get('count_text', '')).strip().isdigit() else None
+                department_summaries.append({
+                    "department": dept_name,
+                    "expected": expected_for_dept,
+                    "scraped": 0,
+                    "resume_skipped": False
+                })
             
             # Check session before navigation
             try:
@@ -807,89 +965,9 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
                     log_callback(f"ERROR: Failed to navigate back (session may be lost): {nav_err}")
                     break
 
-        # Generate Excel file if we have data
+        # Generate output file if we have data
         if all_tender_details:
-            try:
-                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-                website_keyword = get_website_keyword_from_url(base_url_config['BaseURL'])
-                excel_filename = EXCEL_FILENAME_FORMAT.format(
-                    website_keyword=website_keyword,
-                    timestamp=timestamp
-                )
-                excel_path = os.path.join(download_dir, excel_filename)
-                
-                # Ensure download directory exists and is writable
-                try:
-                    os.makedirs(download_dir, exist_ok=True)
-                except Exception as dir_err:
-                    log_callback(f"ERROR: Cannot create download directory: {dir_err}")
-                    # Fallback to user's home directory
-                    fallback_dir = os.path.join(os.path.expanduser("~"), "Downloads", "Tender_Downloads")
-                    log_callback(f"Using fallback directory: {fallback_dir}")
-                    os.makedirs(fallback_dir, exist_ok=True)
-                    excel_path = os.path.join(fallback_dir, excel_filename)
-                    download_dir = fallback_dir
-                
-                # Check write permissions
-                try:
-                    test_file = os.path.join(download_dir, '.write_test')
-                    with open(test_file, 'w') as f:
-                        f.write('test')
-                    os.remove(test_file)
-                except PermissionError:
-                    log_callback(f"ERROR: No write permission for {download_dir}")
-                    # Try temp directory as last resort
-                    import tempfile
-                    fallback_dir = os.path.join(tempfile.gettempdir(), "Tender_Downloads")
-                    os.makedirs(fallback_dir, exist_ok=True)
-                    log_callback(f"Using temp directory: {fallback_dir}")
-                    excel_path = os.path.join(fallback_dir, excel_filename)
-                    download_dir = fallback_dir
-                
-                # Add some derived/calculated fields
-                for tender in all_tender_details:
-                    try:
-                        if EMD_AMOUNT_KEY in tender:
-                            tender['EMD Amount (Numeric)'] = float(
-                                re.sub(r'[^\\d.]', '', tender[EMD_AMOUNT_KEY]) or 0
-                            )
-                    except: pass
-                    
-                # Create DataFrame and sort by department name
-                df = pd.DataFrame(all_tender_details)
-                if DEPARTMENT_NAME_KEY in df.columns:
-                    df = df.sort_values(DEPARTMENT_NAME_KEY)
-                
-                # Save Excel with enhanced error handling
-                try:
-                    df.to_excel(excel_path, index=False, engine='openpyxl')
-                    log_callback(f"\\nSaved {len(all_tender_details)} tender details to: {excel_filename}")
-                    log_callback(f"Full path: {excel_path}")
-                except PermissionError as perm_err:
-                    # File might be open - try with timestamp in milliseconds
-                    timestamp_ms = datetime.now().strftime("%Y%m%d_%H%M%S_%f")[:-3]
-                    excel_filename_alt = EXCEL_FILENAME_FORMAT.format(
-                        website_keyword=website_keyword,
-                        timestamp=timestamp_ms
-                    )
-                    excel_path_alt = os.path.join(download_dir, excel_filename_alt)
-                    log_callback(f"File locked or permission denied. Trying alternate name: {excel_filename_alt}")
-                    df.to_excel(excel_path_alt, index=False, engine='openpyxl')
-                    log_callback(f"\\nSaved {len(all_tender_details)} tender details to: {excel_filename_alt}")
-                    log_callback(f"Full path: {excel_path_alt}")
-                except Exception as save_err:
-                    log_callback(f"ERROR saving Excel file: {save_err}")
-                    # Last resort - save as CSV
-                    csv_filename = excel_filename.replace('.xlsx', '.csv')
-                    csv_path = os.path.join(download_dir, csv_filename)
-                    log_callback(f"Attempting to save as CSV instead: {csv_filename}")
-                    df.to_csv(csv_path, index=False, encoding='utf-8-sig')
-                    log_callback(f"\\nSaved {len(all_tender_details)} tender details to CSV: {csv_filename}")
-                    log_callback(f"Full path: {csv_path}")
-                
-            except Exception as excel_err:
-                log_callback(f"CRITICAL ERROR in Excel generation: {excel_err}")
-                logger.error(f"Excel creation error: {excel_err}", exc_info=True)
+            saved_output_path, saved_output_type = _save_tender_data_snapshot(all_tender_details, mark_partial=False)
         
         status_msg = "Scraping completed"
         if stop_event and stop_event.is_set():
@@ -900,12 +978,39 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
         log_callback("#" * 80)
         log_callback(f"\n=== {status_msg} ===")
         log_callback(f"Processed {processed_depts} departments")
+        if skipped_resume_departments > 0:
+            log_callback(f"Resume skipped departments: {skipped_resume_departments}")
         log_callback(f"Total tenders found: {total_tenders}")
+        if expected_total_tenders > 0:
+            log_callback(f"Verification: expected approx {expected_total_tenders}, extracted {total_tenders}")
+            if total_tenders < expected_total_tenders:
+                log_callback(f"Verification gap: {expected_total_tenders - total_tenders} (portal filters/status differences possible)")
         log_callback("#" * 80)  # Portal completion separator
         log_callback("#" * 80)
         log_callback("")  # Blank line
         status_callback(status_msg)
         timer_callback(start_time)
+
+        extracted_tender_ids = sorted({
+            str(item.get("Tender ID (Extracted)")).strip()
+            for item in all_tender_details
+            if str(item.get("Tender ID (Extracted)", "")).strip()
+        })
+
+        return {
+            "status": status_msg,
+            "processed_departments": processed_depts,
+            "expected_total_tenders": expected_total_tenders,
+            "extracted_total_tenders": total_tenders,
+            "skipped_existing_total": skipped_existing_total,
+            "skipped_resume_departments": skipped_resume_departments,
+            "department_summaries": department_summaries,
+            "extracted_tender_ids": extracted_tender_ids,
+            "processed_department_names": sorted(processed_department_names),
+            "output_file_path": saved_output_path,
+            "output_file_type": saved_output_type,
+            "partial_saved": False
+        }
 
         # Play success sound only if not cancelled
         try:
@@ -917,6 +1022,13 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
     except Exception as e:
         log_callback(f"Error in run_scraping_logic: {e}")
         logger.error(f"Error in run_scraping_logic: {e}", exc_info=True)
+
+        partial_saved = False
+        if all_tender_details:
+            log_callback("Attempting partial save of extracted tenders after error...")
+            saved_output_path, saved_output_type = _save_tender_data_snapshot(all_tender_details, mark_partial=True)
+            partial_saved = bool(saved_output_path)
+
         status_callback("Error during scraping")
         timer_callback(start_time)
         # Play error sound
@@ -924,6 +1036,26 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
             play_sound(SOUND_ERROR)
         except Exception:
             pass
+        extracted_tender_ids = sorted({
+            str(item.get("Tender ID (Extracted)")).strip()
+            for item in all_tender_details
+            if str(item.get("Tender ID (Extracted)", "")).strip()
+        })
+
+        return {
+            "status": "Error during scraping",
+            "processed_departments": processed_depts,
+            "expected_total_tenders": expected_total_tenders,
+            "extracted_total_tenders": len(all_tender_details),
+            "skipped_existing_total": skipped_existing_total,
+            "skipped_resume_departments": skipped_resume_departments,
+            "department_summaries": department_summaries,
+            "extracted_tender_ids": extracted_tender_ids,
+            "processed_department_names": sorted(processed_department_names),
+            "output_file_path": saved_output_path,
+            "output_file_type": saved_output_type,
+            "partial_saved": partial_saved
+        }
 
 def process_department(dept_info, base_url_config, download_dir, driver,
                       log_callback=None, progress_callback=None, stop_event=None):
@@ -946,7 +1078,7 @@ def process_department(dept_info, base_url_config, download_dir, driver,
         time.sleep(STABILIZE_WAIT)
 
         # Extract tender details
-        tender_data = _scrape_tender_details(
+        tender_data, _skipped_existing = _scrape_tender_details(
             driver=driver,
             department_name=dept_info['name'],
             base_url=base_url_config['BaseURL'],

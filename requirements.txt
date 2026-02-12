@@ -1,4 +1,4 @@
-tkinter  # GUI library (usually pre-installed with Python)
+# tkinter is part of standard Python on Windows installs and is not pip-installable
 debugpy>=1.8.0  # Debugging support
 pandas  # For handling CSV files like base_urls.csv
 numpy  # For potential data manipulation

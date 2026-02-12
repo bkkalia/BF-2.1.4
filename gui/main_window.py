@@ -27,6 +27,7 @@ from app_settings import FALLBACK_URL_CONFIG, save_settings, DEFAULT_SETTINGS_ST
 from gui.tab_department import DepartmentTab
 from gui.tab_id_search import IdSearchTab
 from gui.tab_url_process import UrlProcessTab
+from gui.tab_batch_scrape import BatchScrapeTab
 from gui.tab_settings import SettingsTab
 from scraper.webdriver_manager import get_driver, quit_driver  # Add this import
 from scraper.driver_manager import setup_driver, safe_quit_driver  # Add setup_driver import
@@ -372,6 +373,7 @@ class MainWindow:
         self.sidebar_buttons = {}
         nav_items = [
             ("By Department", self._show_department),
+            ("Batch Scrape", self._show_batch_scrape),
             ("By Tender ID", self._show_id_search),
             ("By Direct URL", self._show_url_process),
             ("Settings", self._show_settings),
@@ -496,6 +498,7 @@ class MainWindow:
         logger.debug("Initializing section frames...")
         sections_to_create = {
             "By Department": DepartmentTab,
+            "Batch Scrape": BatchScrapeTab,
             "By Tender ID": IdSearchTab,
             "By Direct URL": UrlProcessTab,
             "Settings": SettingsTab,
@@ -612,6 +615,7 @@ class MainWindow:
                 del self._filter_trace_id
 
     def _show_department(self): self._show_section("By Department")
+    def _show_batch_scrape(self): self._show_section("Batch Scrape")
     def _show_id_search(self): self._show_section("By Tender ID")
     def _show_url_process(self): self._show_section("By Direct URL")
     def _show_settings(self): self._show_section("Settings")
@@ -1069,7 +1073,11 @@ class MainWindow:
         self.settings["use_undetected_driver"] = self.use_undetected_driver_var.get()
         self.settings["headless_mode"] = self.headless_mode_var.get()
         for key, var in self.timeout_vars.items():
-            self.settings[key] = int(var.get())
+            try:
+                self.settings[key] = float(var.get())
+            except ValueError:
+                logger.warning(f"Invalid timeout value for {key}: {var.get()}, keeping previous/default")
+                self.settings[key] = float(self.settings.get(key, 0.0))
         try:
             if self.root.winfo_exists():
                 self.settings["window_geometry"] = self.root.geometry()

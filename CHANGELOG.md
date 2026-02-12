@@ -9,6 +9,22 @@ Run the helper tool (from project root) to infer and update version dates:
 The tool makes a backup of CHANGELOG.md (CHANGELOG.md.bak.TIMESTAMP) before editing.
 -->
 
+## Version 2.1.6 (February 12, 2026)
+
+### 🚀 Batch Dashboard & Feedback
+- **Live Batch Dashboard**: Added per-portal status table (`Idle`, `Fetching`, `Scraping`, `Done`, `Error`) with expected/extracted/skipped counters.
+- **Parallel State Visibility**: Logs now explicitly show `waiting for domain slot`, `acquired`, `retry`, and `cooldown` phases.
+- **Portal-Level Batch Logs**: Added dedicated Batch log panel with portal filter + text search for faster troubleshooting.
+
+### ✅ Verification & New-Only Scraping
+- **New-Only Mode**: Added `Only New Tenders` option in Batch tab to skip already-known Tender IDs.
+- **Manifest Tracking**: Introduced persistent `batch_tender_manifest.json` to track known Tender IDs per portal.
+- **Post-Run Verification**: Batch now logs expected vs extracted vs skipped-known counts and an approximate remaining gap.
+
+### 🛠️ Stability Fixes
+- **Settings Save Fix**: Resolved timeout cast issue on close (`int('10.0')`) by safely parsing float timeout values.
+- **Scraping Summary Return**: Department scraping now returns structured summary payload for dashboard and verification.
+
 ## Version 2.1.5 (February 12, 2026)
 
 ### 🚀 New UX Improvements

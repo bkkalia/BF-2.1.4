@@ -36,7 +36,7 @@ python main.py
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│ Black Forest Tender Scraper v2.1.5                    [_][□][X] │
+│ Black Forest Tender Scraper v2.1.6                    [_][□][X] │
 ├─────────────────────────────────────────────────────────────┤
 │ [By Department] [By Tender ID] [By Direct URL] [Settings] [Help] │
 ├─────────────────────────────────────────────────────────────┤
@@ -126,7 +126,27 @@ HP Tenders: https://hptenders.gov.in/nicgep/app?page=FrontEndTendersByOrganisati
 etenders: https://etenders.gov.in/eprocure/app?page=FrontEndTendersByOrganisation&service=page&TenderID=67890
 ```
 
-### 4. Settings
+### 4. Batch Scrape
+
+#### Overview
+Run multiple portals in one execution with live per-portal feedback and IP-safe parallel controls.
+
+#### Key Features
+- **Mode**: Sequential or Parallel processing
+- **IP Safety Controls**: Per-domain concurrency, min/max delay, cooldown, retries
+- **Only New Tenders**: Skips already-known Tender IDs using manifest tracking
+- **Live Dashboard**: Per-portal expected/extracted/skipped-known counters and current state
+- **Batch Logs Panel**: Filter logs by portal and search text quickly
+
+#### Verification Behavior
+- Each portal run produces a verification summary:
+   - expected tenders (from department table counts)
+   - extracted tenders (current run)
+   - skipped-known tenders (already in manifest)
+   - remaining gap (approximate)
+- Known Tender IDs are persisted in `batch_tender_manifest.json`.
+
+### 5. Settings
 
 #### Overview
 Configure application behavior, appearance, and advanced options.
@@ -144,7 +164,7 @@ Configure application behavior, appearance, and advanced options.
 - **Verbose Logging**: Enable detailed logging
 - **Proxy Settings**: Configure proxy servers if needed
 
-### 5. Help
+### 6. Help
 
 #### Overview
 Access built-in help and documentation.
@@ -307,9 +327,9 @@ Output_Directory/
 ## 🚀 Advanced Features
 
 ### Batch Processing
-- Use CLI mode for batch processing: `python main.py department --all`
-- Create batch files for repetitive tasks
-- Schedule automated scraping with Windows Task Scheduler
+- Use **Batch Scrape tab** for multi-portal orchestration with dashboard and verification
+- Use CLI mode for scheduled/automated jobs: `python main.py department --all`
+- Create exported scripts (`.bat` / `.ps1`) from Batch tab for unattended runs
 
 ### Custom Scripts
 - Use the CLI in custom scripts and automation
@@ -337,5 +357,5 @@ Output_Directory/
 ---
 
 **Last Updated**: February 12, 2026
-**Version**: 2.1.5
+**Version**: 2.1.6
 **GUI Mode**: Interactive tender scraping with visual progress monitoring
