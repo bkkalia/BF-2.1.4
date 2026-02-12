@@ -9,6 +9,17 @@ Run the helper tool (from project root) to infer and update version dates:
 The tool makes a backup of CHANGELOG.md (CHANGELOG.md.bak.TIMESTAMP) before editing.
 -->
 
+## Version 2.1.7 (February 12, 2026)
+
+### 🛡️ Recovery & Completion Reliability
+- **Final Delta Sweep**: Added an optional quick second pass in batch `Only New` mode before completion to catch tenders that appear during long runs.
+- **Portal Health Watchdog**: Added inactivity and sleep/network pause detection with automatic portal recovery retry using a fresh browser session.
+- **Checkpoint Auto-Import**: If `batch_tender_manifest.json` is missing/corrupt, batch now auto-seeds resume state from the most recent portal output file.
+
+### 📊 Run Reporting
+- **Per-Portal Report Files**: Each portal run now writes both JSON and CSV report files with attempted, processed, resume-skipped, extracted, output-path, and error summary fields.
+- **Batch Report Folder**: Reports are grouped into a timestamped run directory under `batch_run_reports` and logged at run completion.
+
 ## Version 2.1.6 (February 12, 2026)
 
 ### 🚀 Batch Dashboard & Feedback

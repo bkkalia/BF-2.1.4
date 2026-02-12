@@ -1,7 +1,10 @@
 import concurrent.futures
+import csv
+import glob
 import json
 import os
 import random
+import re
 import threading
 import time
 import tkinter as tk
@@ -13,6 +16,27 @@ from batch_config_memory import get_batch_memory
 from gui import gui_utils
 from scraper.driver_manager import setup_driver, safe_quit_driver
 from scraper.logic import fetch_department_list_from_site_v2, run_scraping_logic
+from utils import get_website_keyword_from_url, sanitise_filename
+
+try:
+    import pandas as pd
+except Exception:
+    pd = None
+
+
+class _CompositeStopEvent:
+    def __init__(self, primary_event=None, secondary_event=None):
+        self.primary_event = primary_event
+        self.secondary_event = secondary_event
+
+    def is_set(self):
+        primary = bool(self.primary_event and self.primary_event.is_set())
+        secondary = bool(self.secondary_event and self.secondary_event.is_set())
+        return primary or secondary
+
+    def set(self):
+        if self.secondary_event:
+            self.secondary_event.set()
 
 
 class BatchScrapeTab(ttk.Frame):
@@ -47,6 +71,11 @@ class BatchScrapeTab(ttk.Frame):
 
         self.manifest_path = os.path.join(os.getcwd(), "batch_tender_manifest.json")
         self.download_manifest = self._load_manifest()
+
+        self.enable_delta_sweep = True
+        self.portal_watchdog_inactivity_sec = 120
+        self.portal_watchdog_sleep_jump_sec = 180
+        self.current_batch_report_dir = None
 
         self._create_widgets()
         self._load_initial_data()
@@ -213,16 +242,116 @@ class BatchScrapeTab(ttk.Frame):
 
     def _load_manifest(self):
         if not os.path.exists(self.manifest_path):
-            return {"portals": {}}
+            return self._bootstrap_manifest_from_outputs("missing")
         try:
             with open(self.manifest_path, "r", encoding="utf-8") as handle:
                 data = json.load(handle)
             if not isinstance(data, dict):
-                return {"portals": {}}
+                return self._bootstrap_manifest_from_outputs("invalid-structure")
             data.setdefault("portals", {})
+            if not isinstance(data.get("portals"), dict):
+                return self._bootstrap_manifest_from_outputs("invalid-portals")
             return data
         except Exception:
-            return {"portals": {}}
+            return self._bootstrap_manifest_from_outputs("corrupt")
+
+    def _bootstrap_manifest_from_outputs(self, reason):
+        fallback = {"portals": {}}
+        imported = 0
+
+        for config in getattr(self.main_app, "base_urls_data", []):
+            portal_name = str(config.get("Name", "")).strip()
+            base_url = str(config.get("BaseURL", "")).strip()
+            if not portal_name or not base_url:
+                continue
+
+            latest_file = self._find_latest_output_for_portal(base_url)
+            if not latest_file:
+                continue
+
+            ids, departments = self._extract_checkpoint_from_output(latest_file)
+            if not ids and not departments:
+                continue
+
+            fallback["portals"][portal_name] = {
+                "tender_ids": sorted(ids),
+                "processed_departments": sorted(departments),
+                "last_run": datetime.now().isoformat(timespec="seconds"),
+                "last_expected": None,
+                "last_extracted": len(ids),
+                "seeded_from": latest_file,
+                "seed_reason": reason
+            }
+            imported += 1
+
+        if imported > 0:
+            self.download_manifest = fallback
+            self._save_manifest()
+            self.log_callback(f"Manifest {reason}; auto-imported checkpoint for {imported} portal(s).")
+        return fallback
+
+    def _find_latest_output_for_portal(self, base_url):
+        keyword = get_website_keyword_from_url(base_url)
+        if not keyword:
+            return None
+
+        search_dirs = [
+            os.path.join(os.getcwd(), "Tender_Downloads"),
+            os.path.join(os.path.expanduser("~"), "Downloads"),
+            os.getcwd(),
+        ]
+
+        candidates = []
+        for base_dir in search_dirs:
+            if not os.path.isdir(base_dir):
+                continue
+            for pattern in [f"{keyword}_tenders_*.xlsx", f"{keyword}_tenders_*.csv"]:
+                candidates.extend(glob.glob(os.path.join(base_dir, pattern)))
+
+        if not candidates:
+            return None
+
+        candidates.sort(key=lambda path: os.path.getmtime(path), reverse=True)
+        return candidates[0]
+
+    def _extract_checkpoint_from_output(self, file_path):
+        tender_ids = set()
+        departments = set()
+        ext = os.path.splitext(file_path)[1].lower()
+
+        try:
+            if ext == ".xlsx" and pd is not None:
+                df = pd.read_excel(file_path)
+                columns = set(df.columns)
+                id_col = "Tender ID (Extracted)" if "Tender ID (Extracted)" in columns else ("Tender ID" if "Tender ID" in columns else None)
+                dept_col = "Department Name" if "Department Name" in columns else ("Department" if "Department" in columns else None)
+
+                if id_col:
+                    tender_ids.update(
+                        str(value).strip()
+                        for value in df[id_col].dropna().tolist()
+                        if str(value).strip()
+                    )
+                if dept_col:
+                    departments.update(
+                        str(value).strip().lower()
+                        for value in df[dept_col].dropna().tolist()
+                        if str(value).strip()
+                    )
+            elif ext == ".csv":
+                with open(file_path, "r", encoding="utf-8-sig", newline="") as handle:
+                    reader = csv.DictReader(handle)
+                    for row in reader:
+                        tender_id = str(row.get("Tender ID (Extracted)") or row.get("Tender ID") or "").strip()
+                        dept_name = str(row.get("Department Name") or row.get("Department") or "").strip().lower()
+                        if tender_id:
+                            tender_ids.add(tender_id)
+                        if dept_name:
+                            departments.add(dept_name)
+        except Exception as error:
+            self.log_callback(f"Checkpoint import failed for '{os.path.basename(file_path)}': {error}")
+
+        return tender_ids, departments
 
     def _save_manifest(self):
         try:
@@ -645,13 +774,81 @@ class BatchScrapeTab(ttk.Frame):
             self._append_batch_log_threadsafe(portal_name, msg)
         return _portal_log
 
-    def _run_single_portal(self, portal_name, portal_config, download_dir, stop_event, deep_scrape, only_new, shared_driver, portal_log, status_callback):
+    def _attach_sink_to_logger(self, base_logger, sink, touch_callback=None):
+
+        def _portal_log(message):
+            msg = str(message)
+            sink.append(msg)
+            if touch_callback:
+                touch_callback()
+            base_logger(msg)
+
+        return _portal_log
+
+    def _start_portal_watchdog(self, portal_name, portal_log, stop_event, inactivity_state, watchdog_trigger):
+        done_event = threading.Event()
+
+        def _watchdog_loop():
+            while not done_event.is_set():
+                if stop_event and stop_event.is_set():
+                    return
+                now_mono = time.monotonic()
+                now_wall = time.time()
+
+                last_mono = inactivity_state.get("last_mono", now_mono)
+                last_wall = inactivity_state.get("last_wall", now_wall)
+
+                if (now_wall - last_wall) >= self.portal_watchdog_sleep_jump_sec:
+                    portal_log(f"Watchdog: sleep/network pause detected for {portal_name}; requesting auto-recovery.")
+                    watchdog_trigger.set()
+                    return
+
+                if (now_mono - last_mono) >= self.portal_watchdog_inactivity_sec:
+                    portal_log(f"Watchdog: no activity for {self.portal_watchdog_inactivity_sec}s; requesting auto-recovery.")
+                    watchdog_trigger.set()
+                    return
+
+                time.sleep(10)
+
+        thread = threading.Thread(target=_watchdog_loop, daemon=True)
+        thread.start()
+        return done_event, thread
+
+    def _is_recoverable_portal_error(self, text):
+        payload = str(text or "").lower()
+        patterns = [
+            "session",
+            "invalid session",
+            "timeout",
+            "connection",
+            "disconnected",
+            "net::",
+            "chrome not reachable",
+            "target window already closed",
+            "unable to discover open pages",
+        ]
+        return any(pattern in payload for pattern in patterns)
+
+    def _run_portal_pass(self, portal_name, portal_config, download_dir, stop_event, deep_scrape, only_new, shared_driver, portal_log, status_callback, resume_departments=True):
         self._update_dashboard_threadsafe(portal_name, state="Fetching", message="Fetching departments...")
         departments, _estimated = fetch_department_list_from_site_v2(portal_config.get("OrgListURL"), portal_log)
         if not departments:
             portal_log("No departments found.")
             self._update_dashboard_threadsafe(portal_name, state="NoData", expected=0, extracted=0, skipped=0)
-            return {"expected_total_tenders": 0, "extracted_total_tenders": 0, "skipped_existing_total": 0, "extracted_tender_ids": []}
+            return {
+                "status": "No departments found",
+                "expected_total_tenders": 0,
+                "extracted_total_tenders": 0,
+                "processed_departments": 0,
+                "skipped_resume_departments": 0,
+                "skipped_existing_total": 0,
+                "extracted_tender_ids": [],
+                "processed_department_names": [],
+                "output_file_path": None,
+                "output_file_type": None,
+                "partial_saved": False,
+                "department_summaries": []
+            }
 
         valid_departments = []
         expected_total = 0
@@ -665,10 +862,13 @@ class BatchScrapeTab(ttk.Frame):
                     expected_total += int(count_text)
 
         known_ids = self._get_known_ids_for_portal(portal_name) if only_new else set()
-        known_departments = self._get_known_departments_for_portal(portal_name) if only_new else set()
+        known_departments = self._get_known_departments_for_portal(portal_name) if (only_new and resume_departments) else set()
         if only_new:
             portal_log(f"Known tender IDs for resume/new-only: {len(known_ids)}")
-            portal_log(f"Known processed departments for resume: {len(known_departments)}")
+            if resume_departments:
+                portal_log(f"Known processed departments for resume: {len(known_departments)}")
+            else:
+                portal_log("Delta sweep: re-checking all departments with tender-ID de-duplication.")
 
         self._update_dashboard_threadsafe(portal_name, state="Scraping", expected=expected_total)
         status_callback(f"Batch: {portal_name}")
@@ -687,15 +887,179 @@ class BatchScrapeTab(ttk.Frame):
             existing_tender_ids=known_ids,
             existing_department_names=known_departments
         )
+        summary.setdefault("expected_total_tenders", expected_total)
+        summary.setdefault("extracted_total_tenders", 0)
+        summary.setdefault("skipped_existing_total", 0)
+        summary.setdefault("processed_departments", 0)
+        summary.setdefault("skipped_resume_departments", 0)
+        summary.setdefault("extracted_tender_ids", [])
+        summary.setdefault("processed_department_names", [])
+        summary.setdefault("department_summaries", [])
+        summary.setdefault("output_file_path", None)
+        summary.setdefault("output_file_type", None)
+        summary.setdefault("partial_saved", False)
+        return summary
+
+    def _merge_pass_summaries(self, first_summary, delta_summary):
+        combined_ids = sorted(set(first_summary.get("extracted_tender_ids", [])).union(delta_summary.get("extracted_tender_ids", [])))
+        combined_departments = sorted(set(first_summary.get("processed_department_names", [])).union(delta_summary.get("processed_department_names", [])))
+        merged = {
+            "status": first_summary.get("status", "Scraping completed"),
+            "processed_departments": int(first_summary.get("processed_departments", 0)) + int(delta_summary.get("processed_departments", 0)),
+            "expected_total_tenders": int(first_summary.get("expected_total_tenders", 0)),
+            "extracted_total_tenders": int(first_summary.get("extracted_total_tenders", 0)) + int(delta_summary.get("extracted_total_tenders", 0)),
+            "skipped_existing_total": int(first_summary.get("skipped_existing_total", 0)) + int(delta_summary.get("skipped_existing_total", 0)),
+            "skipped_resume_departments": int(first_summary.get("skipped_resume_departments", 0)) + int(delta_summary.get("skipped_resume_departments", 0)),
+            "department_summaries": list(first_summary.get("department_summaries", [])) + list(delta_summary.get("department_summaries", [])),
+            "extracted_tender_ids": combined_ids,
+            "processed_department_names": combined_departments,
+            "output_file_path": delta_summary.get("output_file_path") or first_summary.get("output_file_path"),
+            "output_file_type": delta_summary.get("output_file_type") or first_summary.get("output_file_type"),
+            "partial_saved": bool(first_summary.get("partial_saved") or delta_summary.get("partial_saved")),
+            "delta_sweep_extracted": int(delta_summary.get("extracted_total_tenders", 0))
+        }
+        if "error" in str(first_summary.get("status", "")).lower() or "error" in str(delta_summary.get("status", "")).lower():
+            merged["status"] = "Error during scraping"
+        return merged
+
+    def _prepare_batch_report_dir(self):
+        stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        report_root = os.path.join(os.getcwd(), "batch_run_reports")
+        report_dir = os.path.join(report_root, f"run_{stamp}")
+        os.makedirs(report_dir, exist_ok=True)
+        self.current_batch_report_dir = report_dir
+        return report_dir
+
+    def _write_portal_report(self, portal_name, report):
+        if not self.current_batch_report_dir:
+            self._prepare_batch_report_dir()
+        report_dir = self.current_batch_report_dir or os.path.join(os.getcwd(), "batch_run_reports")
+        os.makedirs(report_dir, exist_ok=True)
+
+        safe_name = sanitise_filename(portal_name) or "portal"
+        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+        base_path = os.path.join(report_dir, f"{safe_name}_{ts}")
+        json_path = f"{base_path}.json"
+        csv_path = f"{base_path}.csv"
+
+        with open(json_path, "w", encoding="utf-8") as handle:
+            json.dump(report, handle, indent=2, ensure_ascii=False)
+
+        csv_row = dict(report)
+        csv_row["errors"] = " | ".join(report.get("errors", []))
+        with open(csv_path, "w", encoding="utf-8-sig", newline="") as handle:
+            writer = csv.DictWriter(handle, fieldnames=list(csv_row.keys()))
+            writer.writeheader()
+            writer.writerow(csv_row)
+
+        return json_path, csv_path
+
+    def _run_single_portal(self, portal_name, portal_config, download_dir, stop_event, deep_scrape, only_new, shared_driver, portal_log, status_callback):
+        started_at = datetime.now()
+        portal_messages = []
+        inactivity_state = {
+            "last_mono": time.monotonic(),
+            "last_wall": time.time()
+        }
+
+        def _touch_activity():
+            inactivity_state["last_mono"] = time.monotonic()
+            inactivity_state["last_wall"] = time.time()
+
+        portal_log = self._attach_sink_to_logger(portal_log, portal_messages, _touch_activity)
+        watchdog_trigger = threading.Event()
+        composite_stop = _CompositeStopEvent(stop_event, watchdog_trigger)
+        watchdog_done, watchdog_thread = self._start_portal_watchdog(
+            portal_name=portal_name,
+            portal_log=portal_log,
+            stop_event=stop_event,
+            inactivity_state=inactivity_state,
+            watchdog_trigger=watchdog_trigger
+        )
+
+        summary = None
+        try:
+            for attempt in range(2):
+                if composite_stop.is_set() and attempt == 0:
+                    break
+
+                summary = self._run_portal_pass(
+                    portal_name=portal_name,
+                    portal_config=portal_config,
+                    download_dir=download_dir,
+                    stop_event=composite_stop,
+                    deep_scrape=deep_scrape,
+                    only_new=only_new,
+                    shared_driver=shared_driver,
+                    portal_log=portal_log,
+                    status_callback=status_callback,
+                    resume_departments=True
+                )
+
+                if not watchdog_trigger.is_set() and "error" not in str(summary.get("status", "")).lower():
+                    break
+
+                if attempt == 0 and (watchdog_trigger.is_set() or self._is_recoverable_portal_error(summary.get("status"))):
+                    portal_log("Watchdog/session recovery: retrying portal with fresh browser session.")
+                    try:
+                        if shared_driver:
+                            safe_quit_driver(shared_driver, portal_log)
+                    except Exception:
+                        pass
+                    shared_driver = setup_driver(initial_download_dir=download_dir)
+                    watchdog_trigger.clear()
+                    _touch_activity()
+                    continue
+                break
+
+            if summary is None:
+                summary = {
+                    "status": "Error during scraping",
+                    "processed_departments": 0,
+                    "expected_total_tenders": 0,
+                    "extracted_total_tenders": 0,
+                    "skipped_existing_total": 0,
+                    "skipped_resume_departments": 0,
+                    "department_summaries": [],
+                    "extracted_tender_ids": [],
+                    "processed_department_names": [],
+                    "output_file_path": None,
+                    "output_file_type": None,
+                    "partial_saved": False
+                }
+
+            if self.enable_delta_sweep and only_new and not composite_stop.is_set() and "error" not in str(summary.get("status", "")).lower():
+                portal_log("Starting optional final delta sweep (quick second pass)...")
+                delta_summary = self._run_portal_pass(
+                    portal_name=portal_name,
+                    portal_config=portal_config,
+                    download_dir=download_dir,
+                    stop_event=composite_stop,
+                    deep_scrape=False,
+                    only_new=True,
+                    shared_driver=shared_driver,
+                    portal_log=portal_log,
+                    status_callback=status_callback,
+                    resume_departments=False
+                )
+                summary = self._merge_pass_summaries(summary, delta_summary)
+                portal_log(f"Delta sweep extracted: {summary.get('delta_sweep_extracted', 0)}")
+        finally:
+            watchdog_done.set()
+            if watchdog_thread:
+                watchdog_thread.join(timeout=1)
 
         status_text = str(summary.get("status", "")).lower()
-        state_value = "Done" if "completed" in status_text else "Error"
+        if "no departments" in status_text:
+            state_value = "NoData"
+        else:
+            state_value = "Done" if "completed" in status_text else "Error"
 
         known_total = self._update_manifest_for_portal(portal_name, summary)
         self._update_dashboard_threadsafe(
             portal_name,
             state=state_value,
-            expected=summary.get("expected_total_tenders", expected_total),
+            expected=summary.get("expected_total_tenders", 0),
             extracted=summary.get("extracted_total_tenders", 0),
             skipped=summary.get("skipped_existing_total", 0),
             known=known_total
@@ -718,6 +1082,32 @@ class BatchScrapeTab(ttk.Frame):
             f"remaining_gap={gap}"
         )
 
+        completed_at = datetime.now()
+        errors = [msg for msg in portal_messages if re.search(r"\b(error|failed|critical|exception)\b", msg, re.IGNORECASE)]
+        report = {
+            "portal": portal_name,
+            "started_at": started_at.isoformat(timespec="seconds"),
+            "completed_at": completed_at.isoformat(timespec="seconds"),
+            "duration_sec": max(0.0, (completed_at - started_at).total_seconds()),
+            "status": summary.get("status", "Unknown"),
+            "attempted_departments": int(summary.get("processed_departments", 0)) + int(summary.get("skipped_resume_departments", 0)),
+            "processed_departments": int(summary.get("processed_departments", 0)),
+            "resume_skipped_departments": int(summary.get("skipped_resume_departments", 0)),
+            "expected_tenders": int(summary.get("expected_total_tenders", 0)),
+            "extracted_tenders": int(summary.get("extracted_total_tenders", 0)),
+            "skipped_known_tenders": int(summary.get("skipped_existing_total", 0)),
+            "output_file_path": summary.get("output_file_path"),
+            "output_file_type": summary.get("output_file_type"),
+            "partial_saved": bool(summary.get("partial_saved", False)),
+            "delta_sweep_enabled": bool(self.enable_delta_sweep and only_new),
+            "delta_sweep_extracted": int(summary.get("delta_sweep_extracted", 0)),
+            "error_count": len(errors),
+            "errors": errors[:30]
+        }
+        json_report_path, csv_report_path = self._write_portal_report(portal_name, report)
+        portal_log(f"Run report saved (JSON): {json_report_path}")
+        portal_log(f"Run report saved (CSV): {csv_report_path}")
+
         return summary
 
     def _run_batch_worker(self, selected_portals, download_dir, mode, max_parallel, ip_safety, only_new,
@@ -728,6 +1118,7 @@ class BatchScrapeTab(ttk.Frame):
         progress_callback = progress_callback or (lambda *_args: None)
 
         total_portals = len(selected_portals)
+        self._prepare_batch_report_dir()
 
         if mode == "parallel":
             self._run_parallel(selected_portals, download_dir, max_parallel, ip_safety, only_new, log_callback, status_callback, progress_callback, stop_event, kwargs)
@@ -776,6 +1167,8 @@ class BatchScrapeTab(ttk.Frame):
             progress_callback(completed, total_portals, f"Completed {completed}/{total_portals}")
 
         status_callback("Batch scraping completed")
+        if self.current_batch_report_dir:
+            log_callback(f"Batch run reports saved in: {self.current_batch_report_dir}")
 
     def _run_parallel(self, selected_portals, download_dir, max_parallel, ip_safety, only_new, log_callback, status_callback, progress_callback, stop_event, common_kwargs):
         lock = threading.Lock()
@@ -871,6 +1264,8 @@ class BatchScrapeTab(ttk.Frame):
                 future.result()
 
         status_callback("Batch scraping completed")
+        if self.current_batch_report_dir:
+            log_callback(f"Batch run reports saved in: {self.current_batch_report_dir}")
 
     def set_controls_state(self, state):
         widgets = [

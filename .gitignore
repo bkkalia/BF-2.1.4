@@ -14,6 +14,7 @@ portal_config_history.json
 batch_scrape_profiles.json
 batch_tender_manifest.json
 Tender_Downloads/*.xlsx
+batch_run_reports/
 
 # OS/editor noise
 .DS_Store
