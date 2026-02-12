@@ -62,9 +62,15 @@ def safe_extract_text(driver, locator, description, timeout_multiplier=1.0, defa
             logger.error(f"Unexpected error extracting text for {description} ({locator}): {e}", exc_info=True)
     return default
 
-def click_element(driver, locator, description, scroll=True, timeout_multiplier=1.0, wait_condition=EC.element_to_be_clickable):
-    """Finds, optionally scrolls to, and clicks an element with retries (standard and JS click)."""
-    element = None; wait_time = max(5, int(ELEMENT_WAIT_TIMEOUT * timeout_multiplier)); last_exception = None
+def click_element(driver, locator, description, scroll=True, timeout_multiplier=1.0, wait_condition=EC.element_to_be_clickable, max_wait=None):
+    """Finds, optionally scrolls to, and clicks an element with retries (standard and JS click).
+    
+    Args:
+        max_wait: Maximum wait time in seconds. If specified, overrides timeout_multiplier.
+    """
+    element = None
+    wait_time = max_wait if max_wait is not None else max(5, int(ELEMENT_WAIT_TIMEOUT * timeout_multiplier))
+    last_exception = None
     for attempt in range(2):
         action_type = "standard" if attempt == 0 else "JavaScript"; current_wait_condition = wait_condition if attempt == 0 else EC.presence_of_element_located
         if attempt > 0: logger.warning(f"Std click failed for '{description}'. Retrying with {action_type}..."); time.sleep(0.5)

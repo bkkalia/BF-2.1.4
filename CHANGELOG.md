@@ -9,30 +9,26 @@ Run the helper tool (from project root) to infer and update version dates:
 The tool makes a backup of CHANGELOG.md (CHANGELOG.md.bak.TIMESTAMP) before editing.
 -->
 
-## Version 2.1.5 (September 23, 2025)
+## Version 2.1.5 (February 12, 2026)
 
-### 🚀 Major Features
-- **Smart Upgrade System**: Automatic detection and upgrade of existing installations
-- **Enhanced CLI Architecture**: Separate CLI entry point with ASCII banner
-- **Console-Free GUI**: GUI now runs without console dependency issues
-- **Professional Installer**: Inno Setup with upgrade/uninstall/repair options
+### 🚀 New UX Improvements
+- **Dual Status Progress Bars**: Separate colorful progress bars for Departments and Tenders.
+- **Live Progress Context**: Status now shows scraped departments, pending departments, and tender totals.
+- **Better Visual Logging**: Added clear separators after each department (`********`) and portal (`########`).
 
-### ✅ Performance & Capabilities
-- **High-Speed Scraping**: Can scrape 1000+ records in under 10 minutes (tested: 1316 records in 8 min 28 sec)
-- **40+ Government Portals**: Support for 40+ government tender portals (12 currently configured)
-- **Multi-Mode Operation**: Independent GUI and CLI modes without interference
+### ✅ Reliability & Scraping Enhancements
+- **Back-Navigation Recovery**: Automatically recovers to `FrontEndTendersByOrganisation` when portals redirect to wrong pages.
+- **Flexible Table Parsing**: Handles 3-column and standard 6-column tender tables.
+- **Row-Skip Reduction**: Added robust table/row retry handling for stale elements on large portals.
 
-### 🐛 Bug Fixes & Improvements
-- **Console Dependency Fix**: Resolved GUI opening with Python console issues
-- **CLI Mode Enhancement**: Dedicated CLI entry point with interactive banner
-- **Upgrade Logic**: Smart version comparison and automatic uninstall during upgrades
-- **Registry Integration**: Proper Windows Add/Remove Programs support
-- **Silent Operations**: Background uninstall and dependency installation
+### 📝 Logging & Operations
+- **Run-Based Log Files**: Logs are now generated per run with timestamped filenames.
+- **Retention Policy**: Keeps the latest 30 runs automatically for both GUI and CLI logs.
+- **GUI Log Filtering**: Added in-app filter by log level (`Critical`, `Error`, `Warning`, `Info`, `Debug`, `All`).
 
-### 📦 Distribution & Deployment
-- **Intelligent Installer**: Detects existing versions, offers repair/reinstall options
-- **Hybrid Package**: Small launcher EXE (10MB) + complete Python application
-- **Enterprise Ready**: Professional installation with automatic dependency management
+### 🧠 Portal Memory
+- **Locator Preference Memory**: Stores successful locator strategies per portal and reuses them in future runs.
+- **Faster Recovery on Known Portals**: Preferred locator order now uses learned success history.
 
 ## Version 2.1.4 (September 18, 2025)
 

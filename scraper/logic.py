@@ -61,6 +61,7 @@ try:
     from scraper.driver_manager import setup_driver, set_download_directory, safe_quit_driver
     from scraper.actions import safe_extract_text, click_element, wait_for_downloads, save_page_as_pdf
     from scraper.captcha_handler import handle_captcha
+    from portal_config_memory import get_portal_memory
 except ImportError as e:
     print(f"Error importing local modules: {e}")
     raise
@@ -126,14 +127,23 @@ except Exception:
 # ==                           UTILITY FUNCTIONS                              ==
 # ==============================================================================
 
-def find_element_with_fallbacks(driver, locators, description="element", timeout=ELEMENT_WAIT_TIMEOUT, log_callback=None):
+def find_element_with_fallbacks(driver, locators, description="element", timeout=ELEMENT_WAIT_TIMEOUT, log_callback=None, preferred_index=None):
     """
     Try multiple locators in order until one succeeds.
+    If preferred_index is provided, tries that locator first.
     Returns (element, successful_locator) or (None, None) if all fail.
     """
     log_callback = log_callback or (lambda x: None)
     
-    for i, locator in enumerate(locators):
+    # Create ordered list - try preferred first if specified
+    indices = list(range(len(locators)))
+    if preferred_index is not None and 0 <= preferred_index < len(locators):
+        log_callback(f"  Using preferred locator index {preferred_index} based on portal history")
+        indices.remove(preferred_index)
+        indices.insert(0, preferred_index)
+    
+    for i in indices:
+        locator = locators[i]
         try:
             log_callback(f"  Trying locator {i+1}/{len(locators)} for {description}: {locator}")
             if hasattr(driver, 'find_element') and hasattr(WebDriverWait, '__call__'):
@@ -325,7 +335,7 @@ def _find_and_click_dept_link(driver, dept_info, log_callback):
 
 
 def _scrape_tender_details(driver, department_name, base_url, log_callback):
-    """ Scrapes tender details from the department's tender list page with session validation."""
+    """ Scrapes tender details from the department's tender list page with enhanced retry logic for large tables."""
     tender_data = []
     log_callback(f"  Scraping details for: {department_name}...")
     
@@ -336,144 +346,253 @@ def _scrape_tender_details(driver, department_name, base_url, log_callback):
         log_callback(f"  ERROR: Driver session invalid before scraping {department_name}: {session_err}")
         return []
     
-    try:
-        table = WebDriverWait(driver, ELEMENT_WAIT_TIMEOUT).until(EC.presence_of_element_located(DETAILS_TABLE_LOCATOR))
-        log_callback("    Details table located.")
-        time.sleep(STABILIZE_WAIT / 2)
-        
-        try: 
-            body = table.find_element(*DETAILS_TABLE_BODY_LOCATOR)
-        except NoSuchElementException: 
-            log_callback("    Details tbody not found, use table.")
-            body = table
+    # Maximum retries for stale element issues
+    MAX_TABLE_REFETCH_RETRIES = 3
+    
+    for table_attempt in range(MAX_TABLE_REFETCH_RETRIES):
+        try:
+            # Add extra stabilization wait for large tables
+            if table_attempt > 0:
+                log_callback(f"    Retry {table_attempt}/{MAX_TABLE_REFETCH_RETRIES-1} for table fetch...")
+                time.sleep(STABILIZE_WAIT * 2)
             
-        rows = body.find_elements(By.TAG_NAME, "tr")
-        if not rows: 
-            log_callback(f"    No rows found in details table for {department_name}.")
-            return []
+            table = WebDriverWait(driver, ELEMENT_WAIT_TIMEOUT).until(EC.presence_of_element_located(DETAILS_TABLE_LOCATOR))
+            log_callback("    Details table located.")
+            time.sleep(STABILIZE_WAIT)  # Extra wait for table to stabilize
+            
+            try: 
+                body = table.find_element(*DETAILS_TABLE_BODY_LOCATOR)
+            except NoSuchElementException: 
+                log_callback("    Details tbody not found, use table.")
+                body = table
+                
+            rows = body.find_elements(By.TAG_NAME, "tr")
+            if not rows: 
+                log_callback(f"    No rows found in details table for {department_name}.")
+                return []
 
-        first_row_cells = rows[0].find_elements(By.XPATH, ".//th|.//td")
-        if first_row_cells:
-            if rows[0].find_elements(By.TAG_NAME, "th"): 
-                log_callback("    Skipping header row (<th>).")
-                rows = rows[1:]
-            elif DETAILS_TABLE_HEADER_FRAGMENTS:
-                first_row_text = " ".join(c.text.strip().lower() for c in first_row_cells)
-                matches = [f.lower() for f in DETAILS_TABLE_HEADER_FRAGMENTS if f.lower() in first_row_text]
-                if len(matches) >= 2: 
-                    log_callback(f"    Skipping header row (content match: {matches}).")
+            first_row_cells = rows[0].find_elements(By.XPATH, ".//th|.//td")
+            if first_row_cells:
+                if rows[0].find_elements(By.TAG_NAME, "th"): 
+                    log_callback("    Skipping header row (<th>).")
                     rows = rows[1:]
-                else: 
-                    log_callback("    First row not matching header content.")
-                    
-        if not rows: 
-            log_callback(f"    No data rows after header check for {department_name}.")
-            return []
-            
-        log_callback(f"    Found {len(rows)} data rows for {department_name}.")
-
-        processed_count = 0
-        req_cols = max(DETAILS_COL_SNO, DETAILS_COL_PUB_DATE, DETAILS_COL_CLOSE_DATE, DETAILS_COL_OPEN_DATE, DETAILS_COL_TITLE_REF, DETAILS_COL_ORG_CHAIN) + 1
-        
-        for i, row in enumerate(rows, 1):
-            data = {DEPARTMENT_NAME_KEY: department_name}
-            prefix = f"    Row {i}:"
-            
-            try:
-                cells = row.find_elements(By.TAG_NAME, "td")
-                if len(cells) < req_cols:
-                    if any(c.text for c in cells): 
-                        log_callback(f"{prefix} WARN - Skip: {len(cells)} cells < {req_cols}.")
-                    continue
-                    
-                data["S.No"] = cells[DETAILS_COL_SNO].text.strip() if DETAILS_COL_SNO < len(cells) else "N/A"
-                data["e-Published Date"] = cells[DETAILS_COL_PUB_DATE].text.strip() if DETAILS_COL_PUB_DATE < len(cells) else "N/A"
-                data["Closing Date"] = cells[DETAILS_COL_CLOSE_DATE].text.strip() if DETAILS_COL_CLOSE_DATE < len(cells) else "N/A"
-                data["Opening Date"] = cells[DETAILS_COL_OPEN_DATE].text.strip() if DETAILS_COL_OPEN_DATE < len(cells) else "N/A"
-                data["Organisation Chain"] = cells[DETAILS_COL_ORG_CHAIN].text.strip() if DETAILS_COL_ORG_CHAIN < len(cells) else "N/A"
-
-                t_id, direct_url, status_url = None, None, None
-                title_text = "N/A"
-                
-                if DETAILS_COL_TITLE_REF < len(cells):
-                    try:
-                        title_cell = cells[DETAILS_COL_TITLE_REF]
-                        title_text = title_cell.text.strip()
-                        data[TITLE_REF_KEY] = title_text
+                elif DETAILS_TABLE_HEADER_FRAGMENTS:
+                    first_row_text = " ".join(c.text.strip().lower() for c in first_row_cells)
+                    matches = [f.lower() for f in DETAILS_TABLE_HEADER_FRAGMENTS if f.lower() in first_row_text]
+                    if len(matches) >= 2: 
+                        log_callback(f"    Skipping header row (content match: {matches}).")
+                        rows = rows[1:]
+                    else: 
+                        log_callback("    First row not matching header content.")
                         
-                        try: 
-                            a = title_cell.find_element(By.XPATH, DETAILS_TITLE_LINK_XPATH)
-                            href = a.get_attribute('href')
-                        except NoSuchElementException: 
-                            href = None
-                            
-                        if href: 
-                            urls = generate_tender_urls(href, base_url)
-                            direct_url = urls.get('direct_url')
-                            status_url = urls.get('status_url')
-                            logger.debug(f"{prefix} Processed link: {direct_url}")
-                        else: 
-                            logger.debug(f"{prefix} No link in title cell.")
-                            
-                        match = re.search(r'\[(\d{4}_[A-Z0-9_]+(?:_\d+)?)\]', title_text) or re.search(r'\[([A-Z0-9_]{5,})\]', title_text)
-                        if match: 
-                            t_id = match.group(1)
-                            logger.debug(f"{prefix} Extracted ID: {t_id}")
-                        else: 
-                            logger.debug(f"{prefix} No ID pattern in title: '{title_text[:50]}...'")
-                            
-                    except Exception as title_err: 
-                        log_callback(f"{prefix} WARN - Error processing title cell: {title_err}")
-                        data[TITLE_REF_KEY] = "Error"
-                else: 
-                    data[TITLE_REF_KEY] = "N/A (Col Idx OOR)"
+            if not rows: 
+                log_callback(f"    No data rows after header check for {department_name}.")
+                return []
+                
+            total_rows = len(rows)
+            log_callback(f"    Found {total_rows} data rows for {department_name}.")
+            
+            # For large tables, add progress logging every N rows
+            progress_interval = 100 if total_rows > 1000 else 500
 
-                data["Tender ID (Extracted)"] = t_id
-                data["Direct URL"] = direct_url
-                data["Status URL"] = status_url
-                tender_data.append(data)
-                processed_count += 1
+            processed_count = 0
+            skipped_count = 0
+            req_cols = max(DETAILS_COL_SNO, DETAILS_COL_PUB_DATE, DETAILS_COL_CLOSE_DATE, DETAILS_COL_OPEN_DATE, DETAILS_COL_TITLE_REF, DETAILS_COL_ORG_CHAIN) + 1
+            
+            # Detect actual column count from first data row for flexible handling
+            actual_cols = 0
+            if len(rows) > 0:
+                first_data_row_cells = rows[0].find_elements(By.TAG_NAME, "td")
+                actual_cols = len(first_data_row_cells)
+                if actual_cols < req_cols:
+                    log_callback(f"    INFO: Table has {actual_cols} columns (expected {req_cols}). Using flexible column detection.")
+                    # Adjust to actual available columns
+                    req_cols = min(req_cols, actual_cols)
+            
+            for i, row in enumerate(rows, 1):
+                # Progress logging for large tables
+                if total_rows > 1000 and i % progress_interval == 0:
+                    log_callback(f"    Processing row {i}/{total_rows} ({int(i/total_rows*100)}%)...")
                 
-            except StaleElementReferenceException: 
-                log_callback(f"{prefix} WARN - Stale element. Skipping.")
-                continue
-            except Exception as row_err: 
-                log_callback(f"{prefix} WARN - Unexpected row error: {row_err}")
-                logger.warning(f"Error tender detail row {i}", exc_info=True)
-                continue
+                data = {DEPARTMENT_NAME_KEY: department_name}
+                prefix = f"    Row {i}:"
                 
-        log_callback(f"  Successfully extracted details for {processed_count} tenders from {department_name}.")
-        return tender_data
-        
-    except (TimeoutException, NoSuchElementException) as table_err: 
-        log_callback(f"  ERROR: Details table ({DETAILS_TABLE_LOCATOR}) not found/timeout for {department_name}: {table_err}")
-        return []
-    except WebDriverException as wde: 
-        # Check if it's a session error
-        if "invalid session id" in str(wde).lower() or "session deleted" in str(wde).lower():
-            log_callback(f"  ERROR: WebDriver session lost while scraping {department_name}: {wde}")
-        else:
-            log_callback(f"  ERROR: WebDriverException scraping {department_name}: {wde}")
-        logger.error(f"WebDriverException scraping details {department_name}", exc_info=True)
-        return []
-    except Exception as e: 
-        log_callback(f"  ERROR: Unexpected error scraping {department_name}: {e}")
-        logger.error(f"Unexpected error scraping details {department_name}", exc_info=True)
-        return []
+                # Retry logic for individual rows that experience stale element issues
+                MAX_ROW_RETRIES = 2
+                row_processed = False
+                
+                for row_attempt in range(MAX_ROW_RETRIES):
+                    try:
+                        cells = row.find_elements(By.TAG_NAME, "td")
+                        
+                        # Flexible column handling - extract what we can
+                        num_cells = len(cells)
+                        
+                        # Skip rows with truly insufficient data
+                        if num_cells < 3:
+                            if any(c.text.strip() for c in cells):
+                                if row_attempt == 0:
+                                    log_callback(f"{prefix} WARN - Skip: Only {num_cells} cells, need at least 3.")
+                                skipped_count += 1
+                            break
+                        
+                        # Proceed with flexible extraction
+                        if num_cells < req_cols and row_attempt == 0:
+                            log_callback(f"{prefix} INFO - Processing with {num_cells}/{req_cols} columns (flexible mode)")
+                            
+                        # Extract data with bounds checking
+                        data["S.No"] = cells[0].text.strip() if num_cells > 0 else "N/A"
+                        data["e-Published Date"] = cells[1].text.strip() if num_cells > 1 else "N/A"
+                        data["Closing Date"] = cells[2].text.strip() if num_cells > 2 else "N/A"
+                        data["Opening Date"] = cells[3].text.strip() if num_cells > 3 else "N/A"
+                        
+                        # For 3-column tables, try different mappings
+                        if num_cells == 3:
+                            # Likely: S.No, Title, Date or S.No, Date, Title
+                            # Check if column 1 or 2 contains tender ID pattern
+                            col1_text = cells[1].text.strip()
+                            col2_text = cells[2].text.strip()
+                            if re.search(r'\[.*?\]', col1_text):  # Has tender ID markers
+                                data[TITLE_REF_KEY] = col1_text
+                                data["Closing Date"] = col2_text
+                            else:
+                                data["Closing Date"] = col1_text
+                                data[TITLE_REF_KEY] = col2_text
+                            data["Opening Date"] = "N/A"
+                            data["Organisation Chain"] = "N/A"
+                        else:
+                            # Standard 6+ column layout
+                            data[TITLE_REF_KEY] = cells[DETAILS_COL_TITLE_REF].text.strip() if DETAILS_COL_TITLE_REF < num_cells else "N/A"
+                            data["Organisation Chain"] = cells[DETAILS_COL_ORG_CHAIN].text.strip() if DETAILS_COL_ORG_CHAIN < num_cells else "N/A"
+
+                        t_id, direct_url, status_url = None, None, None
+                        title_text = data.get(TITLE_REF_KEY, "N/A")
+                        
+                        # Try to extract link from title column
+                        title_col_index = 1 if num_cells == 3 else DETAILS_COL_TITLE_REF
+                        if title_col_index < num_cells:
+                            try:
+                                title_cell = cells[title_col_index]
+                                if title_text == "N/A":  # If not set above, get it now
+                                    title_text = title_cell.text.strip()
+                                    data[TITLE_REF_KEY] = title_text
+                                
+                                try: 
+                                    a = title_cell.find_element(By.XPATH, DETAILS_TITLE_LINK_XPATH)
+                                    href = a.get_attribute('href')
+                                except NoSuchElementException: 
+                                    href = None
+                                    
+                                if href: 
+                                    urls = generate_tender_urls(href, base_url)
+                                    direct_url = urls.get('direct_url')
+                                    status_url = urls.get('status_url')
+                                    logger.debug(f"{prefix} Processed link: {direct_url}")
+                                else: 
+                                    logger.debug(f"{prefix} No link in title cell.")
+                                    
+                                match = re.search(r'\[(\d{4}_[A-Z0-9_]+(?:_\d+)?)\]', title_text) or re.search(r'\[([A-Z0-9_]{5,})\]', title_text)
+                                if match: 
+                                    t_id = match.group(1)
+                                    logger.debug(f"{prefix} Extracted ID: {t_id}")
+                                else: 
+                                    logger.debug(f"{prefix} No ID pattern in title: '{title_text[:50]}...'")
+                                    
+                            except Exception as title_err: 
+                                log_callback(f"{prefix} WARN - Error processing title cell: {title_err}")
+                                if TITLE_REF_KEY not in data:
+                                    data[TITLE_REF_KEY] = "Error"
+
+                        data["Tender ID (Extracted)"] = t_id
+                        data["Direct URL"] = direct_url
+                        data["Status URL"] = status_url
+                        tender_data.append(data)
+                        processed_count += 1
+                        row_processed = True
+                        break  # Success, exit retry loop
+                        
+                    except StaleElementReferenceException:
+                        if row_attempt < MAX_ROW_RETRIES - 1:
+                            log_callback(f"{prefix} WARN - Stale element, retrying ({row_attempt + 1}/{MAX_ROW_RETRIES})...")
+                            time.sleep(0.3)  # Brief wait before retry
+                            # Re-fetch the row from the table
+                            try:
+                                table = driver.find_element(*DETAILS_TABLE_LOCATOR)
+                                body = table.find_element(*DETAILS_TABLE_BODY_LOCATOR) if table.find_elements(*DETAILS_TABLE_BODY_LOCATOR) else table
+                                rows = body.find_elements(By.TAG_NAME, "tr")
+                                if i <= len(rows):
+                                    row = rows[i-1]  # Re-get the row
+                                else:
+                                    log_callback(f"{prefix} ERROR - Row index out of range after refetch")
+                                    break
+                            except Exception as refetch_err:
+                                log_callback(f"{prefix} ERROR - Failed to refetch table: {refetch_err}")
+                                break
+                        else:
+                            log_callback(f"{prefix} ERROR - Stale element persists after {MAX_ROW_RETRIES} retries. Skipping row.")
+                            skipped_count += 1
+                            break
+                    except Exception as row_err:
+                        log_callback(f"{prefix} WARN - Unexpected row error: {row_err}")
+                        logger.warning(f"Error tender detail row {i}", exc_info=True)
+                        skipped_count += 1
+                        break
+            
+            log_callback(f"  Successfully extracted {processed_count} tenders from {department_name}.")
+            if skipped_count > 0:
+                log_callback(f"  Skipped {skipped_count} rows due to errors or insufficient data.")
+            log_callback("")  # Blank line for readability
+            log_callback("*" * 80)  # Department completion separator
+            log_callback("")  # Blank line
+            
+            return tender_data
+            
+        except (TimeoutException, NoSuchElementException) as table_err:
+            if table_attempt < MAX_TABLE_REFETCH_RETRIES - 1:
+                log_callback(f"  WARN: Table fetch error (attempt {table_attempt + 1}/{MAX_TABLE_REFETCH_RETRIES}): {table_err}")
+                time.sleep(STABILIZE_WAIT * 2)
+                continue
+            else:
+                log_callback(f"  ERROR: Details table ({DETAILS_TABLE_LOCATOR}) not found after {MAX_TABLE_REFETCH_RETRIES} attempts for {department_name}: {table_err}")
+                return []
+        except WebDriverException as wde: 
+            # Check if it's a session error
+            if "invalid session id" in str(wde).lower() or "session deleted" in str(wde).lower():
+                log_callback(f"  ERROR: WebDriver session lost while scraping {department_name}: {wde}")
+            else:
+                log_callback(f"  ERROR: WebDriverException scraping {department_name}: {wde}")
+            logger.error(f"WebDriverException scraping details {department_name}", exc_info=True)
+            return []
+        except Exception as e: 
+            log_callback(f"  ERROR: Unexpected error scraping {department_name}: {e}")
+            logger.error(f"Unexpected error scraping details {department_name}", exc_info=True)
+            return []
 
 
 def _click_on_page_back_button(driver, log_callback):
-    """Clicks the website's 'Back' button from dept tender list with session validation."""
+    """Clicks the website's 'Back' button from dept tender list with enhanced validation and fallback to direct navigation.
+    
+    Uses shorter timeout (15s) to prevent session hangs.
+    """
     log_callback("  Attempting site 'Back' button click...")
     
     # Check session before clicking
     try:
-        driver.current_url
+        current_url_before = driver.current_url
     except Exception as session_err:
         log_callback(f"  ERROR: Driver session invalid before back button click: {session_err}")
         return False
     
-    if click_element(driver, BACK_BUTTON_FROM_DEPT_LIST_LOCATOR, "Dept List Back Button"):
+    # Try clicking the back button with shorter timeout to prevent session hangs
+    # Use max 15 seconds instead of default 45 to avoid session expiration
+    back_button_clicked = click_element(
+        driver, 
+        BACK_BUTTON_FROM_DEPT_LIST_LOCATOR, 
+        "Dept List Back Button",
+        max_wait=15  # Prevent long hangs that cause session expiration
+    )
+    
+    if back_button_clicked:
         log_callback("    Site 'Back' button clicked.")
         time.sleep(STABILIZE_WAIT * 1.5)
         
@@ -484,36 +603,60 @@ def _click_on_page_back_button(driver, log_callback):
             log_callback(f"  ERROR: Driver session lost after back button click: {session_err}")
             return False
         
-        # Check if we ended up on Site Compatibility page
-        if SITE_COMPATIBILITY_URL_PATTERN in current_url:
-            log_callback("    ⚠ Back button led to Site Compatibility page - recovering...")
-            
-            # Try to navigate directly to organization list
-            base_url = current_url.split('?')[0]
-            org_url = f"{base_url}?page=FrontEndTendersByOrganisation&service=page"
-            log_callback(f"    Navigating directly to: {org_url}")
-            
-            try:
-                driver.get(org_url)
-                time.sleep(STABILIZE_WAIT * 2)
-                
-                # Verify we're on the correct page
-                final_url = driver.current_url
-                if TENDERS_BY_ORG_URL_PATTERN in final_url:
-                    log_callback("    ✓ Successfully recovered to organization list page")
-                    return True
-                else:
-                    log_callback(f"    ✗ Recovery failed, ended up at: {final_url}")
-                    return False
-                    
-            except Exception as recovery_err:
-                log_callback(f"    ✗ Recovery navigation failed: {recovery_err}")
-                return False
-        else:
-            log_callback(f"    ✓ Back navigation successful, URL: {current_url}")
+        # Check if we landed on the correct page
+        if TENDERS_BY_ORG_URL_PATTERN in current_url:
+            log_callback(f"    ✓ Back button navigation successful to Tenders by Organisation")
             return True
+        
+        # Check if we ended up on Site Compatibility or wrong page
+        if SITE_COMPATIBILITY_URL_PATTERN in current_url:
+            log_callback("    ⚠ Back button led to Site Compatibility page - using direct navigation...")
+        elif "StandardBiddingDocuments" in current_url:
+            log_callback("    ⚠ Back button led to Standard Bidding Documents page - using direct navigation...")
+        else:
+            log_callback(f"    ⚠ Back button led to unexpected page - using direct navigation...")
+            log_callback(f"    Wrong URL: {current_url}")
+            # Check if we're already on org list (maybe table exists)
+            try:
+                table = driver.find_element(*MAIN_TABLE_LOCATOR)
+                if table:
+                    log_callback("    ✓ Organization table found - may be on correct page")
+                    return True
+            except NoSuchElementException:
+                log_callback("    ⚠ Organization table not found - using direct navigation...")
     else:
-        log_callback("  WARN: Failed site 'Back' button click.")
+        log_callback("  WARN: Back button click failed - using direct navigation...")
+    
+    # Fallback: Direct navigation to organization list URL
+    try:
+        base_url = current_url_before.split('?')[0]
+        org_url = f"{base_url}?page=FrontEndTendersByOrganisation&service=page"
+        log_callback(f"    Navigating directly to: {org_url}")
+        
+        driver.get(org_url)
+        time.sleep(STABILIZE_WAIT * 2)
+        
+        # Verify we're on the correct page
+        final_url = driver.current_url
+        if TENDERS_BY_ORG_URL_PATTERN in final_url:
+            log_callback("    ✓ Direct navigation successful")
+            
+            # Verify table is present
+            try:
+                WebDriverWait(driver, ELEMENT_WAIT_TIMEOUT).until(
+                    EC.presence_of_element_located(MAIN_TABLE_LOCATOR)
+                )
+                log_callback("    ✓ Organization table confirmed")
+                return True
+            except TimeoutException:
+                log_callback("    ⚠ Table not found but URL correct")
+                return True  # Give benefit of doubt
+        else:
+            log_callback(f"    ✗ Direct navigation failed, ended up at: {final_url}")
+            return False
+            
+    except Exception as recovery_err:
+        log_callback(f"    ✗ Direct navigation error: {recovery_err}")
         return False
 
 
@@ -566,10 +709,19 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
                 break
 
             processed_depts += 1
+            pending_depts = max(0, total_depts - processed_depts)
             dept_name = dept_info.get('name', 'Unknown')
             dept_sno = dept_info.get('s_no', 'Unknown')
             
             log_callback(f"\nProcessing department {processed_depts}/{total_depts}: {dept_name}")
+            
+            # Update progress with department info
+            if progress_callback:
+                progress_details = (
+                    f"Dept {processed_depts}/{total_depts}: {dept_name[:30]}... "
+                    f"| Scraped: {total_tenders} | Pending: {pending_depts}"
+                )
+                progress_callback(processed_depts, total_depts, progress_details, dept_name, 0, total_tenders, pending_depts)
             
             # Validate department info before processing
             if dept_sno.lower() in ['s.no', 'sr.no', 'serial', '#']:
@@ -616,8 +768,13 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
                 dept_info['tenders_found'] = dept_tender_count
                 log_callback(f"Found {dept_tender_count} tenders in department {dept_name}")
                 
+                # Update progress with detailed tender info
                 if progress_callback:
-                    progress_callback(total_tenders, processed_depts, total_depts, None)
+                    progress_details = (
+                        f"Dept {processed_depts}/{total_depts}: {dept_name[:28]}... "
+                        f"| Scraped: {total_tenders} | Pending: {pending_depts}"
+                    )
+                    progress_callback(processed_depts, total_depts, progress_details, dept_name, dept_tender_count, total_tenders, pending_depts)
             else:
                 log_callback(f"No tenders found/extracted from department {dept_name}")
                 dept_info['processed'] = True
@@ -661,12 +818,40 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
                 )
                 excel_path = os.path.join(download_dir, excel_filename)
                 
+                # Ensure download directory exists and is writable
+                try:
+                    os.makedirs(download_dir, exist_ok=True)
+                except Exception as dir_err:
+                    log_callback(f"ERROR: Cannot create download directory: {dir_err}")
+                    # Fallback to user's home directory
+                    fallback_dir = os.path.join(os.path.expanduser("~"), "Downloads", "Tender_Downloads")
+                    log_callback(f"Using fallback directory: {fallback_dir}")
+                    os.makedirs(fallback_dir, exist_ok=True)
+                    excel_path = os.path.join(fallback_dir, excel_filename)
+                    download_dir = fallback_dir
+                
+                # Check write permissions
+                try:
+                    test_file = os.path.join(download_dir, '.write_test')
+                    with open(test_file, 'w') as f:
+                        f.write('test')
+                    os.remove(test_file)
+                except PermissionError:
+                    log_callback(f"ERROR: No write permission for {download_dir}")
+                    # Try temp directory as last resort
+                    import tempfile
+                    fallback_dir = os.path.join(tempfile.gettempdir(), "Tender_Downloads")
+                    os.makedirs(fallback_dir, exist_ok=True)
+                    log_callback(f"Using temp directory: {fallback_dir}")
+                    excel_path = os.path.join(fallback_dir, excel_filename)
+                    download_dir = fallback_dir
+                
                 # Add some derived/calculated fields
                 for tender in all_tender_details:
                     try:
                         if EMD_AMOUNT_KEY in tender:
                             tender['EMD Amount (Numeric)'] = float(
-                                re.sub(r'[^\d.]', '', tender[EMD_AMOUNT_KEY]) or 0
+                                re.sub(r'[^\\d.]', '', tender[EMD_AMOUNT_KEY]) or 0
                             )
                     except: pass
                     
@@ -675,21 +860,50 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
                 if DEPARTMENT_NAME_KEY in df.columns:
                     df = df.sort_values(DEPARTMENT_NAME_KEY)
                 
-                # Save Excel with index=False
-                df.to_excel(excel_path, index=False, engine='openpyxl')
-                log_callback(f"\nSaved {len(all_tender_details)} tender details to: {excel_filename}")
+                # Save Excel with enhanced error handling
+                try:
+                    df.to_excel(excel_path, index=False, engine='openpyxl')
+                    log_callback(f"\\nSaved {len(all_tender_details)} tender details to: {excel_filename}")
+                    log_callback(f"Full path: {excel_path}")
+                except PermissionError as perm_err:
+                    # File might be open - try with timestamp in milliseconds
+                    timestamp_ms = datetime.now().strftime("%Y%m%d_%H%M%S_%f")[:-3]
+                    excel_filename_alt = EXCEL_FILENAME_FORMAT.format(
+                        website_keyword=website_keyword,
+                        timestamp=timestamp_ms
+                    )
+                    excel_path_alt = os.path.join(download_dir, excel_filename_alt)
+                    log_callback(f"File locked or permission denied. Trying alternate name: {excel_filename_alt}")
+                    df.to_excel(excel_path_alt, index=False, engine='openpyxl')
+                    log_callback(f"\\nSaved {len(all_tender_details)} tender details to: {excel_filename_alt}")
+                    log_callback(f"Full path: {excel_path_alt}")
+                except Exception as save_err:
+                    log_callback(f"ERROR saving Excel file: {save_err}")
+                    # Last resort - save as CSV
+                    csv_filename = excel_filename.replace('.xlsx', '.csv')
+                    csv_path = os.path.join(download_dir, csv_filename)
+                    log_callback(f"Attempting to save as CSV instead: {csv_filename}")
+                    df.to_csv(csv_path, index=False, encoding='utf-8-sig')
+                    log_callback(f"\\nSaved {len(all_tender_details)} tender details to CSV: {csv_filename}")
+                    log_callback(f"Full path: {csv_path}")
                 
             except Exception as excel_err:
-                log_callback(f"Error saving Excel file: {excel_err}")
+                log_callback(f"CRITICAL ERROR in Excel generation: {excel_err}")
                 logger.error(f"Excel creation error: {excel_err}", exc_info=True)
         
         status_msg = "Scraping completed"
         if stop_event and stop_event.is_set():
             status_msg = "Scraping stopped by user"
             
+        log_callback("")
+        log_callback("#" * 80)  # Portal completion separator
+        log_callback("#" * 80)
         log_callback(f"\n=== {status_msg} ===")
         log_callback(f"Processed {processed_depts} departments")
         log_callback(f"Total tenders found: {total_tenders}")
+        log_callback("#" * 80)  # Portal completion separator
+        log_callback("#" * 80)
+        log_callback("")  # Blank line
         status_callback(status_msg)
         timer_callback(start_time)
 
@@ -1347,16 +1561,21 @@ def process_tender_page(driver, tender_info, deep_scrape=False):
         return False
 
 def navigate_to_org_list(driver, log_callback=None):
-    """Navigate to the organization list page using resilient locator strategies with wrong page detection."""
+    """Navigate to the organization list page using resilient locator strategies with portal config memory."""
     log_callback = log_callback or (lambda x: None)
+    
+    # Get portal memory
+    portal_memory = get_portal_memory()
     
     try:
         current_url = driver.current_url
+        portal_name = get_website_keyword_from_url(current_url)
         log_callback(f"Worker: Current URL: {current_url}")
         
         # Check if we're already on the correct page
         if TENDERS_BY_ORG_URL_PATTERN in current_url:
             log_callback("✓ Already on 'Tenders by Organisation' page")
+            portal_memory.record_successful_config(portal_name, "navigation", "already_on_page")
             return True
         
         # Check if we're on the wrong page (Site Compatibility)
@@ -1369,13 +1588,17 @@ def navigate_to_org_list(driver, log_callback=None):
         
         log_callback("Worker: Finding 'Tenders by Organisation' link with fallback strategies...")
         
+        # Check if we have a preferred locator from history
+        preferred_locator_index = portal_memory.get_preferred_locator(portal_name, "tenders_by_org")
+        
         # Try to find the link using multiple fallback strategies
         org_link, successful_locator = find_element_with_fallbacks(
             driver, 
             TENDERS_BY_ORG_LOCATORS, 
             "'Tenders by Organisation' link",
             timeout=8,  # Shorter timeout per attempt
-            log_callback=log_callback
+            log_callback=log_callback,
+            preferred_index=preferred_locator_index
         )
         
         if org_link:
@@ -1400,6 +1623,16 @@ def navigate_to_org_list(driver, log_callback=None):
                 if TENDERS_BY_ORG_URL_PATTERN in final_url:
                     log_callback("✓ Successfully navigated to 'Tenders by Organisation' page")
                     
+                    # Record successful locator
+                    locator_index = TENDERS_BY_ORG_LOCATORS.index(successful_locator) if successful_locator in TENDERS_BY_ORG_LOCATORS else None
+                    if locator_index is not None:
+                        portal_memory.record_successful_config(
+                            portal_name, 
+                            "locator_tenders_by_org", 
+                            locator_index,
+                            {"locator": str(successful_locator), "url": final_url}
+                        )
+                    
                     # Double-check for the main table
                     try:
                         WebDriverWait(driver, ELEMENT_WAIT_TIMEOUT).until(
@@ -1413,6 +1646,7 @@ def navigate_to_org_list(driver, log_callback=None):
                 
                 elif SITE_COMPATIBILITY_URL_PATTERN in final_url:
                     log_callback("✗ Link led to Site Compatibility page instead")
+                    portal_memory.record_failure(portal_name, "navigation_site_compatibility", {"url": final_url})
                     return False
                 else:
                     log_callback(f"? Link led to unexpected page: {final_url}")

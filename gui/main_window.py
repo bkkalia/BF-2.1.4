@@ -66,6 +66,8 @@ class MainWindow:
             self.start_time = None
             self.timer_id = None
             self.total_estimated_tenders_for_run = 0
+            self._all_log_messages = []
+            self.log_filter_var = StringVar(value="All")
             print("State variables initialized")
 
             # Initialize Tkinter variables
@@ -105,19 +107,29 @@ class MainWindow:
         """Initialize logging-related methods early."""
         self.update_log = self._update_log_impl
         self.update_status = lambda message: gui_utils.update_status(self.status_label, message)
-        
-        # Simplified progress callback with correct parameter mapping
-        self.update_progress = lambda current=0, total=0, details=None, *args: gui_utils.update_progress(
-            self.progress_bar,
-            self.progress_details_label, 
-            self.est_rem_label,
-            current,                  # Current count
-            total,                    # Total items
-            None,                     # Percent (calculated in gui_utils)
-            details,                  # Details text
-            None,                     # Est. remaining (calculated in gui_utils)
-            self.scraping_in_progress # Scraping status
-        )
+        self.update_progress = self._update_progress_impl
+
+    def _update_progress_impl(self, current=0, total=0, details=None, *args):
+        """Update both department and tender progress bars."""
+        try:
+            if hasattr(self, 'dept_progress_bar') and hasattr(self, 'dept_progress_label'):
+                gui_utils.update_dept_progress(self.dept_progress_bar, self.dept_progress_label, current, total)
+
+            if hasattr(self, 'progress_bar') and hasattr(self, 'progress_details_label') and hasattr(self, 'est_rem_label'):
+                gui_utils.update_progress(
+                    self.progress_bar,
+                    self.progress_details_label,
+                    self.est_rem_label,
+                    current,
+                    total,
+                    None,
+                    details,
+                    None,
+                    self.scraping_in_progress,
+                    *args
+                )
+        except Exception as e:
+            logger.error(f"Error in progress update: {e}")
 
     def _update_log_impl(self, message):
         """Implementation of the log update functionality."""
@@ -126,11 +138,58 @@ class MainWindow:
                 return
             if not isinstance(message, str):
                 message = str(message)
-            if hasattr(self, 'log_text') and self.log_text and not self.stop_event.is_set():
-                gui_utils.update_log(self.log_text, message)
-                logger.debug(f"Log updated: {message[:100]}")
+
+            timestamp = datetime.now().strftime("%H:%M:%S")
+            thread_name = threading.current_thread().name
+            formatted_message = f"[{timestamp}][{thread_name}] {message}"
+            self._all_log_messages.append(formatted_message)
+
+            if hasattr(self, 'log_text') and self.log_text and self.log_text.winfo_exists() and self._passes_log_filter(formatted_message):
+                self.log_text.after(0, gui_utils._append_log_message, self.log_text, formatted_message)
+
+            logger.debug(f"Log updated: {message[:100]}")
         except Exception as e:
             logger.error(f"Error updating log: {e}")
+
+    def _passes_log_filter(self, formatted_message):
+        """Check whether a log message matches the selected log level filter."""
+        try:
+            selected = self.log_filter_var.get().upper() if hasattr(self, 'log_filter_var') else "ALL"
+            if selected == "ALL":
+                return True
+
+            msg_upper = formatted_message.upper()
+            if selected == "CRITICAL":
+                return "CRITICAL" in msg_upper
+            if selected == "ERROR":
+                return "ERROR" in msg_upper or "CRITICAL" in msg_upper
+            if selected == "WARNING":
+                return "WARNING" in msg_upper
+            if selected == "INFO":
+                return "INFO" in msg_upper
+            if selected == "DEBUG":
+                return "DEBUG" in msg_upper
+            return True
+        except Exception:
+            return True
+
+    def _apply_log_filter(self, *_args):
+        """Re-render logs in the viewer using the selected filter."""
+        try:
+            if not hasattr(self, 'log_text') or not self.log_text or not self.log_text.winfo_exists():
+                return
+
+            self.log_text.config(state=tk.NORMAL)
+            self.log_text.delete('1.0', tk.END)
+
+            for msg in self._all_log_messages:
+                if self._passes_log_filter(msg):
+                    self.log_text.insert(tk.END, msg + "\n")
+
+            self.log_text.see(tk.END)
+            self.log_text.config(state=tk.DISABLED)
+        except Exception as e:
+            logger.error(f"Error applying log filter: {e}")
 
     def _init_tkinter_vars(self):
         """Initialize all Tkinter variables."""
@@ -270,9 +329,27 @@ class MainWindow:
         style.configure("Danger.TButton", foreground="#FFFFFF", background="#C62828", font=self.stop_button_font)
         style.map("Danger.TButton", background=[("active", "#E53935"), ('disabled', '#EF9A9A')])
 
-        # Progress bar and status area style
+        # Progress bar and status area styles with colors  
         style.configure('Status.TFrame', background="#ECEFF1")
         style.configure('Status.TLabel', background="#ECEFF1", font=self.status_font)
+        
+        # Department progress bar - Green theme
+        style.configure(
+            "Dept.Horizontal.TProgressbar",
+            troughcolor='#D0D0D0',
+            background='#28a745',  # Green
+            borderwidth=1,
+            relief='flat'
+        )
+        
+        # Tender progress bar - Blue theme  
+        style.configure(
+            "Tender.Horizontal.TProgressbar",
+            troughcolor='#D0D0D0',
+            background='#007bff',  # Blue
+            borderwidth=1,
+            relief='flat'
+        )
         style.configure('Content.TFrame', background="#f5f7fa")  # Set background for content area
 
     def _build_layout(self):
@@ -360,27 +437,42 @@ class MainWindow:
         self.content_frame.update_idletasks()
         global_panel_height = self.global_panel.winfo_reqheight() + 5
         # Calculate status bar height after it's created
-        # --- Status Bar ---
-        status_frame = ttk.Frame(self.root, style='Status.TFrame', height=44)  # Increased by 10% from 40 to 44
+        # --- Enhanced Status Bar with Dual Progress Bars ---
+        status_frame = ttk.Frame(self.root, style='Status.TFrame', height=80)  # Increased height for dual bars
         status_frame.pack(side=tk.BOTTOM, fill=tk.X)
         status_frame.pack_propagate(False)  # Prevent shrinking
 
-        self.progress_bar = ttk.Progressbar(status_frame, orient="horizontal", length=250, mode="determinate")
-        self.progress_bar.pack(side=tk.LEFT, padx=(15, 5), pady=8)
-        self.progress_details_label = ttk.Label(status_frame, text="Processed: 0 / ~0", style='Status.TLabel', width=25, anchor='w')
-        self.progress_details_label.pack(side=tk.LEFT, padx=5, pady=8)
-        self.est_rem_label = ttk.Label(status_frame, text="Est. Rem: --:--:--", style='Status.TLabel', width=20, anchor='w')
-        self.est_rem_label.pack(side=tk.LEFT, padx=5, pady=8)
-        self.timer_label = ttk.Label(status_frame, text="Elapsed: 00:00:00", style='Status.TLabel', width=18, anchor='w')
-        self.timer_label.pack(side=tk.LEFT, padx=5, pady=8)
+        # Department Progress (Top Row)
+        dept_row = ttk.Frame(status_frame, style='Status.TFrame')
+        dept_row.pack(side=tk.TOP, fill=tk.X, pady=(3, 0))
+        
+        ttk.Label(dept_row, text="Depts:", style='Status.TLabel', width=6).pack(side=tk.LEFT, padx=(10, 2))
+        self.dept_progress_bar = ttk.Progressbar(dept_row, orient="horizontal", length=200, mode="determinate", style="Dept.Horizontal.TProgressbar")
+        self.dept_progress_bar.pack(side=tk.LEFT, padx=2)
+        self.dept_progress_label = ttk.Label(dept_row, text="0/0", style='Status.TLabel', width=12, anchor='w')
+        self.dept_progress_label.pack(side=tk.LEFT, padx=5)
+        
+        # Tender Progress (Bottom Row) 
+        tender_row = ttk.Frame(status_frame, style='Status.TFrame')
+        tender_row.pack(side=tk.TOP, fill=tk.X, pady=(2, 3))
+        
+        ttk.Label(tender_row, text="Tenders:", style='Status.TLabel', width=6).pack(side=tk.LEFT, padx=(10, 2))
+        self.progress_bar = ttk.Progressbar(tender_row, orient="horizontal", length=200, mode="determinate", style="Tender.Horizontal.TProgressbar")
+        self.progress_bar.pack(side=tk.LEFT, padx=2)
+        self.progress_details_label = ttk.Label(tender_row, text="0 / ~0", style='Status.TLabel', width=18, anchor='w')
+        self.progress_details_label.pack(side=tk.LEFT, padx=5)
+        self.est_rem_label = ttk.Label(tender_row, text="Est. Rem: --:--:--", style='Status.TLabel', width=16, anchor='w')
+        self.est_rem_label.pack(side=tk.LEFT, padx=3)
+        self.timer_label = ttk.Label(tender_row, text="Elapsed: 00:00:00", style='Status.TLabel', width=15, anchor='w')
+        self.timer_label.pack(side=tk.LEFT, padx=3)
         self.stop_button = ttk.Button(
-            status_frame,
+            dept_row,
             text="EMERGENCY STOP",
             command=self.request_stop_scraping,
             style="Danger.TButton",
             width=15
         )
-        self.stop_button.pack(side=tk.RIGHT, padx=(2, 5), pady=4)
+        self.stop_button.pack(side=tk.RIGHT, padx=(2, 10), pady=2)
 
         self.content_frame.update_idletasks()
         status_bar_height = status_frame.winfo_reqheight()
@@ -425,11 +517,41 @@ class MainWindow:
         logs_frame.pack(fill=tk.BOTH, expand=True)
         log_labelframe = ttk.Labelframe(logs_frame, text="Log Output", style="Section.TLabelframe")
         log_labelframe.pack(fill=tk.BOTH, expand=True, pady=(0, 5))
+        
+        # Log controls frame (for buttons)
+        log_controls_frame = ttk.Frame(log_labelframe)
+        log_controls_frame.pack(fill=tk.X, padx=5, pady=(5, 2))
+        
+        ttk.Button(
+            log_controls_frame,
+            text="Save Log",
+            command=self._save_log_to_file,
+            width=12
+        ).pack(side=tk.LEFT, padx=(0, 5))
+        
+        ttk.Button(
+            log_controls_frame,
+            text="Clear Log",
+            command=self._clear_log,
+            width=12
+        ).pack(side=tk.LEFT)
+
+        ttk.Label(log_controls_frame, text="Level:").pack(side=tk.LEFT, padx=(15, 4))
+        self.log_level_filter_combo = ttk.Combobox(
+            log_controls_frame,
+            textvariable=self.log_filter_var,
+            values=["All", "Critical", "Error", "Warning", "Info", "Debug"],
+            state="readonly",
+            width=12
+        )
+        self.log_level_filter_combo.pack(side=tk.LEFT)
+        self.log_level_filter_combo.bind("<<ComboboxSelected>>", self._apply_log_filter)
+        
         self.log_text = scrolledtext.ScrolledText(
             log_labelframe, height=15, wrap=tk.WORD, state=tk.DISABLED,
             borderwidth=1, relief="solid", font=self.log_font, bg="#FFFFFF"
         )
-        self.log_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+        self.log_text.pack(fill=tk.BOTH, expand=True, padx=5, pady=(2, 5))
         self.status_label = ttk.Label(logs_frame, text="Status: Initializing...", font=self.status_font, anchor="w")
         self.status_label.pack(fill=tk.X, padx=5, pady=(5, 0))
 
@@ -495,6 +617,50 @@ class MainWindow:
     def _show_settings(self): self._show_section("Settings")
     def _show_help(self): self._show_section("Help")  # Add help method
     def _show_logs(self): self._show_section("Logs")
+    
+    def _save_log_to_file(self):
+        """Save the current log content to a file."""
+        try:
+            from datetime import datetime
+            from tkinter import filedialog
+            import os
+            
+            # Get log content
+            log_content = self.log_text.get("1.0", tk.END)
+            
+            if not log_content.strip():
+                gui_utils.show_message("Empty Log", "No log content to save.", type="info", parent=self.root)
+                return
+            
+            # Generate default filename
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            default_filename = f"scraper_log_{timestamp}.txt"
+            
+            # Ask user where to save
+            filepath = filedialog.asksaveasfilename(
+                parent=self.root,
+                title="Save Log File",
+                initialfile=default_filename,
+                defaultextension=".txt",
+                filetypes=[("Text Files", "*.txt"), ("All Files", "*.*")]
+            )
+            
+            if filepath:
+                with open(filepath, 'w', encoding='utf-8') as f:
+                    f.write(log_content)
+                
+                self.update_log(f"Log saved to: {filepath}")
+                gui_utils.show_message("Log Saved", f"Log successfully saved to:\n{filepath}", type="info", parent=self.root)
+                logger.info(f"Log saved to file: {filepath}")
+        
+        except Exception as e:
+            logger.error(f"Error saving log to file: {e}", exc_info=True)
+            gui_utils.show_message("Save Error", f"Failed to save log:\n{e}", type="error", parent=self.root)
+    
+    def _clear_log(self):
+        """Clear the log text widget."""
+        self._all_log_messages = []
+        gui_utils.clear_log(self.log_text, None)
 
     def get_available_themes(self):
         """Returns list of available themes for the settings dialog."""
@@ -759,6 +925,8 @@ class MainWindow:
         self.update_log(log_message)
         self.set_controls_state(tk.NORMAL)
         self.progress_bar['value'] = 0
+        if hasattr(self, 'dept_progress_bar'):
+            self.dept_progress_bar['value'] = 0
         self.root.lift()
         self.root.focus_force()
 
@@ -993,7 +1161,15 @@ class MainWindow:
             tab_instance = url_process_frame.winfo_children()[0]
             if hasattr(tab_instance, "reset_progress"):
                 tab_instance.reset_progress()
-        self.timer_label.config(text="00:00:00")
+        self.timer_label.config(text="Elapsed: 00:00:00")
+        if hasattr(self, 'progress_bar'):
+            self.progress_bar['value'] = 0
+        if hasattr(self, 'dept_progress_bar'):
+            self.dept_progress_bar['value'] = 0
+        if hasattr(self, 'dept_progress_label'):
+            self.dept_progress_label.config(text="0/0")
+        if hasattr(self, 'progress_details_label'):
+            self.progress_details_label.config(text="0 / ~0")
         self.processed_count = 0
         self.total_count = 0
         self.start_time = None

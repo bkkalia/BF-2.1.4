@@ -92,6 +92,28 @@ def setup_logging():
     try:
         # Create logs directory if it doesn't exist
         os.makedirs(ABS_LOG_DIR, exist_ok=True)
+
+        def _cleanup_old_run_logs(prefix, keep_count=30):
+            try:
+                log_files = []
+                for file_name in os.listdir(ABS_LOG_DIR):
+                    if file_name.startswith(prefix) and file_name.endswith('.log'):
+                        full_path = os.path.join(ABS_LOG_DIR, file_name)
+                        log_files.append((full_path, os.path.getmtime(full_path)))
+
+                log_files.sort(key=lambda x: x[1], reverse=True)
+                for old_file, _mtime in log_files[keep_count:]:
+                    try:
+                        os.remove(old_file)
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+
+        run_log_file = os.path.join(
+            ABS_LOG_DIR,
+            f"app_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
+        )
         
         # Configure logging with both console and file output
         logging.basicConfig(
@@ -100,12 +122,14 @@ def setup_logging():
             handlers=[
                 logging.StreamHandler(sys.stdout),
                 logging.FileHandler(
-                    os.path.join(ABS_LOG_DIR, f"app_{datetime.datetime.now().strftime('%Y%m%d')}.log"),
+                    run_log_file,
                     encoding='utf-8'
                 )
             ],
             force=True
         )
+
+        _cleanup_old_run_logs("app_", keep_count=30)
         
         # Log system information
         logging.info(f"--- {DEFAULT_APP_NAME} v{APP_VERSION} Starting ---")

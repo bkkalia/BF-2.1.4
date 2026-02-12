@@ -62,20 +62,52 @@ def clear_log(log_text_widget, log_callback):
     except Exception as e:
         logger.warning(f"Error clearing log: {e}")
 
+def update_dept_progress(dept_progress_bar, dept_progress_label, current, total):
+    """Thread-safe update for department progress indicators."""
+    if dept_progress_bar and dept_progress_bar.winfo_exists():
+        try:
+            dept_progress_bar.after(0, _set_dept_progress, dept_progress_bar, dept_progress_label, current, total)
+        except Exception as e:
+            if dept_progress_bar.winfo_exists():
+                logger.warning(f"Error scheduling dept progress update: {e}")
+
+def _set_dept_progress(dept_progress_bar, dept_progress_label, current, total):
+    """Internal function to set department progress, called via after()"""
+    try:
+        if not dept_progress_bar.winfo_exists() or not dept_progress_label.winfo_exists():
+            return
+
+        # Calculate percentage
+        percentage = int((current / max(1, total)) * 100) if total else 0
+        dept_progress_bar['value'] = min(percentage, 100)
+        
+        # Update label
+        dept_progress_label.config(text=f"{current}/{total} ({percentage}%)")
+
+    except Exception as e:
+        if dept_progress_bar.winfo_exists():
+            logger.warning(f"Error setting dept progress: {e}")
+
 def update_progress(progress_bar, details_label, rem_label,
-                   current, total, percent, details, est_rem, scraping_in_progress):
-    """Thread-safe update for progress indicators."""
+                   current, total, percent, details, est_rem, scraping_in_progress, *extra_args):
+    """Thread-safe update for progress indicators with enhanced details."""
     if progress_bar and progress_bar.winfo_exists():
         try:
+            # Extract additional info if provided
+            dept_name = extra_args[0] if len(extra_args) > 0 else None
+            dept_tender_count = extra_args[1] if len(extra_args) > 1 else None
+            total_tenders = extra_args[2] if len(extra_args) > 2 else None
+            pending_depts = extra_args[3] if len(extra_args) > 3 else None
+            
             progress_bar.after(0, _set_progress, progress_bar, details_label, rem_label,
-                             current, total, details, scraping_in_progress)
+                             current, total, details, scraping_in_progress, dept_name, dept_tender_count, total_tenders, pending_depts)
         except Exception as e:
             if progress_bar.winfo_exists():
                 logger.warning(f"Error scheduling progress update: {e}")
 
 def _set_progress(progress_bar, details_label, rem_label,
-                  current, total, details, scraping_in_progress):
-    """Internal function to set progress, called via after()"""
+                  current, total, details, scraping_in_progress, dept_name=None, dept_tender_count=None, total_tenders=None, pending_depts=None):
+    """Internal function to set progress with enhanced details, called via after()"""
     try:
         if not all(w.winfo_exists() for w in (progress_bar, details_label, rem_label)):
             return
@@ -84,12 +116,29 @@ def _set_progress(progress_bar, details_label, rem_label,
         percentage = int((current / max(1, total)) * 100) if total else 0
         progress_bar['value'] = min(percentage, 100)
         
-        # Update details label
-        details_text = details if details else f"Processed: {current} / {total}"
+        # Build enhanced details text
+        if details:
+            details_text = details
+        elif dept_name:
+            # Enhanced format with department name and counts
+            dept_display = dept_name[:40] + "..." if len(dept_name) > 40 else dept_name
+            details_text = f"Dept {current}/{total}: {dept_display}"
+            if total_tenders is not None:
+                details_text += f" | Scraped Tenders: {total_tenders}"
+            if pending_depts is not None:
+                details_text += f" | Pending Depts: {pending_depts}"
+            if dept_tender_count is not None:
+                details_text += f" | This Dept: {dept_tender_count}"
+        else:
+            details_text = f"Processed: {current} / {total}"
+        
         details_label.config(text=details_text)
         
-        # Update remaining time label
-        rem_label.config(text="Est. Rem: --:--:--")
+        # Simple remaining time estimate (can be enhanced with actual timing data)
+        if scraping_in_progress and current > 0 and total > current:
+            rem_label.config(text="Est. Rem: Calculating...")
+        else:
+            rem_label.config(text="Est. Rem: --:--:--")
 
     except Exception as e:
         if progress_bar.winfo_exists():
