@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk, scrolledtext, font as tkFont, StringVar, BooleanVar, filedialog
 import logging
 import os
+import re
 import sys
 import threading
 from datetime import datetime
@@ -69,6 +70,16 @@ class MainWindow:
             self.total_estimated_tenders_for_run = 0
             self._all_log_messages = []
             self.log_filter_var = StringVar(value="All")
+            self.logs_portal_rows = {}
+            self.status_context = {
+                "run_type": "Idle",
+                "mode": "-",
+                "scope": "-",
+                "active_portal": "-",
+                "completed_portals": 0,
+                "total_portals": 0,
+                "state": "Ready"
+            }
             print("State variables initialized")
 
             # Initialize Tkinter variables
@@ -107,8 +118,57 @@ class MainWindow:
     def _init_logging_methods(self):
         """Initialize logging-related methods early."""
         self.update_log = self._update_log_impl
-        self.update_status = lambda message: gui_utils.update_status(self.status_label, message)
+        self.update_status = self._update_status_impl
         self.update_progress = self._update_progress_impl
+
+    def _render_statusbar_summary(self):
+        if not hasattr(self, "statusbar_summary_label"):
+            return
+        ctx = self.status_context
+        text = (
+            f"Run: {ctx.get('run_type', 'Idle')}"
+            f"   Mode: {ctx.get('mode', '-')}"
+            f"   Scope: {ctx.get('scope', '-')}"
+            f"   Portal: {ctx.get('active_portal', '-')}"
+            f"   Portals: {ctx.get('completed_portals', 0)}/{ctx.get('total_portals', 0)}"
+            f"   State: {ctx.get('state', 'Ready')}"
+        )
+        self.statusbar_summary_label.config(text=text)
+
+    def set_status_context(self, **kwargs):
+        if threading.current_thread() is not threading.main_thread():
+            self.root.after(0, lambda: self.set_status_context(**kwargs))
+            return
+        self.status_context.update(kwargs)
+        self._render_statusbar_summary()
+
+    def _update_status_impl(self, message):
+        text = str(message or "")
+        gui_utils.update_status(self.status_label, text)
+
+        lowered = text.lower()
+        updates = {"state": text}
+
+        if lowered.startswith("batch:"):
+            portal = text.split(":", 1)[1].strip()
+            if portal:
+                updates["active_portal"] = portal
+                updates["state"] = "Running"
+        elif "parallel batch" in lowered and "completed" in lowered:
+            try:
+                right = text.split("batch", 1)[1]
+                ratio = right.split("completed", 1)[0].strip()
+                if "/" in ratio:
+                    done_s, total_s = ratio.split("/", 1)
+                    updates["completed_portals"] = int(done_s.strip())
+                    updates["total_portals"] = int(total_s.strip())
+                    updates["state"] = "Running"
+            except Exception:
+                pass
+        elif "batch scraping completed" in lowered or "idle" in lowered:
+            updates["state"] = "Completed"
+
+        self.set_status_context(**updates)
 
     def _update_progress_impl(self, current=0, total=0, details=None, *args):
         """Update both department and tender progress bars."""
@@ -447,6 +507,14 @@ class MainWindow:
         # Department Progress (Top Row)
         dept_row = ttk.Frame(status_frame, style='Status.TFrame')
         dept_row.pack(side=tk.TOP, fill=tk.X, pady=(3, 0))
+
+        self.statusbar_summary_label = ttk.Label(
+            dept_row,
+            text="Run: Idle   Mode: -   Scope: -   Portal: -   Portals: 0/0   State: Ready",
+            style='Status.TLabel',
+            anchor='w'
+        )
+        self.statusbar_summary_label.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(10, 10))
         
         ttk.Label(dept_row, text="Depts:", style='Status.TLabel', width=6).pack(side=tk.LEFT, padx=(10, 2))
         self.dept_progress_bar = ttk.Progressbar(dept_row, orient="horizontal", length=200, mode="determinate", style="Dept.Horizontal.TProgressbar")
@@ -475,6 +543,7 @@ class MainWindow:
             width=15
         )
         self.stop_button.pack(side=tk.RIGHT, padx=(2, 10), pady=2)
+        self._render_statusbar_summary()
 
         self.content_frame.update_idletasks()
         status_bar_height = status_frame.winfo_reqheight()
@@ -518,6 +587,33 @@ class MainWindow:
         logs_container = ttk.Frame(self.content_frame, padding=0)
         logs_frame = ttk.Frame(logs_container, padding=(5, 5))
         logs_frame.pack(fill=tk.BOTH, expand=True)
+
+        monitor_labelframe = ttk.Labelframe(logs_frame, text="Live Portal Monitor", style="Section.TLabelframe")
+        monitor_labelframe.pack(fill=tk.X, expand=False, pady=(0, 6))
+
+        self.logs_dashboard_tree = ttk.Treeview(
+            monitor_labelframe,
+            columns=("portal", "state", "progress", "expected", "extracted", "skipped", "known", "current", "updated"),
+            show="headings",
+            height=6
+        )
+        for col, txt, width in [
+            ("portal", "Portal", 155),
+            ("state", "State", 95),
+            ("progress", "Progress", 120),
+            ("expected", "Expected", 75),
+            ("extracted", "Extracted", 75),
+            ("skipped", "Skipped", 70),
+            ("known", "Known", 70),
+            ("current", "Current Activity", 300),
+            ("updated", "Updated", 80),
+        ]:
+            self.logs_dashboard_tree.heading(col, text=txt)
+            self.logs_dashboard_tree.column(col, width=width, anchor="center")
+        self.logs_dashboard_tree.column("portal", anchor="w")
+        self.logs_dashboard_tree.column("current", anchor="w")
+        self.logs_dashboard_tree.pack(fill=tk.X, expand=True, padx=5, pady=(5, 5))
+
         log_labelframe = ttk.Labelframe(logs_frame, text="Log Output", style="Section.TLabelframe")
         log_labelframe.pack(fill=tk.BOTH, expand=True, pady=(0, 5))
         
@@ -621,6 +717,99 @@ class MainWindow:
     def _show_settings(self): self._show_section("Settings")
     def _show_help(self): self._show_section("Help")  # Add help method
     def _show_logs(self): self._show_section("Logs")
+
+    def _build_progress_text(self, expected, extracted, state, current_activity=None):
+        try:
+            expected_i = int(expected or 0)
+            extracted_i = int(extracted or 0)
+        except Exception:
+            expected_i = 0
+            extracted_i = 0
+
+        if expected_i > 0:
+            pct = int(max(0, min(100, round((extracted_i / expected_i) * 100))))
+        else:
+            pct = 100 if str(state).lower() == "done" and extracted_i > 0 else 0
+
+        if pct == 0 and current_activity:
+            dept_match = re.search(r"dept\s+(\d+)\s*/\s*(\d+)", str(current_activity), flags=re.IGNORECASE)
+            if dept_match:
+                done = int(dept_match.group(1))
+                total = max(1, int(dept_match.group(2)))
+                pct = int(max(0, min(100, round((done / total) * 100))))
+
+        filled = int(round((pct / 100) * 10))
+        bar = "█" * filled + "░" * (10 - filled)
+        return f"{bar} {pct}%"
+
+    def reset_logs_portal_monitor(self, portal_names=None):
+        if not hasattr(self, 'logs_dashboard_tree'):
+            return
+        for item in self.logs_dashboard_tree.get_children():
+            self.logs_dashboard_tree.delete(item)
+        self.logs_portal_rows = {}
+
+        for portal in portal_names or []:
+            progress = self._build_progress_text(0, 0, "Idle", "Waiting to start...")
+            item_id = self.logs_dashboard_tree.insert(
+                "",
+                tk.END,
+                values=(portal, "Idle", progress, 0, 0, 0, 0, "Waiting to start...", "--:--:--")
+            )
+            self.logs_portal_rows[portal] = item_id
+
+    def update_logs_portal_monitor(self, portal, state=None, expected=None, extracted=None, skipped=None, known=None, current=None, updated=None):
+        if not hasattr(self, 'logs_dashboard_tree'):
+            return
+
+        if threading.current_thread() is not threading.main_thread():
+            self.root.after(
+                0,
+                self.update_logs_portal_monitor,
+                portal,
+                state,
+                expected,
+                extracted,
+                skipped,
+                known,
+                current,
+                updated
+            )
+            return
+
+        item_id = self.logs_portal_rows.get(portal)
+        if not item_id:
+            progress = self._build_progress_text(expected or 0, extracted or 0, state or "Idle", current or "")
+            item_id = self.logs_dashboard_tree.insert(
+                "",
+                tk.END,
+                values=(portal, state or "Idle", progress, expected or 0, extracted or 0, skipped or 0, known or 0, current or "Waiting to start...", updated or "--:--:--")
+            )
+            self.logs_portal_rows[portal] = item_id
+            return
+
+        current_vals = list(self.logs_dashboard_tree.item(item_id, "values"))
+        if not current_vals:
+            current_vals = [portal, "Idle", self._build_progress_text(0, 0, "Idle", "Waiting to start..."), 0, 0, 0, 0, "Waiting to start...", "--:--:--"]
+
+        if state is not None:
+            current_vals[1] = state
+        if expected is not None:
+            current_vals[3] = expected
+        if extracted is not None:
+            current_vals[4] = extracted
+        if skipped is not None:
+            current_vals[5] = skipped
+        if known is not None:
+            current_vals[6] = known
+        if current is not None:
+            text = str(current).replace("\n", " ").strip()
+            current_vals[7] = text[:295]
+
+        display_state = current_vals[1]
+        current_vals[2] = self._build_progress_text(current_vals[3], current_vals[4], display_state, current_vals[7])
+        current_vals[8] = updated or datetime.now().strftime("%H:%M:%S")
+        self.logs_dashboard_tree.item(item_id, values=current_vals)
     
     def _save_log_to_file(self):
         """Save the current log content to a file."""
@@ -812,6 +1001,15 @@ class MainWindow:
 
         # Set scraping in progress and disable controls before starting the task
         self.scraping_in_progress = True
+        self.set_status_context(
+            run_type=task_name,
+            mode="Sequential",
+            scope="-",
+            active_portal="-",
+            completed_portals=0,
+            total_portals=0,
+            state="Starting"
+        )
         self.set_controls_state(tk.DISABLED)
 
         def task_wrapper():
@@ -927,6 +1125,15 @@ class MainWindow:
         self.stop_timer_updates()
         self.update_status(status_message)
         self.update_log(log_message)
+        self.set_status_context(
+            run_type="Idle",
+            mode="-",
+            scope="-",
+            active_portal="-",
+            completed_portals=0,
+            total_portals=0,
+            state="Ready"
+        )
         self.set_controls_state(tk.NORMAL)
         self.progress_bar['value'] = 0
         if hasattr(self, 'dept_progress_bar'):

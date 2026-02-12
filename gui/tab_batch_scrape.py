@@ -67,6 +67,7 @@ class BatchScrapeTab(ttk.Frame):
 
         self.batch_log_messages = []
         self.portal_dashboard_rows = {}
+        self.portal_live_stats = {}
         self._dashboard_lock = threading.Lock()
 
         self.manifest_path = os.path.join(os.getcwd(), "batch_tender_manifest.json")
@@ -360,11 +361,49 @@ class BatchScrapeTab(ttk.Frame):
         except Exception as error:
             self.log_callback(f"Failed to save batch manifest: {error}")
 
+    def _ensure_portal_checkpoint(self, portal_name):
+        portals = self.download_manifest.setdefault("portals", {})
+        if portal_name in portals:
+            return
+
+        portal_config = self._portal_config_by_name(portal_name)
+        if not portal_config:
+            return
+
+        base_url = str(portal_config.get("BaseURL", "")).strip()
+        if not base_url:
+            return
+
+        latest_file = self._find_latest_output_for_portal(base_url)
+        if not latest_file:
+            return
+
+        ids, departments = self._extract_checkpoint_from_output(latest_file)
+        if not ids and not departments:
+            return
+
+        portals[portal_name] = {
+            "tender_ids": sorted(ids),
+            "processed_departments": sorted(departments),
+            "last_run": datetime.now().isoformat(timespec="seconds"),
+            "last_expected": None,
+            "last_extracted": len(ids),
+            "seeded_from": latest_file,
+            "seed_reason": "portal-missing"
+        }
+        self._save_manifest()
+        self.log_callback(
+            f"Resume checkpoint auto-imported for '{portal_name}' from {os.path.basename(latest_file)} "
+            f"(ids={len(ids)}, depts={len(departments)})."
+        )
+
     def _get_known_ids_for_portal(self, portal_name):
+        self._ensure_portal_checkpoint(portal_name)
         portal_data = self.download_manifest.get("portals", {}).get(portal_name, {})
         return set(portal_data.get("tender_ids", []))
 
     def _get_known_departments_for_portal(self, portal_name):
+        self._ensure_portal_checkpoint(portal_name)
         portal_data = self.download_manifest.get("portals", {}).get(portal_name, {})
         return {
             str(name).strip().lower()
@@ -400,12 +439,67 @@ class BatchScrapeTab(ttk.Frame):
             "message": message_text
         }
         self.batch_log_messages.append(entry)
+
+        live_updates, progress_note = self._update_live_stats_from_message(portal_name, message_text)
+        combined_message = message_text
+        if progress_note:
+            combined_message = f"{progress_note} | {message_text}"
+
         self._update_dashboard(
             portal_name,
             state=self._derive_state_from_message(message_text),
-            message=message_text
+            extracted=live_updates.get("extracted") if live_updates else None,
+            message=combined_message
         )
         self._render_batch_logs()
+
+    def _update_live_stats_from_message(self, portal_name, message_text):
+        stats = self.portal_live_stats.setdefault(
+            portal_name,
+            {
+                "dept_total": 0,
+                "dept_done": 0,
+                "extracted": 0,
+                "completed_departments": set(),
+            }
+        )
+
+        text = str(message_text)
+
+        processing_match = re.search(r"processing department\s+(\d+)\s*/\s*(\d+)\s*:\s*(.+)", text, flags=re.IGNORECASE)
+        if processing_match:
+            current_idx = int(processing_match.group(1))
+            stats["dept_total"] = max(stats["dept_total"], int(processing_match.group(2)))
+            stats["dept_done"] = max(stats["dept_done"], max(0, current_idx - 1))
+
+        found_match = re.search(r"found\s+(\d+)\s+tenders?\s+in\s+department\s+(.+)", text, flags=re.IGNORECASE)
+        if found_match:
+            dept_name = found_match.group(2).strip().lower()
+            if dept_name and dept_name not in stats["completed_departments"]:
+                stats["completed_departments"].add(dept_name)
+                stats["dept_done"] += 1
+                stats["extracted"] += int(found_match.group(1))
+
+        no_tenders_match = re.search(r"no tenders found/extracted from department\s+(.+)", text, flags=re.IGNORECASE)
+        if no_tenders_match:
+            dept_name = no_tenders_match.group(1).strip().lower()
+            if dept_name and dept_name not in stats["completed_departments"]:
+                stats["completed_departments"].add(dept_name)
+                stats["dept_done"] += 1
+
+        resume_skip_match = re.search(r"resume:\s+skipping already-processed department:\s+(.+)", text, flags=re.IGNORECASE)
+        if resume_skip_match:
+            dept_name = resume_skip_match.group(1).strip().lower()
+            if dept_name and dept_name not in stats["completed_departments"]:
+                stats["completed_departments"].add(dept_name)
+                stats["dept_done"] += 1
+
+        progress_note = None
+        if stats["dept_total"] > 0:
+            done = min(stats["dept_done"], stats["dept_total"])
+            progress_note = f"Dept {done}/{stats['dept_total']} | Scraped {stats['extracted']}"
+
+        return {"extracted": stats["extracted"]}, progress_note
 
     def _derive_state_from_message(self, message):
         text = str(message).lower()
@@ -457,6 +551,13 @@ class BatchScrapeTab(ttk.Frame):
         for item in existing_items:
             self.dashboard_tree.delete(item)
         self.portal_dashboard_rows = {}
+        self.portal_live_stats = {}
+
+        if hasattr(self.main_app, "reset_logs_portal_monitor"):
+            try:
+                self.main_app.reset_logs_portal_monitor(selected_portals)
+            except Exception:
+                pass
 
         for portal in selected_portals:
             known_total = len(self._get_known_ids_for_portal(portal))
@@ -494,6 +595,21 @@ class BatchScrapeTab(ttk.Frame):
 
             current[7] = datetime.now().strftime("%H:%M:%S")
             self.dashboard_tree.item(item_id, values=current)
+
+            if hasattr(self.main_app, "update_logs_portal_monitor"):
+                try:
+                    self.main_app.update_logs_portal_monitor(
+                        portal=portal,
+                        state=current[1],
+                        expected=current[2],
+                        extracted=current[3],
+                        skipped=current[4],
+                        known=current[5],
+                        current=current[6],
+                        updated=current[7]
+                    )
+                except Exception:
+                    pass
 
     def _update_dashboard_threadsafe(self, portal, **kwargs):
         self.main_app.root.after(
@@ -759,6 +875,19 @@ class BatchScrapeTab(ttk.Frame):
         self.main_app.total_estimated_tenders_for_run = len(selected_portals)
         self.main_app.reset_progress_and_timer()
         self.main_app.update_status(f"Starting batch ({mode})...")
+        if hasattr(self.main_app, "set_status_context"):
+            try:
+                self.main_app.set_status_context(
+                    run_type="Batch",
+                    mode=mode.title(),
+                    scope="Only New" if only_new else "All",
+                    active_portal="-",
+                    completed_portals=0,
+                    total_portals=len(selected_portals),
+                    state="Starting"
+                )
+            except Exception:
+                pass
         self.log_callback(f"Starting batch scrape for {len(selected_portals)} portal(s) in {mode} mode.")
 
         self.main_app.start_background_task(
@@ -873,6 +1002,11 @@ class BatchScrapeTab(ttk.Frame):
                 portal_log("Delta sweep: re-checking all departments with tender-ID de-duplication.")
 
         self._update_dashboard_threadsafe(portal_name, state="Scraping", expected=expected_total)
+        if hasattr(self.main_app, "set_status_context"):
+            try:
+                self.main_app.set_status_context(active_portal=portal_name, state="Scraping")
+            except Exception:
+                pass
         status_callback(f"Batch: {portal_name}")
 
         summary = run_scraping_logic(
@@ -1174,9 +1308,24 @@ class BatchScrapeTab(ttk.Frame):
                 self._update_dashboard_threadsafe(portal_name, state="Error")
 
             completed += 1
+            if hasattr(self.main_app, "set_status_context"):
+                try:
+                    self.main_app.set_status_context(
+                        completed_portals=completed,
+                        total_portals=total_portals,
+                        active_portal=portal_name,
+                        state="Running"
+                    )
+                except Exception:
+                    pass
             progress_callback(completed, total_portals, f"Completed {completed}/{total_portals}")
 
         status_callback("Batch scraping completed")
+        if hasattr(self.main_app, "set_status_context"):
+            try:
+                self.main_app.set_status_context(state="Completed", completed_portals=total_portals)
+            except Exception:
+                pass
         if self.current_batch_report_dir:
             log_callback(f"Batch run reports saved in: {self.current_batch_report_dir}")
 
@@ -1263,6 +1412,16 @@ class BatchScrapeTab(ttk.Frame):
                 with lock:
                     completed["count"] += 1
                     done = completed["count"]
+                if hasattr(self.main_app, "set_status_context"):
+                    try:
+                        self.main_app.set_status_context(
+                            completed_portals=done,
+                            total_portals=total,
+                            active_portal=portal_name,
+                            state="Running"
+                        )
+                    except Exception:
+                        pass
                 progress_callback(done, total, f"Parallel completed {done}/{total}")
                 status_callback(f"Parallel batch {done}/{total} completed")
 
@@ -1274,6 +1433,11 @@ class BatchScrapeTab(ttk.Frame):
                 future.result()
 
         status_callback("Batch scraping completed")
+        if hasattr(self.main_app, "set_status_context"):
+            try:
+                self.main_app.set_status_context(state="Completed", completed_portals=total)
+            except Exception:
+                pass
         if self.current_batch_report_dir:
             log_callback(f"Batch run reports saved in: {self.current_batch_report_dir}")
 

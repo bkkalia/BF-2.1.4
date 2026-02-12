@@ -579,12 +579,15 @@ def _scrape_tender_details(driver, department_name, base_url, log_callback, exis
             return [], 0
 
 
-def _click_on_page_back_button(driver, log_callback):
-    """Clicks the website's 'Back' button from dept tender list with enhanced validation and fallback to direct navigation.
-    
-    Uses shorter timeout (15s) to prevent session hangs.
+def _click_on_page_back_button(driver, log_callback, org_list_url=None):
+    """Return to organization list page.
+
+    Strategy order:
+    1) Direct navigation to OrgListURL (preferred)
+    2) Site back button
+    3) navigate_to_org_list fallback
     """
-    log_callback("  Attempting site 'Back' button click...")
+    log_callback("  Attempting return to organization page...")
     
     # Check session before clicking
     try:
@@ -593,55 +596,11 @@ def _click_on_page_back_button(driver, log_callback):
         log_callback(f"  ERROR: Driver session invalid before back button click: {session_err}")
         return False
     
-    # Try clicking the back button with shorter timeout to prevent session hangs
-    # Use max 15 seconds instead of default 45 to avoid session expiration
-    back_button_clicked = click_element(
-        driver, 
-        BACK_BUTTON_FROM_DEPT_LIST_LOCATOR, 
-        "Dept List Back Button",
-        max_wait=15  # Prevent long hangs that cause session expiration
-    )
-    
-    if back_button_clicked:
-        log_callback("    Site 'Back' button clicked.")
-        time.sleep(STABILIZE_WAIT * 1.5)
-        
-        # Check session after clicking
-        try:
-            current_url = driver.current_url
-        except Exception as session_err:
-            log_callback(f"  ERROR: Driver session lost after back button click: {session_err}")
-            return False
-        
-        # Check if we landed on the correct page
-        if TENDERS_BY_ORG_URL_PATTERN in current_url:
-            log_callback(f"    ✓ Back button navigation successful to Tenders by Organisation")
-            return True
-        
-        # Check if we ended up on Site Compatibility or wrong page
-        if SITE_COMPATIBILITY_URL_PATTERN in current_url:
-            log_callback("    ⚠ Back button led to Site Compatibility page - using direct navigation...")
-        elif "StandardBiddingDocuments" in current_url:
-            log_callback("    ⚠ Back button led to Standard Bidding Documents page - using direct navigation...")
-        else:
-            log_callback(f"    ⚠ Back button led to unexpected page - using direct navigation...")
-            log_callback(f"    Wrong URL: {current_url}")
-            # Check if we're already on org list (maybe table exists)
-            try:
-                table = driver.find_element(*MAIN_TABLE_LOCATOR)
-                if table:
-                    log_callback("    ✓ Organization table found - may be on correct page")
-                    return True
-            except NoSuchElementException:
-                log_callback("    ⚠ Organization table not found - using direct navigation...")
-    else:
-        log_callback("  WARN: Back button click failed - using direct navigation...")
-    
-    # Fallback: Direct navigation to organization list URL
+    # Preferred: direct navigation to organization list URL
     try:
         base_url = current_url_before.split('?')[0]
-        org_url = f"{base_url}?page=FrontEndTendersByOrganisation&service=page"
-        log_callback(f"    Navigating directly to: {org_url}")
+        org_url = org_list_url or f"{base_url}?page=FrontEndTendersByOrganisation&service=page"
+        log_callback(f"    Direct navigation first: {org_url}")
         
         driver.get(org_url)
         time.sleep(STABILIZE_WAIT * 2)
@@ -656,18 +615,59 @@ def _click_on_page_back_button(driver, log_callback):
                 WebDriverWait(driver, ELEMENT_WAIT_TIMEOUT).until(
                     EC.presence_of_element_located(MAIN_TABLE_LOCATOR)
                 )
-                log_callback("    ✓ Organization table confirmed")
+                log_callback("    ✓ Direct navigation successful and organization table confirmed")
                 return True
             except TimeoutException:
                 log_callback("    ⚠ Table not found but URL correct")
                 return True  # Give benefit of doubt
         else:
-            log_callback(f"    ✗ Direct navigation failed, ended up at: {final_url}")
-            return False
+            log_callback(f"    ⚠ Direct navigation did not land on org page: {final_url}")
             
-    except Exception as recovery_err:
-        log_callback(f"    ✗ Direct navigation error: {recovery_err}")
-        return False
+    except Exception as direct_err:
+        log_callback(f"    ⚠ Direct navigation error: {direct_err}")
+
+    # Fallback 1: try site back button
+    back_button_clicked = click_element(
+        driver,
+        BACK_BUTTON_FROM_DEPT_LIST_LOCATOR,
+        "Dept List Back Button",
+        max_wait=15
+    )
+
+    if back_button_clicked:
+        log_callback("    Site 'Back' button clicked.")
+        time.sleep(STABILIZE_WAIT * 1.5)
+
+        try:
+            current_url = driver.current_url
+        except Exception as session_err:
+            log_callback(f"  ERROR: Driver session lost after back button click: {session_err}")
+            return False
+
+        if TENDERS_BY_ORG_URL_PATTERN in current_url:
+            log_callback("    ✓ Back button navigation successful to Tenders by Organisation")
+            return True
+
+        try:
+            table = driver.find_element(*MAIN_TABLE_LOCATOR)
+            if table:
+                log_callback("    ✓ Organization table found after back click")
+                return True
+        except NoSuchElementException:
+            pass
+        log_callback(f"    ⚠ Back button landed on unexpected page: {current_url}")
+    else:
+        log_callback("    WARN: Back button click failed.")
+
+    # Fallback 2: robust generic navigation helper
+    try:
+        if navigate_to_org_list(driver, log_callback):
+            log_callback("    ✓ Fallback navigate_to_org_list successful")
+            return True
+    except Exception as nav_err:
+        log_callback(f"    ⚠ Fallback navigate_to_org_list error: {nav_err}")
+
+    return False
 
 
 def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
@@ -985,7 +985,7 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
                 break
             
             # Navigate back after each department with Site Compatibility recovery
-            back_clicked = _click_on_page_back_button(driver, log_callback)
+            back_clicked = _click_on_page_back_button(driver, log_callback, base_url_config.get('OrgListURL'))
             if not back_clicked:
                 log_callback("WARNING: Back button click failed, returning to org list URL")
                 try:
@@ -1170,7 +1170,7 @@ def process_department(dept_info, base_url_config, download_dir, driver,
         log_callback(f"Found {len(tender_data)} tenders in department {dept_info['name']}")
 
         # Click back to department list
-        back_clicked = _click_on_page_back_button(driver, log_callback)
+        back_clicked = _click_on_page_back_button(driver, log_callback, base_url_config.get('OrgListURL'))
         if not back_clicked:
             log_callback("Warning: Back button click failed, returning to org list URL")
             try:
