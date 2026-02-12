@@ -9,6 +9,19 @@ Run the helper tool (from project root) to infer and update version dates:
 The tool makes a backup of CHANGELOG.md (CHANGELOG.md.bak.TIMESTAMP) before editing.
 -->
 
+## Version 2.1.8 (February 12, 2026)
+
+### 🗄️ Data Pipeline Upgrade
+- **SQLite Primary Datastore**: Department scrape runs now persist to SQLite first (`blackforest_tenders.sqlite3`) as the source of truth for run and tender data.
+- **Run Tracking in SQLite**: Added run-level metadata tracking (`status`, expected/extracted/skipped counts, output metadata, partial-save state).
+
+### 📤 SQLite-Backed Exports
+- **Excel/CSV from SQLite Views**: User-facing export files are now generated from SQLite view queries instead of direct in-memory lists.
+- **Graceful Fallback**: If SQLite export fails unexpectedly, file export still falls back to direct DataFrame write to avoid data loss.
+
+### 📊 Reporting Integration
+- **Batch Report Enrichment**: Portal run JSON/CSV reports now include SQLite context (`sqlite_db_path`, `sqlite_run_id`) for downstream APIs and audits.
+
 ## Version 2.1.7 (February 12, 2026)
 
 ### 🛡️ Recovery & Completion Reliability

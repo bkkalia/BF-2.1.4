@@ -58,6 +58,7 @@ try:
         TENDERS_BY_ORG_LOCATORS, SITE_COMPATIBILITY_URL_PATTERN, TENDERS_BY_ORG_URL_PATTERN  # Add the new constants
     )
     from utils import sanitise_filename, get_website_keyword_from_url, generate_tender_urls
+    from tender_store import TenderDataStore
     from scraper.driver_manager import setup_driver, set_download_directory, safe_quit_driver
     from scraper.actions import safe_extract_text, click_element, wait_for_downloads, save_page_as_pdf
     from scraper.captcha_handler import handle_captcha
@@ -698,6 +699,25 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
     expected_total_tenders = 0
     department_summaries = []
     processed_department_names = set()
+    portal_name = str(base_url_config.get('Name', 'Unknown')).strip() or "Unknown"
+    scope_mode = "only_new" if existing_tender_ids or existing_department_names else "all"
+
+    sqlite_db_path = kwargs.get("sqlite_db_path") or os.path.join(download_dir, "blackforest_tenders.sqlite3")
+    data_store = None
+    sqlite_run_id = None
+
+    try:
+        data_store = TenderDataStore(sqlite_db_path)
+        sqlite_run_id = data_store.start_run(
+            portal_name=portal_name,
+            base_url=base_url_config.get('BaseURL', ''),
+            scope_mode=scope_mode
+        )
+        log_callback(f"SQLite datastore active: {sqlite_db_path} (run_id={sqlite_run_id})")
+    except Exception as ds_err:
+        log_callback(f"WARNING: SQLite datastore unavailable ({ds_err}). Falling back to direct file export.")
+        data_store = None
+        sqlite_run_id = None
 
     def _save_tender_data_snapshot(data_to_save, mark_partial=False):
         """Save extracted tenders to Excel (or CSV fallback) and return save metadata."""
@@ -741,6 +761,7 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
             prepared_rows = []
             for tender in data_to_save:
                 row = dict(tender)
+                row.setdefault("Portal", portal_name)
                 try:
                     if EMD_AMOUNT_KEY in row:
                         row['EMD Amount (Numeric)'] = float(
@@ -749,6 +770,24 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
                 except Exception:
                     pass
                 prepared_rows.append(row)
+
+            if data_store is not None and sqlite_run_id is not None:
+                try:
+                    saved_rows = data_store.replace_run_tenders(sqlite_run_id, prepared_rows)
+                    log_callback(f"SQLite updated for run {sqlite_run_id}: {saved_rows} row(s)")
+                    exported_path, exported_type = data_store.export_run(
+                        run_id=sqlite_run_id,
+                        output_dir=target_dir,
+                        website_keyword=f"{website_keyword}{suffix}",
+                        mark_partial=mark_partial
+                    )
+                    if exported_path:
+                        label = "PARTIAL" if mark_partial else "FINAL"
+                        log_callback(f"\\n[{label}] Exported {len(prepared_rows)} tenders from SQLite view to: {os.path.basename(exported_path)}")
+                        log_callback(f"[{label}] Full path: {exported_path}")
+                        return exported_path, exported_type
+                except Exception as sqlite_export_err:
+                    log_callback(f"WARNING: SQLite export failed, using direct file export: {sqlite_export_err}")
 
             df = pd.DataFrame(prepared_rows)
             if DEPARTMENT_NAME_KEY in df.columns:
@@ -997,6 +1036,21 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
             if str(item.get("Tender ID (Extracted)", "")).strip()
         })
 
+        if data_store is not None and sqlite_run_id is not None:
+            try:
+                data_store.finalize_run(
+                    run_id=sqlite_run_id,
+                    status=status_msg,
+                    expected_total=expected_total_tenders,
+                    extracted_total=total_tenders,
+                    skipped_total=skipped_existing_total,
+                    partial_saved=False,
+                    output_file_path=saved_output_path,
+                    output_file_type=saved_output_type
+                )
+            except Exception as finalize_err:
+                log_callback(f"WARNING: Failed to finalize SQLite run metadata: {finalize_err}")
+
         return {
             "status": status_msg,
             "processed_departments": processed_depts,
@@ -1009,7 +1063,9 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
             "processed_department_names": sorted(processed_department_names),
             "output_file_path": saved_output_path,
             "output_file_type": saved_output_type,
-            "partial_saved": False
+            "partial_saved": False,
+            "sqlite_db_path": sqlite_db_path,
+            "sqlite_run_id": sqlite_run_id
         }
 
         # Play success sound only if not cancelled
@@ -1042,6 +1098,21 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
             if str(item.get("Tender ID (Extracted)", "")).strip()
         })
 
+        if data_store is not None and sqlite_run_id is not None:
+            try:
+                data_store.finalize_run(
+                    run_id=sqlite_run_id,
+                    status="Error during scraping",
+                    expected_total=expected_total_tenders,
+                    extracted_total=len(all_tender_details),
+                    skipped_total=skipped_existing_total,
+                    partial_saved=partial_saved,
+                    output_file_path=saved_output_path,
+                    output_file_type=saved_output_type
+                )
+            except Exception as finalize_err:
+                log_callback(f"WARNING: Failed to finalize SQLite run metadata: {finalize_err}")
+
         return {
             "status": "Error during scraping",
             "processed_departments": processed_depts,
@@ -1054,7 +1125,9 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
             "processed_department_names": sorted(processed_department_names),
             "output_file_path": saved_output_path,
             "output_file_type": saved_output_type,
-            "partial_saved": partial_saved
+            "partial_saved": partial_saved,
+            "sqlite_db_path": sqlite_db_path,
+            "sqlite_run_id": sqlite_run_id
         }
 
 def process_department(dept_info, base_url_config, download_dir, driver,

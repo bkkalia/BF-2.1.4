@@ -846,6 +846,8 @@ class BatchScrapeTab(ttk.Frame):
                 "processed_department_names": [],
                 "output_file_path": None,
                 "output_file_type": None,
+                "sqlite_db_path": None,
+                "sqlite_run_id": None,
                 "partial_saved": False,
                 "department_summaries": []
             }
@@ -897,6 +899,8 @@ class BatchScrapeTab(ttk.Frame):
         summary.setdefault("department_summaries", [])
         summary.setdefault("output_file_path", None)
         summary.setdefault("output_file_type", None)
+        summary.setdefault("sqlite_db_path", None)
+        summary.setdefault("sqlite_run_id", None)
         summary.setdefault("partial_saved", False)
         return summary
 
@@ -915,6 +919,8 @@ class BatchScrapeTab(ttk.Frame):
             "processed_department_names": combined_departments,
             "output_file_path": delta_summary.get("output_file_path") or first_summary.get("output_file_path"),
             "output_file_type": delta_summary.get("output_file_type") or first_summary.get("output_file_type"),
+            "sqlite_db_path": delta_summary.get("sqlite_db_path") or first_summary.get("sqlite_db_path"),
+            "sqlite_run_id": delta_summary.get("sqlite_run_id") or first_summary.get("sqlite_run_id"),
             "partial_saved": bool(first_summary.get("partial_saved") or delta_summary.get("partial_saved")),
             "delta_sweep_extracted": int(delta_summary.get("extracted_total_tenders", 0))
         }
@@ -1025,6 +1031,8 @@ class BatchScrapeTab(ttk.Frame):
                     "processed_department_names": [],
                     "output_file_path": None,
                     "output_file_type": None,
+                    "sqlite_db_path": None,
+                    "sqlite_run_id": None,
                     "partial_saved": False
                 }
 
@@ -1098,6 +1106,8 @@ class BatchScrapeTab(ttk.Frame):
             "skipped_known_tenders": int(summary.get("skipped_existing_total", 0)),
             "output_file_path": summary.get("output_file_path"),
             "output_file_type": summary.get("output_file_type"),
+            "sqlite_db_path": summary.get("sqlite_db_path"),
+            "sqlite_run_id": summary.get("sqlite_run_id"),
             "partial_saved": bool(summary.get("partial_saved", False)),
             "delta_sweep_enabled": bool(self.enable_delta_sweep and only_new),
             "delta_sweep_extracted": int(summary.get("delta_sweep_extracted", 0)),

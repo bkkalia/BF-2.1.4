@@ -2,7 +2,7 @@
 ; This script creates a complete installer for the hybrid distribution package
 
 #define MyAppName "Black Forest Tender Scraper"
-#define MyAppVersion "2.1.7"
+#define MyAppVersion "2.1.8"
 #define MyAppPublisher "Cloud84"
 #define MyAppURL "https://github.com/your-repo/blackforest"
 #define MyAppExeName "BlackForest.exe"
@@ -52,6 +52,7 @@ Source: "dist\cli_runner.py"; DestDir: "{app}"; Flags: ignoreversion
 Source: "dist\config.py"; DestDir: "{app}"; Flags: ignoreversion
 Source: "dist\app_settings.py"; DestDir: "{app}"; Flags: ignoreversion
 Source: "dist\utils.py"; DestDir: "{app}"; Flags: ignoreversion
+Source: "dist\tender_store.py"; DestDir: "{app}"; Flags: ignoreversion
 
 ; Configuration files
 Source: "dist\base_urls.csv"; DestDir: "{app}"; Flags: ignoreversion
