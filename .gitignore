@@ -1,0 +1,17 @@
+# Python bytecode / caches
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Runtime logs
+logs/*.log
+dist/logs/*.log
+
+# Local runtime state
+portal_config_history.json
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
