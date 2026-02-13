@@ -36,6 +36,14 @@ DEFAULT_SETTINGS_STRUCTURE = {
     "selected_theme": DEFAULT_THEME,
     "use_undetected_driver": USE_UNDETECTED_DRIVER_DEFAULT,
     "headless_mode": HEADLESS_MODE_DEFAULT,
+    "refresh_watch_enabled": False,
+    "refresh_watch_loop_seconds": 30,
+    "refresh_watch_portals": [],
+    "refresh_watch_state": {},
+    "refresh_watch_history": [],
+    "central_sqlite_db_path": None,
+    "sqlite_backup_directory": None,
+    "sqlite_backup_retention_days": 30,
     **_initial_timeout_settings  # Unpack all timeout settings
 }
 

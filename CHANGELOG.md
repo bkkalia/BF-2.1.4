@@ -9,6 +9,28 @@ Run the helper tool (from project root) to infer and update version dates:
 The tool makes a backup of CHANGELOG.md (CHANGELOG.md.bak.TIMESTAMP) before editing.
 -->
 
+## Version 2.1.9 (February 13, 2026)
+
+### 🗄️ Archive & Backup Reliability
+- **Tiered SQLite Backups**: Added automatic backup tiers under configured backup directory:
+    - daily snapshots in root backup folder,
+    - weekly snapshots in `weekly/`,
+    - monthly snapshots in `monthly/`,
+    - yearly snapshots in `yearly/`.
+- **Retention Policy by Tier**:
+    - daily: controlled by `sqlite_backup_retention_days` (minimum 7),
+    - weekly: keep ~16 weeks,
+    - monthly: keep ~24 months,
+    - yearly: keep ~7 years.
+
+### ✅ Data Integrity Enforcement
+- **Portal + Tender Uniqueness in Runtime**: Persistence now keeps latest row for each `(portal, Tender ID (Extracted))` key.
+- **Missing Tender ID Cleanup Rule**: Rows with missing/invalid tender IDs (`nan`, `none`, `null`, empty, etc.) are dropped during persistence.
+
+### ⚡ Import Performance
+- **Bulk Dedupe Optimization**: Replaced row-by-row duplicate cleanup with temp-table batched delete logic for large historical imports.
+- **Normalized Composite Index**: Added index on normalized `(portal_name, tender_id_extracted)` to speed large upserts and duplicate replacement.
+
 ## Version 2.1.8 (February 12, 2026)
 
 ### 🗄️ Data Pipeline Upgrade

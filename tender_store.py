@@ -1,6 +1,7 @@
 import os
+import shutil
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import pandas as pd
 
@@ -59,6 +60,8 @@ class TenderDataStore:
 
                 CREATE INDEX IF NOT EXISTS idx_tenders_run_id ON tenders(run_id);
                 CREATE INDEX IF NOT EXISTS idx_tenders_tender_id ON tenders(tender_id_extracted);
+                CREATE INDEX IF NOT EXISTS idx_tenders_portal_tender_norm
+                    ON tenders(LOWER(TRIM(COALESCE(portal_name, ''))), TRIM(COALESCE(tender_id_extracted, '')));
 
                 CREATE VIEW IF NOT EXISTS v_tender_export AS
                 SELECT
@@ -82,6 +85,99 @@ class TenderDataStore:
                 """
             )
 
+    def backup_if_due(self, backup_dir, retention_days=30):
+        backup_target = str(backup_dir or "").strip()
+        if not backup_target:
+            return None
+
+        if not os.path.exists(self.db_path):
+            return None
+
+        retention_days = max(7, int(retention_days or 30))
+        os.makedirs(backup_target, exist_ok=True)
+
+        base_name = os.path.splitext(os.path.basename(self.db_path))[0]
+        now = datetime.now()
+        day_stamp = now.strftime("%Y%m%d")
+        backup_filename = f"{base_name}_{day_stamp}.sqlite3"
+        backup_path = os.path.join(backup_target, backup_filename)
+
+        if not os.path.exists(backup_path):
+            shutil.copy2(self.db_path, backup_path)
+
+        weekly_dir = os.path.join(backup_target, "weekly")
+        monthly_dir = os.path.join(backup_target, "monthly")
+        yearly_dir = os.path.join(backup_target, "yearly")
+        os.makedirs(weekly_dir, exist_ok=True)
+        os.makedirs(monthly_dir, exist_ok=True)
+        os.makedirs(yearly_dir, exist_ok=True)
+
+        iso_year, iso_week, _ = now.isocalendar()
+        week_stamp = f"{iso_year}W{iso_week:02d}"
+        week_path = os.path.join(weekly_dir, f"{base_name}_{week_stamp}.sqlite3")
+        if not os.path.exists(week_path):
+            shutil.copy2(self.db_path, week_path)
+
+        month_stamp = now.strftime("%Y%m")
+        month_path = os.path.join(monthly_dir, f"{base_name}_{month_stamp}.sqlite3")
+        if not os.path.exists(month_path):
+            shutil.copy2(self.db_path, month_path)
+
+        year_stamp = now.strftime("%Y")
+        year_path = os.path.join(yearly_dir, f"{base_name}_{year_stamp}.sqlite3")
+        if not os.path.exists(year_path):
+            shutil.copy2(self.db_path, year_path)
+
+        cutoff = datetime.now() - timedelta(days=retention_days)
+        for entry in os.listdir(backup_target):
+            if not entry.lower().endswith(".sqlite3"):
+                continue
+            entry_path = os.path.join(backup_target, entry)
+            try:
+                modified_time = datetime.fromtimestamp(os.path.getmtime(entry_path))
+                if modified_time < cutoff:
+                    os.remove(entry_path)
+            except Exception:
+                continue
+
+        weekly_cutoff = now - timedelta(days=7 * 16)
+        for entry in os.listdir(weekly_dir):
+            if not entry.lower().endswith(".sqlite3"):
+                continue
+            entry_path = os.path.join(weekly_dir, entry)
+            try:
+                modified_time = datetime.fromtimestamp(os.path.getmtime(entry_path))
+                if modified_time < weekly_cutoff:
+                    os.remove(entry_path)
+            except Exception:
+                continue
+
+        monthly_cutoff = now - timedelta(days=31 * 24)
+        for entry in os.listdir(monthly_dir):
+            if not entry.lower().endswith(".sqlite3"):
+                continue
+            entry_path = os.path.join(monthly_dir, entry)
+            try:
+                modified_time = datetime.fromtimestamp(os.path.getmtime(entry_path))
+                if modified_time < monthly_cutoff:
+                    os.remove(entry_path)
+            except Exception:
+                continue
+
+        yearly_cutoff = now - timedelta(days=366 * 7)
+        for entry in os.listdir(yearly_dir):
+            if not entry.lower().endswith(".sqlite3"):
+                continue
+            entry_path = os.path.join(yearly_dir, entry)
+            try:
+                modified_time = datetime.fromtimestamp(os.path.getmtime(entry_path))
+                if modified_time < yearly_cutoff:
+                    os.remove(entry_path)
+            except Exception:
+                continue
+
+        return backup_path
+
     def start_run(self, portal_name, base_url, scope_mode="all"):
         started_at = datetime.now().isoformat(timespec="seconds")
         with self._connect() as conn:
@@ -98,36 +194,92 @@ class TenderDataStore:
             return int(run_id)
 
     def replace_run_tenders(self, run_id, tenders):
+        def _normalize_text(value):
+            if value is None:
+                return ""
+            return str(value).strip()
+
+        def _is_missing_tender_id(value):
+            tender_id = _normalize_text(value)
+            if not tender_id:
+                return True
+            return tender_id.lower() in {"nan", "none", "null", "na", "n/a", "-"}
+
         with self._connect() as conn:
             conn.execute("DELETE FROM tenders WHERE run_id = ?", (run_id,))
             if not tenders:
                 return 0
 
-            rows = []
+            deduped = {}
+            ordered_keys = []
             for item in tenders:
-                tender_id = str(item.get("Tender ID (Extracted)", "")).strip()
+                portal_name = _normalize_text(item.get("Portal"))
+                tender_id = _normalize_text(item.get("Tender ID (Extracted)"))
+                if _is_missing_tender_id(tender_id):
+                    continue
+
+                key = (portal_name.lower(), tender_id)
+                if key not in deduped:
+                    ordered_keys.append(key)
+                deduped[key] = item
+
+            rows = []
+            dedupe_keys = []
+            for key in ordered_keys:
+                item = deduped[key]
+                portal_name = _normalize_text(item.get("Portal"))
+                tender_id = _normalize_text(item.get("Tender ID (Extracted)"))
                 emd_raw = item.get("EMD Amount")
                 emd_numeric = item.get("EMD Amount (Numeric)")
                 try:
                     emd_numeric = float(emd_numeric) if emd_numeric is not None else None
                 except Exception:
                     emd_numeric = None
+                dedupe_keys.append((key[0], tender_id))
+
                 rows.append(
                     (
                         run_id,
-                        str(item.get("Portal", "")).strip(),
-                        str(item.get("Department Name", "")).strip(),
+                        portal_name,
+                        _normalize_text(item.get("Department Name")),
                         tender_id,
-                        str(item.get("Published Date", "")).strip(),
-                        str(item.get("Closing Date", "")).strip(),
-                        str(item.get("Opening Date", "")).strip(),
-                        str(item.get("Title and Ref.No./Tender ID", "")).strip(),
-                        str(item.get("Organisation Chain", "")).strip(),
-                        str(emd_raw).strip() if emd_raw is not None else "",
+                        _normalize_text(item.get("Published Date")),
+                        _normalize_text(item.get("Closing Date")),
+                        _normalize_text(item.get("Opening Date")),
+                        _normalize_text(item.get("Title and Ref.No./Tender ID")),
+                        _normalize_text(item.get("Organisation Chain")),
+                        _normalize_text(emd_raw),
                         emd_numeric,
                         str(item)
                     )
                 )
+
+            if dedupe_keys:
+                conn.execute("DROP TABLE IF EXISTS _incoming_keys")
+                conn.execute(
+                    """
+                    CREATE TEMP TABLE _incoming_keys (
+                        portal_key TEXT NOT NULL,
+                        tender_key TEXT NOT NULL
+                    )
+                    """
+                )
+                conn.executemany(
+                    "INSERT INTO _incoming_keys (portal_key, tender_key) VALUES (?, ?)",
+                    dedupe_keys
+                )
+                conn.execute(
+                    """
+                    DELETE FROM tenders
+                    WHERE EXISTS (
+                        SELECT 1
+                        FROM _incoming_keys k
+                        WHERE k.portal_key = LOWER(TRIM(COALESCE(tenders.portal_name, '')))
+                          AND k.tender_key = TRIM(COALESCE(tenders.tender_id_extracted, ''))
+                    )
+                    """
+                )
+                conn.execute("DROP TABLE IF EXISTS _incoming_keys")
 
             conn.executemany(
                 """

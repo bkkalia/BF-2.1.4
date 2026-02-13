@@ -535,7 +535,7 @@ class BatchScrapeTab(ttk.Frame):
             line = f"[{entry['timestamp']}][{entry['portal']}] {entry['message']}"
             if search_term and search_term not in line.lower():
                 continue
-            self.batch_log_text.insert(tk.END, line + "\n")
+            gui_utils.append_styled_log_line(self.batch_log_text, line)
 
         self.batch_log_text.see(tk.END)
         self.batch_log_text.config(state=tk.DISABLED)
@@ -566,6 +566,8 @@ class BatchScrapeTab(ttk.Frame):
                 values=(portal, "Idle", 0, 0, 0, known_total, "Waiting to start...", "--:--:--")
             )
             self.portal_dashboard_rows[portal] = item_id
+
+        self._push_global_progress(state="Starting" if selected_portals else "Ready")
 
     def _update_dashboard(self, portal, state=None, expected=None, extracted=None, skipped=None, known=None, message=None):
         with self._dashboard_lock:
@@ -611,6 +613,8 @@ class BatchScrapeTab(ttk.Frame):
                 except Exception:
                     pass
 
+            self._push_global_progress(active_portal=portal)
+
     def _update_dashboard_threadsafe(self, portal, **kwargs):
         self.main_app.root.after(
             0,
@@ -622,6 +626,100 @@ class BatchScrapeTab(ttk.Frame):
             kwargs.get("skipped"),
             kwargs.get("known"),
             kwargs.get("message")
+        )
+
+    def _safe_int(self, value):
+        try:
+            return int(value)
+        except Exception:
+            try:
+                return int(float(value))
+            except Exception:
+                return 0
+
+    def _collect_global_metrics(self):
+        total_portals = len(self.portal_dashboard_rows)
+        completed_portals = 0
+        active_portals = 0
+        total_tenders = 0
+        scraped_tenders = 0
+        active_names = []
+
+        terminal_states = {"done", "error", "nodata"}
+        active_states = {"scraping", "fetching", "waiting", "starting"}
+
+        for portal_name, item_id in self.portal_dashboard_rows.items():
+            values = list(self.dashboard_tree.item(item_id, "values"))
+            if not values:
+                continue
+
+            state = str(values[1]).strip().lower()
+            expected = self._safe_int(values[2])
+            extracted = self._safe_int(values[3])
+
+            total_tenders += max(0, expected)
+            scraped_tenders += max(0, extracted)
+
+            if state in terminal_states:
+                completed_portals += 1
+            if state in active_states:
+                active_portals += 1
+                active_names.append(portal_name)
+
+        total_departments = 0
+        scraped_departments = 0
+        for stats in self.portal_live_stats.values():
+            dept_total = max(0, self._safe_int(stats.get("dept_total", 0)))
+            dept_done = max(0, self._safe_int(stats.get("dept_done", 0)))
+            total_departments += dept_total
+            scraped_departments += min(dept_done, dept_total) if dept_total > 0 else dept_done
+
+        if active_names:
+            active_portal_text = ", ".join(active_names[:2]) + (" ..." if len(active_names) > 2 else "")
+        else:
+            active_portal_text = "-"
+
+        return {
+            "total_portals": total_portals,
+            "completed_portals": completed_portals,
+            "active_portals": active_portals,
+            "total_tenders": total_tenders,
+            "scraped_tenders": scraped_tenders,
+            "total_departments": total_departments,
+            "scraped_departments": scraped_departments,
+            "active_portal_text": active_portal_text,
+        }
+
+    def _push_global_progress(self, state=None, active_portal=None):
+        if not hasattr(self.main_app, "update_global_progress"):
+            return
+
+        metrics = self._collect_global_metrics()
+        total_portals = metrics["total_portals"]
+        completed_portals = metrics["completed_portals"]
+        active_portals = metrics["active_portals"]
+
+        if state is None:
+            if total_portals == 0:
+                state = "Ready"
+            elif completed_portals >= total_portals:
+                state = "Completed"
+            elif active_portals > 0:
+                state = "Running"
+            else:
+                state = "Starting"
+
+        active_portal_value = active_portal or metrics["active_portal_text"]
+        self.main_app.update_global_progress(
+            active_portals=active_portals,
+            completed_portals=completed_portals,
+            total_portals=total_portals,
+            total_tenders=metrics["total_tenders"],
+            scraped_tenders=metrics["scraped_tenders"],
+            total_departments=metrics["total_departments"],
+            scraped_departments=metrics["scraped_departments"],
+            active_portal=active_portal_value,
+            state=state,
         )
 
     def _get_ip_safety_settings(self):
@@ -830,46 +928,76 @@ class BatchScrapeTab(ttk.Frame):
         self.log_callback(f"Exported PowerShell batch script: {save_path}")
 
     def start_batch(self):
-        if self.main_app.scraping_in_progress:
-            gui_utils.show_message("Busy", "Another process is currently running.", type="warning", parent=self.main_app.root)
-            return
-
         selected_portals = self._get_selected_portals()
+        mode = self.mode_var.get()
+        only_new = self.scrape_scope_var.get() == "only_new"
+        max_parallel = max(1, int(self.max_parallel_var.get() or 1))
+        self._start_batch_execution(
+            selected_portals=selected_portals,
+            mode=mode,
+            only_new=only_new,
+            max_parallel=max_parallel,
+            confirm=True,
+            reason="manual"
+        )
+
+    def start_batch_for_portals(self, portal_names, only_new=False, mode="sequential", max_parallel=1, reason="auto-watch"):
+        selected_portals = [str(name).strip() for name in (portal_names or []) if str(name).strip()]
+        return self._start_batch_execution(
+            selected_portals=selected_portals,
+            mode=mode,
+            only_new=bool(only_new),
+            max_parallel=max_parallel,
+            confirm=False,
+            reason=reason
+        )
+
+    def _start_batch_execution(self, selected_portals, mode, only_new, max_parallel, confirm=True, reason="manual"):
+        if self.main_app.scraping_in_progress:
+            if confirm:
+                gui_utils.show_message("Busy", "Another process is currently running.", type="warning", parent=self.main_app.root)
+            else:
+                self.log_callback("Auto-run skipped: another process is currently running.")
+            return False
+
         if not selected_portals:
-            gui_utils.show_message("No Selection", "Select one or more portals first.", type="warning", parent=self.main_app.root)
-            return
+            if confirm:
+                gui_utils.show_message("No Selection", "Select one or more portals first.", type="warning", parent=self.main_app.root)
+            else:
+                self.log_callback("Auto-run skipped: no portals selected.")
+            return False
 
         self._init_dashboard_rows(selected_portals)
         self._refresh_portal_filter_values()
 
         download_dir = self.main_app.download_dir_var.get()
         if not self.main_app.validate_download_dir(download_dir):
-            return
+            return False
 
-        mode = self.mode_var.get()
-        only_new = self.scrape_scope_var.get() == "only_new"
-        max_parallel = max(1, int(self.max_parallel_var.get() or 1))
+        mode = "parallel" if str(mode).lower() == "parallel" else "sequential"
+        max_parallel = max(1, int(max_parallel or 1))
         if mode == "parallel":
             max_parallel = min(max_parallel, len(selected_portals), 4)
 
         ip_safety = self._get_ip_safety_settings()
 
-        if not gui_utils.show_message(
-            "Confirm Batch",
-            f"Start batch scrape for {len(selected_portals)} portal(s)?\n"
-            f"Mode: {mode.title()}\n"
-            f"Scope: {'Only New' if only_new else 'All'}\n"
-            f"Max Parallel: {max_parallel}\n"
-            f"Per-Domain: {ip_safety['per_domain_max']}\n"
-            f"Delay: {ip_safety['min_delay_sec']}s to {ip_safety['max_delay_sec']}s\n"
-            f"Cooldown: {ip_safety['cooldown_sec']}s\n"
-            f"Retries: {ip_safety['max_retries']}",
-            type="askyesno",
-            parent=self.main_app.root
-        ):
-            return
+        if confirm:
+            if not gui_utils.show_message(
+                "Confirm Batch",
+                f"Start batch scrape for {len(selected_portals)} portal(s)?\n"
+                f"Mode: {mode.title()}\n"
+                f"Scope: {'Only New' if only_new else 'All'}\n"
+                f"Max Parallel: {max_parallel}\n"
+                f"Per-Domain: {ip_safety['per_domain_max']}\n"
+                f"Delay: {ip_safety['min_delay_sec']}s to {ip_safety['max_delay_sec']}s\n"
+                f"Cooldown: {ip_safety['cooldown_sec']}s\n"
+                f"Retries: {ip_safety['max_retries']}",
+                type="askyesno",
+                parent=self.main_app.root
+            ):
+                return False
 
-        self.only_new_var.set(only_new)
+        self.only_new_var.set(bool(only_new))
         self.batch_memory.save_last_settings(selected_portals, mode, max_parallel, ip_safety, only_new)
 
         self.main_app.total_estimated_tenders_for_run = len(selected_portals)
@@ -888,13 +1016,18 @@ class BatchScrapeTab(ttk.Frame):
                 )
             except Exception:
                 pass
-        self.log_callback(f"Starting batch scrape for {len(selected_portals)} portal(s) in {mode} mode.")
+        self._push_global_progress(state="Starting", active_portal="-")
+        self.log_callback(
+            f"Starting batch scrape for {len(selected_portals)} portal(s) in {mode} mode "
+            f"(scope={'Only New' if only_new else 'All'}, reason={reason})."
+        )
 
         self.main_app.start_background_task(
             self._run_batch_worker,
             args=(selected_portals, download_dir, mode, max_parallel, ip_safety, only_new),
             task_name="Batch Scrape"
         )
+        return True
 
     def _build_portal_logger(self, portal_name, log_callback):
         def _portal_log(message):
@@ -1009,6 +1142,13 @@ class BatchScrapeTab(ttk.Frame):
                 pass
         status_callback(f"Batch: {portal_name}")
 
+        sqlite_runtime_kwargs = {}
+        if hasattr(self.main_app, "_get_sqlite_runtime_settings"):
+            try:
+                sqlite_runtime_kwargs = self.main_app._get_sqlite_runtime_settings()
+            except Exception:
+                sqlite_runtime_kwargs = {}
+
         summary = run_scraping_logic(
             departments_to_scrape=valid_departments,
             base_url_config=portal_config,
@@ -1021,7 +1161,8 @@ class BatchScrapeTab(ttk.Frame):
             driver=shared_driver,
             deep_scrape=deep_scrape,
             existing_tender_ids=known_ids,
-            existing_department_names=known_departments
+            existing_department_names=known_departments,
+            **sqlite_runtime_kwargs
         )
         summary.setdefault("expected_total_tenders", expected_total)
         summary.setdefault("extracted_total_tenders", 0)
@@ -1224,6 +1365,32 @@ class BatchScrapeTab(ttk.Frame):
             f"remaining_gap={gap}"
         )
 
+        sqlite_db_path = str(summary.get("sqlite_db_path") or "").strip()
+        sqlite_run_id = summary.get("sqlite_run_id")
+        output_file_path = str(summary.get("output_file_path") or "").strip()
+        output_file_type = str(summary.get("output_file_type") or "").strip().upper()
+
+        if sqlite_db_path and sqlite_run_id is not None:
+            portal_log(f"[PERSIST][BATCH] SQLite: SAVED | run_id={sqlite_run_id} | path={sqlite_db_path}")
+        elif sqlite_db_path:
+            portal_log(f"[PERSIST][BATCH] SQLite: NOT CONFIRMED | path={sqlite_db_path}")
+        else:
+            portal_log("[PERSIST][BATCH] SQLite: NOT AVAILABLE")
+
+        if output_file_path:
+            export_fmt = output_file_type or "UNKNOWN"
+            portal_log(f"[PERSIST][BATCH] File: SAVED | format={export_fmt} | path={output_file_path}")
+            self._update_dashboard_threadsafe(
+                portal_name,
+                message=f"Persisted -> SQLite run {sqlite_run_id if sqlite_run_id is not None else '-'} | {export_fmt}: {output_file_path}"
+            )
+        else:
+            portal_log("[PERSIST][BATCH] File: NOT GENERATED")
+            self._update_dashboard_threadsafe(
+                portal_name,
+                message=f"Persisted -> SQLite run {sqlite_run_id if sqlite_run_id is not None else '-'} | file not generated"
+            )
+
         completed_at = datetime.now()
         errors = [msg for msg in portal_messages if re.search(r"\b(error|failed|critical|exception)\b", msg, re.IGNORECASE)]
         report = {
@@ -1321,6 +1488,7 @@ class BatchScrapeTab(ttk.Frame):
             progress_callback(completed, total_portals, f"Completed {completed}/{total_portals}")
 
         status_callback("Batch scraping completed")
+        self._push_global_progress(state="Completed")
         if hasattr(self.main_app, "set_status_context"):
             try:
                 self.main_app.set_status_context(state="Completed", completed_portals=total_portals)
@@ -1433,6 +1601,7 @@ class BatchScrapeTab(ttk.Frame):
                 future.result()
 
         status_callback("Batch scraping completed")
+        self._push_global_progress(state="Completed")
         if hasattr(self.main_app, "set_status_context"):
             try:
                 self.main_app.set_status_context(state="Completed", completed_portals=total)

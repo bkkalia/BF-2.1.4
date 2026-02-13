@@ -269,6 +269,15 @@ class CLIRunner:
                     print(".1f")
 
             # Run scraping logic
+            config_dir = str(self.paths['config_file'].parent)
+            sqlite_db_path = str(self.settings.get('central_sqlite_db_path') or '').strip()
+            if sqlite_db_path and not os.path.isabs(sqlite_db_path):
+                sqlite_db_path = str(Path(config_dir) / sqlite_db_path)
+
+            sqlite_backup_dir = str(self.settings.get('sqlite_backup_directory') or '').strip()
+            if sqlite_backup_dir and not os.path.isabs(sqlite_backup_dir):
+                sqlite_backup_dir = str(Path(config_dir) / sqlite_backup_dir)
+
             run_scraping_logic(
                 departments_to_scrape=departments,
                 base_url_config=base_urls_config,
@@ -278,7 +287,10 @@ class CLIRunner:
                 status_callback=lambda msg: self.logger.info(f"STATUS: {msg}"),
                 stop_event=None,  # CLI mode doesn't have stop events
                 driver=self.driver,
-                deep_scrape=False  # Keep it simple for CLI
+                deep_scrape=False,  # Keep it simple for CLI
+                sqlite_db_path=sqlite_db_path or None,
+                sqlite_backup_dir=sqlite_backup_dir or None,
+                sqlite_backup_retention_days=int(self.settings.get('sqlite_backup_retention_days', 30) or 30)
             )
 
             elapsed = time.time() - start_time

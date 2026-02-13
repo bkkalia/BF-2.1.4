@@ -6,6 +6,7 @@ import re
 import sys
 import threading
 from datetime import datetime
+from collections import deque
 
 # --- Ensure project root in sys.path ---
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -29,6 +30,7 @@ from gui.tab_department import DepartmentTab
 from gui.tab_id_search import IdSearchTab
 from gui.tab_url_process import UrlProcessTab
 from gui.tab_batch_scrape import BatchScrapeTab
+from gui.tab_refresh_watch import RefreshWatchTab
 from gui.tab_settings import SettingsTab
 from scraper.webdriver_manager import get_driver, quit_driver  # Add this import
 from scraper.driver_manager import setup_driver, safe_quit_driver  # Add setup_driver import
@@ -47,6 +49,7 @@ class MainWindow:
             
             self.settings = settings
             print("Settings assigned")
+            self._ensure_sqlite_settings_defaults()
             
             self.base_urls_data = base_urls_data if isinstance(base_urls_data, list) and base_urls_data else [FALLBACK_URL_CONFIG.copy()]
             print("Base URLs processed")
@@ -76,10 +79,25 @@ class MainWindow:
                 "mode": "-",
                 "scope": "-",
                 "active_portal": "-",
+                "active_portals": 0,
                 "completed_portals": 0,
                 "total_portals": 0,
                 "state": "Ready"
             }
+            self.global_progress_data = {
+                "active_portals": 0,
+                "total_tenders": 0,
+                "scraped_tenders": 0,
+                "total_departments": 0,
+                "scraped_departments": 0,
+                "overall_percent": 0,
+            }
+            self.progress_stall_threshold_sec = 90
+            self._last_progress_units = 0
+            self._last_progress_tick = None
+            self._status_messages = deque(maxlen=16)
+            self._status_message_index = 0
+            self._status_message_job = None
             print("State variables initialized")
 
             # Initialize Tkinter variables
@@ -125,12 +143,16 @@ class MainWindow:
         if not hasattr(self, "statusbar_summary_label"):
             return
         ctx = self.status_context
+        active_count = int(ctx.get("active_portals", 0) or 0)
+        overall_percent = int(self.global_progress_data.get("overall_percent", 0) or 0)
         text = (
             f"Run: {ctx.get('run_type', 'Idle')}"
             f"   Mode: {ctx.get('mode', '-')}"
             f"   Scope: {ctx.get('scope', '-')}"
             f"   Portal: {ctx.get('active_portal', '-')}"
+            f"   Active: {active_count}"
             f"   Portals: {ctx.get('completed_portals', 0)}/{ctx.get('total_portals', 0)}"
+            f"   Progress: {overall_percent}%"
             f"   State: {ctx.get('state', 'Ready')}"
         )
         self.statusbar_summary_label.config(text=text)
@@ -142,9 +164,234 @@ class MainWindow:
         self.status_context.update(kwargs)
         self._render_statusbar_summary()
 
+    def _to_int(self, value, default=0):
+        try:
+            return int(value)
+        except Exception:
+            return int(default)
+
+    def _format_hms(self, total_seconds):
+        seconds = max(0, int(total_seconds or 0))
+        hours, rem = divmod(seconds, 3600)
+        minutes, secs = divmod(rem, 60)
+        return f"{hours:02d}:{minutes:02d}:{secs:02d}"
+
+    def _get_default_central_sqlite_path(self):
+        base_dir = os.path.dirname(self.settings_filepath)
+        data_dir = os.path.join(base_dir, "data")
+        return os.path.normpath(os.path.join(data_dir, "blackforest_tenders.sqlite3"))
+
+    def _get_default_sqlite_backup_dir(self):
+        base_dir = os.path.dirname(self.settings_filepath)
+        return os.path.normpath(os.path.join(base_dir, "db_backups"))
+
+    def _ensure_sqlite_settings_defaults(self):
+        db_path = str(self.settings.get("central_sqlite_db_path") or "").strip()
+        if not db_path:
+            db_path = self._get_default_central_sqlite_path()
+        elif not os.path.isabs(db_path):
+            db_path = os.path.normpath(os.path.join(os.path.dirname(self.settings_filepath), db_path))
+        self.settings["central_sqlite_db_path"] = db_path
+
+        backup_dir = str(self.settings.get("sqlite_backup_directory") or "").strip()
+        if not backup_dir:
+            backup_dir = self._get_default_sqlite_backup_dir()
+        elif not os.path.isabs(backup_dir):
+            backup_dir = os.path.normpath(os.path.join(os.path.dirname(self.settings_filepath), backup_dir))
+        self.settings["sqlite_backup_directory"] = backup_dir
+
+        try:
+            retention_days = int(self.settings.get("sqlite_backup_retention_days", 30) or 30)
+        except Exception:
+            retention_days = 30
+        self.settings["sqlite_backup_retention_days"] = max(7, retention_days)
+
+    def _get_sqlite_runtime_settings(self):
+        self._ensure_sqlite_settings_defaults()
+        return {
+            "sqlite_db_path": self.settings.get("central_sqlite_db_path"),
+            "sqlite_backup_dir": self.settings.get("sqlite_backup_directory"),
+            "sqlite_backup_retention_days": int(self.settings.get("sqlite_backup_retention_days", 30) or 30),
+        }
+
+    def _extract_scraped_tenders(self, details, extra_args):
+        scraped = None
+        try:
+            if len(extra_args) > 2 and extra_args[2] is not None:
+                scraped = self._to_int(extra_args[2], 0)
+        except Exception:
+            scraped = None
+
+        if scraped is None and details:
+            match = re.search(r"scraped\s*:\s*(\d+)", str(details), flags=re.IGNORECASE)
+            if match:
+                scraped = self._to_int(match.group(1), 0)
+
+        if scraped is None:
+            scraped = self._to_int(self.global_progress_data.get("scraped_tenders", 0), 0)
+        return max(0, int(scraped))
+
+    def _queue_status_message(self, message):
+        text = str(message or "").strip()
+        if not text:
+            return
+        if not self._status_messages or self._status_messages[-1] != text:
+            self._status_messages.append(text)
+        self._refresh_status_message_line()
+
+    def _refresh_status_message_line(self):
+        if not hasattr(self, "status_message_label"):
+            return
+        if not self._status_messages:
+            self.status_message_label.config(text="Messages: Ready")
+            return
+        if self._status_message_index >= len(self._status_messages):
+            self._status_message_index = 0
+        msg = self._status_messages[self._status_message_index]
+        self.status_message_label.config(text=f"Messages: {msg}")
+
+    def _rotate_status_message_line(self):
+        self._status_message_job = None
+        if not hasattr(self, "status_message_label"):
+            return
+        if len(self._status_messages) > 1:
+            self._status_message_index = (self._status_message_index + 1) % len(self._status_messages)
+        self._refresh_status_message_line()
+        if self.root and self.root.winfo_exists():
+            self._status_message_job = self.root.after(3500, self._rotate_status_message_line)
+
+    def _calculate_overall_percent(self, scraped_departments, total_departments, scraped_tenders, total_tenders, completed_portals, total_portals):
+        if total_departments > 0:
+            return max(0, min(100, int(round((scraped_departments / max(1, total_departments)) * 100))))
+        if total_tenders > 0:
+            return max(0, min(100, int(round((scraped_tenders / max(1, total_tenders)) * 100))))
+        if total_portals > 0:
+            return max(0, min(100, int(round((completed_portals / max(1, total_portals)) * 100))))
+        return 0
+
+    def update_global_progress(self, **kwargs):
+        if threading.current_thread() is not threading.main_thread():
+            self.root.after(0, lambda: self.update_global_progress(**kwargs))
+            return
+
+        active_portals = self._to_int(kwargs.get("active_portals", self.status_context.get("active_portals", 0)))
+        completed_portals = self._to_int(kwargs.get("completed_portals", self.status_context.get("completed_portals", 0)))
+        total_portals = self._to_int(kwargs.get("total_portals", self.status_context.get("total_portals", 0)))
+
+        total_tenders = self._to_int(kwargs.get("total_tenders", self.global_progress_data.get("total_tenders", 0)))
+        scraped_tenders = self._to_int(kwargs.get("scraped_tenders", self.global_progress_data.get("scraped_tenders", 0)))
+        total_departments = self._to_int(kwargs.get("total_departments", self.global_progress_data.get("total_departments", 0)))
+        scraped_departments = self._to_int(kwargs.get("scraped_departments", self.global_progress_data.get("scraped_departments", 0)))
+
+        overall_percent = self._calculate_overall_percent(
+            scraped_departments,
+            total_departments,
+            scraped_tenders,
+            total_tenders,
+            completed_portals,
+            total_portals,
+        )
+
+        self.global_progress_data.update({
+            "active_portals": active_portals,
+            "total_tenders": total_tenders,
+            "scraped_tenders": scraped_tenders,
+            "total_departments": total_departments,
+            "scraped_departments": scraped_departments,
+            "overall_percent": overall_percent,
+        })
+
+        now = datetime.now()
+        progress_units = scraped_tenders + scraped_departments + completed_portals
+        if self._last_progress_tick is None:
+            self._last_progress_tick = now
+            self._last_progress_units = progress_units
+        elif progress_units > self._last_progress_units:
+            self._last_progress_tick = now
+            self._last_progress_units = progress_units
+
+        stalled_seconds = 0
+        if self._last_progress_tick is not None:
+            stalled_seconds = int(max(0, (now - self._last_progress_tick).total_seconds()))
+        is_stalled = (
+            self.scraping_in_progress
+            and active_portals > 0
+            and stalled_seconds >= self.progress_stall_threshold_sec
+            and overall_percent < 100
+        )
+
+        if hasattr(self, "overall_progress_bar"):
+            try:
+                self.overall_progress_bar.configure(
+                    style="OverallWarn.Horizontal.TProgressbar" if is_stalled else "Overall.Horizontal.TProgressbar"
+                )
+            except Exception:
+                pass
+            self.overall_progress_bar["value"] = overall_percent
+        if hasattr(self, "overall_progress_label"):
+            self.overall_progress_label.config(text=f"{overall_percent}%")
+
+        if hasattr(self, "dept_progress_bar") and hasattr(self, "dept_progress_label"):
+            gui_utils.update_dept_progress(self.dept_progress_bar, self.dept_progress_label, scraped_departments, total_departments)
+
+        if hasattr(self, "progress_bar") and hasattr(self, "progress_details_label"):
+            tender_total_display = max(total_tenders, scraped_tenders)
+            tender_pct = int(round((scraped_tenders / max(1, tender_total_display)) * 100)) if tender_total_display > 0 else 0
+            self.progress_bar["value"] = max(0, min(100, tender_pct))
+            pending_tenders = max(0, tender_total_display - scraped_tenders)
+            self.progress_details_label.config(
+                text=f"Scraped: {scraped_tenders}   Total: {tender_total_display}   Pending: {pending_tenders}"
+            )
+
+        if hasattr(self, "global_kpi_label"):
+            stall_text = f"   Stalled: {self._format_hms(stalled_seconds)}" if is_stalled else ""
+            tender_pending = max(0, max(total_tenders, scraped_tenders) - scraped_tenders)
+            dept_pending = max(0, max(total_departments, scraped_departments) - scraped_departments)
+            self.global_kpi_label.config(
+                text=(
+                    f"Portals Active: {active_portals}   "
+                    f"Tenders S/T/P: {scraped_tenders}/{max(total_tenders, scraped_tenders)}/{tender_pending}   "
+                    f"Departments S/T/P: {scraped_departments}/{max(total_departments, scraped_departments)}/{dept_pending}"
+                    f"{stall_text}"
+                )
+            )
+
+        if hasattr(self, "rate_label"):
+            if self.scraping_in_progress and self.start_time:
+                elapsed_seconds = max(1, int((datetime.now() - self.start_time).total_seconds()))
+                tenders_per_min = (scraped_tenders * 60.0) / elapsed_seconds
+                depts_per_min = (scraped_departments * 60.0) / elapsed_seconds
+                if scraped_tenders > 0:
+                    self.rate_label.config(text=f"Rate: {tenders_per_min:.1f} T/min")
+                elif scraped_departments > 0:
+                    self.rate_label.config(text=f"Rate: {depts_per_min:.1f} D/min")
+                else:
+                    self.rate_label.config(text="Rate: --/min")
+            else:
+                self.rate_label.config(text="Rate: --/min")
+
+        if hasattr(self, "est_rem_label"):
+            if self.scraping_in_progress and self.start_time and overall_percent > 0 and overall_percent < 100:
+                elapsed_seconds = (datetime.now() - self.start_time).total_seconds()
+                remaining_seconds = int((elapsed_seconds * (100 - overall_percent)) / max(1, overall_percent))
+                self.est_rem_label.config(text=f"Est. Rem: {self._format_hms(remaining_seconds)}")
+            elif overall_percent >= 100:
+                self.est_rem_label.config(text="Est. Rem: 00:00:00")
+            else:
+                self.est_rem_label.config(text="Est. Rem: --:--:--")
+
+        self.set_status_context(
+            active_portals=active_portals,
+            completed_portals=completed_portals,
+            total_portals=total_portals,
+            active_portal=kwargs.get("active_portal", self.status_context.get("active_portal", "-")),
+            state=kwargs.get("state", self.status_context.get("state", "Ready")),
+        )
+
     def _update_status_impl(self, message):
         text = str(message or "")
         gui_utils.update_status(self.status_label, text)
+        self._queue_status_message(text)
 
         lowered = text.lower()
         updates = {"state": text}
@@ -173,8 +420,11 @@ class MainWindow:
     def _update_progress_impl(self, current=0, total=0, details=None, *args):
         """Update both department and tender progress bars."""
         try:
+            current_i = self._to_int(current, 0)
+            total_i = self._to_int(total, 0)
+
             if hasattr(self, 'dept_progress_bar') and hasattr(self, 'dept_progress_label'):
-                gui_utils.update_dept_progress(self.dept_progress_bar, self.dept_progress_label, current, total)
+                gui_utils.update_dept_progress(self.dept_progress_bar, self.dept_progress_label, current_i, total_i)
 
             if hasattr(self, 'progress_bar') and hasattr(self, 'progress_details_label') and hasattr(self, 'est_rem_label'):
                 gui_utils.update_progress(
@@ -189,6 +439,29 @@ class MainWindow:
                     self.scraping_in_progress,
                     *args
                 )
+
+            scraped_tenders = self._extract_scraped_tenders(details, args)
+            total_tenders = self._to_int(self.total_estimated_tenders_for_run, 0)
+            if total_tenders <= 0:
+                total_tenders = self._to_int(self.global_progress_data.get("total_tenders", 0), 0)
+            if total_tenders <= 0:
+                total_tenders = max(scraped_tenders, 0)
+
+            total_portals = max(1, self._to_int(self.status_context.get("total_portals", 0), 0))
+            completed_portals = 1 if total_i > 0 and current_i >= total_i else 0
+            active_portals = 1 if self.scraping_in_progress and completed_portals == 0 else 0
+
+            self.update_global_progress(
+                active_portals=active_portals,
+                completed_portals=completed_portals,
+                total_portals=total_portals,
+                total_tenders=total_tenders,
+                scraped_tenders=scraped_tenders,
+                total_departments=total_i,
+                scraped_departments=current_i,
+                active_portal=self.selected_url_name_var.get() if hasattr(self, "selected_url_name_var") else "-",
+                state="Running" if self.scraping_in_progress else ("Completed" if completed_portals else "Ready"),
+            )
         except Exception as e:
             logger.error(f"Error in progress update: {e}")
 
@@ -204,6 +477,10 @@ class MainWindow:
             thread_name = threading.current_thread().name
             formatted_message = f"[{timestamp}][{thread_name}] {message}"
             self._all_log_messages.append(formatted_message)
+
+            lowered = message.lower()
+            if "watch" in lowered or "refresh" in lowered or "department" in lowered:
+                self._queue_status_message(message)
 
             if hasattr(self, 'log_text') and self.log_text and self.log_text.winfo_exists() and self._passes_log_filter(formatted_message):
                 self.log_text.after(0, gui_utils._append_log_message, self.log_text, formatted_message)
@@ -245,7 +522,7 @@ class MainWindow:
 
             for msg in self._all_log_messages:
                 if self._passes_log_filter(msg):
-                    self.log_text.insert(tk.END, msg + "\n")
+                    gui_utils.append_styled_log_line(self.log_text, msg)
 
             self.log_text.see(tk.END)
             self.log_text.config(state=tk.DISABLED)
@@ -411,6 +688,20 @@ class MainWindow:
             borderwidth=1,
             relief='flat'
         )
+        style.configure(
+            "Overall.Horizontal.TProgressbar",
+            troughcolor='#D0D0D0',
+            background='#ff9800',
+            borderwidth=1,
+            relief='flat'
+        )
+        style.configure(
+            "OverallWarn.Horizontal.TProgressbar",
+            troughcolor='#D0D0D0',
+            background='#d32f2f',
+            borderwidth=1,
+            relief='flat'
+        )
         style.configure('Content.TFrame', background="#f5f7fa")  # Set background for content area
 
     def _build_layout(self):
@@ -434,6 +725,7 @@ class MainWindow:
         nav_items = [
             ("By Department", self._show_department),
             ("Batch Scrape", self._show_batch_scrape),
+            ("Refresh Watch", self._show_refresh_watch),
             ("By Tender ID", self._show_id_search),
             ("By Direct URL", self._show_url_process),
             ("Settings", self._show_settings),
@@ -499,12 +791,12 @@ class MainWindow:
         self.content_frame.update_idletasks()
         global_panel_height = self.global_panel.winfo_reqheight() + 5
         # Calculate status bar height after it's created
-        # --- Enhanced Status Bar with Dual Progress Bars ---
-        status_frame = ttk.Frame(self.root, style='Status.TFrame', height=80)  # Increased height for dual bars
+        # --- Enhanced Status Bar with Global Process Indicators ---
+        status_frame = ttk.Frame(self.root, style='Status.TFrame', height=136)
         status_frame.pack(side=tk.BOTTOM, fill=tk.X)
         status_frame.pack_propagate(False)  # Prevent shrinking
 
-        # Department Progress (Top Row)
+        # Summary Row
         dept_row = ttk.Frame(status_frame, style='Status.TFrame')
         dept_row.pack(side=tk.TOP, fill=tk.X, pady=(3, 0))
 
@@ -515,26 +807,7 @@ class MainWindow:
             anchor='w'
         )
         self.statusbar_summary_label.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(10, 10))
-        
-        ttk.Label(dept_row, text="Depts:", style='Status.TLabel', width=6).pack(side=tk.LEFT, padx=(10, 2))
-        self.dept_progress_bar = ttk.Progressbar(dept_row, orient="horizontal", length=200, mode="determinate", style="Dept.Horizontal.TProgressbar")
-        self.dept_progress_bar.pack(side=tk.LEFT, padx=2)
-        self.dept_progress_label = ttk.Label(dept_row, text="0/0", style='Status.TLabel', width=12, anchor='w')
-        self.dept_progress_label.pack(side=tk.LEFT, padx=5)
-        
-        # Tender Progress (Bottom Row) 
-        tender_row = ttk.Frame(status_frame, style='Status.TFrame')
-        tender_row.pack(side=tk.TOP, fill=tk.X, pady=(2, 3))
-        
-        ttk.Label(tender_row, text="Tenders:", style='Status.TLabel', width=6).pack(side=tk.LEFT, padx=(10, 2))
-        self.progress_bar = ttk.Progressbar(tender_row, orient="horizontal", length=200, mode="determinate", style="Tender.Horizontal.TProgressbar")
-        self.progress_bar.pack(side=tk.LEFT, padx=2)
-        self.progress_details_label = ttk.Label(tender_row, text="0 / ~0", style='Status.TLabel', width=18, anchor='w')
-        self.progress_details_label.pack(side=tk.LEFT, padx=5)
-        self.est_rem_label = ttk.Label(tender_row, text="Est. Rem: --:--:--", style='Status.TLabel', width=16, anchor='w')
-        self.est_rem_label.pack(side=tk.LEFT, padx=3)
-        self.timer_label = ttk.Label(tender_row, text="Elapsed: 00:00:00", style='Status.TLabel', width=15, anchor='w')
-        self.timer_label.pack(side=tk.LEFT, padx=3)
+
         self.stop_button = ttk.Button(
             dept_row,
             text="EMERGENCY STOP",
@@ -543,7 +816,70 @@ class MainWindow:
             width=15
         )
         self.stop_button.pack(side=tk.RIGHT, padx=(2, 10), pady=2)
+
+        # Global Aggregate Row
+        aggregate_row = ttk.Frame(status_frame, style='Status.TFrame')
+        aggregate_row.pack(side=tk.TOP, fill=tk.X, pady=(2, 0))
+
+        ttk.Label(aggregate_row, text="Global:", style='Status.TLabel', width=6).pack(side=tk.LEFT, padx=(10, 2))
+        self.overall_progress_bar = ttk.Progressbar(
+            aggregate_row,
+            orient="horizontal",
+            length=260,
+            mode="determinate",
+            style="Overall.Horizontal.TProgressbar"
+        )
+        self.overall_progress_bar.pack(side=tk.LEFT, padx=2)
+        self.overall_progress_label = ttk.Label(aggregate_row, text="0%", style='Status.TLabel', width=6, anchor='w')
+        self.overall_progress_label.pack(side=tk.LEFT, padx=(5, 8))
+        self.global_kpi_label = ttk.Label(
+            aggregate_row,
+            text="Portals Active: 0   Tenders: 0/0   Departments: 0/0",
+            style='Status.TLabel',
+            anchor='w'
+        )
+        self.global_kpi_label.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
+        
+        # Detail Row (Departments + Tenders)
+        tender_row = ttk.Frame(status_frame, style='Status.TFrame')
+        tender_row.pack(side=tk.TOP, fill=tk.X, pady=(2, 3))
+
+        ttk.Label(tender_row, text="Depts:", style='Status.TLabel', width=6).pack(side=tk.LEFT, padx=(10, 2))
+        self.dept_progress_bar = ttk.Progressbar(tender_row, orient="horizontal", length=150, mode="determinate", style="Dept.Horizontal.TProgressbar")
+        self.dept_progress_bar.pack(side=tk.LEFT, padx=2)
+        self.dept_progress_label = ttk.Label(tender_row, text="0/0", style='Status.TLabel', width=12, anchor='w')
+        self.dept_progress_label.pack(side=tk.LEFT, padx=5)
+
+        ttk.Label(tender_row, text="Tenders:", style='Status.TLabel', width=7).pack(side=tk.LEFT, padx=(6, 2))
+        self.progress_bar = ttk.Progressbar(tender_row, orient="horizontal", length=180, mode="determinate", style="Tender.Horizontal.TProgressbar")
+        self.progress_bar.pack(side=tk.LEFT, padx=2)
+        self.progress_details_label = ttk.Label(tender_row, text="Scraped: 0   Total: 0   Pending: 0", style='Status.TLabel', width=40, anchor='w')
+        self.progress_details_label.pack(side=tk.LEFT, padx=5)
+
+        # Time + message rows
+        time_row = ttk.Frame(status_frame, style='Status.TFrame')
+        time_row.pack(side=tk.TOP, fill=tk.X, pady=(0, 2))
+
+        self.est_rem_label = ttk.Label(time_row, text="Est. Rem: --:--:--", style='Status.TLabel', width=16, anchor='w')
+        self.est_rem_label.pack(side=tk.LEFT, padx=(10, 8))
+        self.rate_label = ttk.Label(time_row, text="Rate: --/min", style='Status.TLabel', width=18, anchor='w')
+        self.rate_label.pack(side=tk.LEFT, padx=3)
+        self.timer_label = ttk.Label(time_row, text="Elapsed: 00:00:00", style='Status.TLabel', width=16, anchor='w')
+        self.timer_label.pack(side=tk.LEFT, padx=3)
+
+        message_row = ttk.Frame(status_frame, style='Status.TFrame')
+        message_row.pack(side=tk.TOP, fill=tk.X, pady=(0, 3))
+        self.status_message_label = ttk.Label(
+            message_row,
+            text="Messages: Ready",
+            style='Status.TLabel',
+            anchor='w'
+        )
+        self.status_message_label.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(10, 10))
+
         self._render_statusbar_summary()
+        self._queue_status_message("Ready")
+        self._rotate_status_message_line()
 
         self.content_frame.update_idletasks()
         status_bar_height = status_frame.winfo_reqheight()
@@ -568,6 +904,7 @@ class MainWindow:
         sections_to_create = {
             "By Department": DepartmentTab,
             "Batch Scrape": BatchScrapeTab,
+            "Refresh Watch": RefreshWatchTab,
             "By Tender ID": IdSearchTab,
             "By Direct URL": UrlProcessTab,
             "Settings": SettingsTab,
@@ -712,6 +1049,7 @@ class MainWindow:
 
     def _show_department(self): self._show_section("By Department")
     def _show_batch_scrape(self): self._show_section("Batch Scrape")
+    def _show_refresh_watch(self): self._show_section("Refresh Watch")
     def _show_id_search(self): self._show_section("By Tender ID")
     def _show_url_process(self): self._show_section("By Direct URL")
     def _show_settings(self): self._show_section("Settings")
@@ -1000,14 +1338,19 @@ class MainWindow:
             kwargs = {}
 
         # Set scraping in progress and disable controls before starting the task
+        self.stop_event.clear()
         self.scraping_in_progress = True
+        existing_total_portals = self._to_int(self.status_context.get("total_portals", 0), 0)
+        existing_active_portal = self.status_context.get("active_portal", "-")
+        existing_scope = self.status_context.get("scope", "-")
         self.set_status_context(
             run_type=task_name,
             mode="Sequential",
-            scope="-",
-            active_portal="-",
+            scope=existing_scope,
+            active_portal=existing_active_portal,
+            active_portals=1 if existing_total_portals > 0 else 0,
             completed_portals=0,
-            total_portals=0,
+            total_portals=existing_total_portals,
             state="Starting"
         )
         self.set_controls_state(tk.DISABLED)
@@ -1033,6 +1376,7 @@ class MainWindow:
                     'dl_more_details': self.dl_more_details_var.get(),
                     'dl_zip': self.dl_zip_var.get(),
                     'dl_notice_pdfs': self.dl_notice_pdfs_var.get(),
+                    **self._get_sqlite_runtime_settings(),
                     **kwargs
                 }
 
@@ -1130,8 +1474,22 @@ class MainWindow:
             mode="-",
             scope="-",
             active_portal="-",
+            active_portals=0,
             completed_portals=0,
             total_portals=0,
+            state="Ready"
+        )
+        self._last_progress_units = 0
+        self._last_progress_tick = None
+        self.update_global_progress(
+            active_portals=0,
+            completed_portals=0,
+            total_portals=0,
+            total_tenders=0,
+            scraped_tenders=0,
+            total_departments=0,
+            scraped_departments=0,
+            active_portal="-",
             state="Ready"
         )
         self.set_controls_state(tk.NORMAL)
@@ -1308,6 +1666,14 @@ class MainWindow:
         self.selected_theme_var.set(DEFAULT_SETTINGS_STRUCTURE["selected_theme"])
         self.use_undetected_driver_var.set(DEFAULT_SETTINGS_STRUCTURE["use_undetected_driver"])
         self.headless_mode_var.set(DEFAULT_SETTINGS_STRUCTURE["headless_mode"])
+        self.settings["refresh_watch_enabled"] = bool(DEFAULT_SETTINGS_STRUCTURE.get("refresh_watch_enabled", False))
+        self.settings["refresh_watch_loop_seconds"] = int(DEFAULT_SETTINGS_STRUCTURE.get("refresh_watch_loop_seconds", 30))
+        self.settings["refresh_watch_portals"] = list(DEFAULT_SETTINGS_STRUCTURE.get("refresh_watch_portals", []))
+        self.settings["refresh_watch_state"] = dict(DEFAULT_SETTINGS_STRUCTURE.get("refresh_watch_state", {}))
+        self.settings["refresh_watch_history"] = list(DEFAULT_SETTINGS_STRUCTURE.get("refresh_watch_history", []))
+        self.settings["central_sqlite_db_path"] = self._get_default_central_sqlite_path()
+        self.settings["sqlite_backup_directory"] = self._get_default_sqlite_backup_dir()
+        self.settings["sqlite_backup_retention_days"] = int(DEFAULT_SETTINGS_STRUCTURE.get("sqlite_backup_retention_days", 30))
         for key in CONFIGURABLE_TIMEOUTS:
             self.timeout_vars[key].set(str(DEFAULT_SETTINGS_STRUCTURE[key]))
         default_url_name = self.base_urls_data[0]["Name"] if self.base_urls_data else FALLBACK_URL_CONFIG["Name"]
@@ -1334,6 +1700,23 @@ class MainWindow:
                 return
 
         self.stop_event.set()
+        if self._status_message_job:
+            try:
+                self.root.after_cancel(self._status_message_job)
+            except Exception:
+                pass
+            self._status_message_job = None
+
+        # Stop refresh watcher if active
+        refresh_watch_frame = self.section_frames.get("Refresh Watch")
+        if refresh_watch_frame and refresh_watch_frame.winfo_children():
+            watch_tab = refresh_watch_frame.winfo_children()[0]
+            if hasattr(watch_tab, "shutdown"):
+                try:
+                    watch_tab.shutdown()
+                except Exception as watch_err:
+                    logger.warning(f"Failed to stop refresh watcher cleanly: {watch_err}")
+
         # Quit WebDriver if it exists
         if self.driver:
             try:
@@ -1384,7 +1767,35 @@ class MainWindow:
         if hasattr(self, 'dept_progress_label'):
             self.dept_progress_label.config(text="0/0")
         if hasattr(self, 'progress_details_label'):
-            self.progress_details_label.config(text="0 / ~0")
+            self.progress_details_label.config(text="Scraped: 0   Total: 0   Pending: 0")
+        if hasattr(self, 'overall_progress_bar'):
+            try:
+                self.overall_progress_bar.configure(style="Overall.Horizontal.TProgressbar")
+            except Exception:
+                pass
+            self.overall_progress_bar['value'] = 0
+        if hasattr(self, 'overall_progress_label'):
+            self.overall_progress_label.config(text="0%")
+        if hasattr(self, 'global_kpi_label'):
+            self.global_kpi_label.config(text="Portals Active: 0   Tenders S/T/P: 0/0/0   Departments S/T/P: 0/0/0")
+        if hasattr(self, 'est_rem_label'):
+            self.est_rem_label.config(text="Est. Rem: --:--:--")
+        if hasattr(self, 'rate_label'):
+            self.rate_label.config(text="Rate: --/min")
+        if hasattr(self, 'status_message_label'):
+            self._status_messages.clear()
+            self._status_message_index = 0
+            self._queue_status_message("Ready")
+        self.global_progress_data.update({
+            "active_portals": 0,
+            "total_tenders": 0,
+            "scraped_tenders": 0,
+            "total_departments": 0,
+            "scraped_departments": 0,
+            "overall_percent": 0,
+        })
+        self._last_progress_units = 0
+        self._last_progress_tick = None
         self.processed_count = 0
         self.total_count = 0
         self.start_time = None

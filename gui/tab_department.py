@@ -288,6 +288,43 @@ class DepartmentTab(ttk.Frame):
             url_config = self.main_app.get_current_url_config()
             download_dir = self.main_app.download_dir_var.get()
 
+            estimated_total_tenders = 0
+            for dept in selected_depts:
+                count_text = str(dept.get("count_text", "")).strip()
+                if count_text.isdigit():
+                    estimated_total_tenders += int(count_text)
+
+            self.main_app.total_estimated_tenders_for_run = max(0, int(estimated_total_tenders))
+            self.main_app.reset_progress_and_timer()
+            try:
+                self.main_app.set_status_context(
+                    run_type="Department Scrape",
+                    mode="Sequential",
+                    scope="All Departments" if scrape_mode == 1 else "Selected Departments",
+                    active_portal=url_config.get("Name", "-"),
+                    active_portals=1,
+                    completed_portals=0,
+                    total_portals=1,
+                    state="Starting",
+                )
+            except Exception:
+                pass
+
+            try:
+                self.main_app.update_global_progress(
+                    active_portals=1,
+                    completed_portals=0,
+                    total_portals=1,
+                    total_tenders=self.main_app.total_estimated_tenders_for_run,
+                    scraped_tenders=0,
+                    total_departments=len(selected_depts),
+                    scraped_departments=0,
+                    active_portal=url_config.get("Name", "-"),
+                    state="Starting",
+                )
+            except Exception:
+                pass
+
             # Validate download directory before starting
             if not self.main_app.validate_download_dir(download_dir):
                 return

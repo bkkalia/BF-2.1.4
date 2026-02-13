@@ -3,6 +3,7 @@
 
 import tkinter as tk
 from tkinter import messagebox, scrolledtext, filedialog
+from tkinter import font as tkFont
 import datetime
 import logging
 import threading
@@ -10,6 +11,7 @@ import time
 import webbrowser
 import os
 import sys # For platform checks
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -42,12 +44,135 @@ def _append_log_message(log_text_widget, formatted_message):
         if log_text_widget.winfo_exists():
             current_state = log_text_widget['state']
             log_text_widget.config(state=tk.NORMAL)
-            log_text_widget.insert(tk.END, formatted_message + "\n")
+            _insert_styled_log_line(log_text_widget, formatted_message)
             log_text_widget.see(tk.END)
             log_text_widget.config(state=current_state)
     except Exception as e:
         if log_text_widget.winfo_exists():
              logger.warning(f"Error appending log message: {e}")
+
+def _ensure_log_style_tags(log_text_widget):
+    if getattr(log_text_widget, "_bf_log_tags_ready", False):
+        return
+
+    base_font_name = log_text_widget.cget("font")
+    try:
+        base_font = tkFont.nametofont(base_font_name)
+        portal_font = tkFont.Font(
+            family=base_font.actual("family"),
+            size=base_font.actual("size"),
+            weight="bold"
+        )
+        level_font = tkFont.Font(
+            family=base_font.actual("family"),
+            size=base_font.actual("size"),
+            weight="bold"
+        )
+    except Exception:
+        portal_font = ("Consolas", 10, "bold")
+        level_font = ("Consolas", 10, "bold")
+
+    log_text_widget._bf_portal_font = portal_font
+    log_text_widget._bf_level_font = level_font
+
+    log_text_widget.tag_configure("portal_name", foreground="#4169E1", font=portal_font)
+    log_text_widget.tag_configure("department_name", foreground="#C2185B", font=portal_font)
+    log_text_widget.tag_configure("level_critical", foreground="#8E24AA", font=level_font)
+    log_text_widget.tag_configure("level_error", foreground="#C62828", font=level_font)
+    log_text_widget.tag_configure("level_warning", foreground="#EF6C00", font=level_font)
+    log_text_widget.tag_configure("level_info", foreground="#2E7D32", font=level_font)
+    log_text_widget.tag_configure("level_debug", foreground="#546E7A", font=level_font)
+    log_text_widget.tag_configure("number_token", foreground="#8B0000", font=level_font)
+
+    log_text_widget.tag_configure("icon_success", foreground="#2E7D32")
+    log_text_widget.tag_configure("icon_warn", foreground="#EF6C00")
+    log_text_widget.tag_configure("icon_error", foreground="#C62828")
+    log_text_widget.tag_configure("icon_info", foreground="#1565C0")
+
+    log_text_widget._bf_log_tags_ready = True
+
+def _apply_tag_by_span(log_text_widget, line_start_index, match_obj, tag_name, group_index=0):
+    try:
+        start_pos = match_obj.start(group_index)
+        end_pos = match_obj.end(group_index)
+        if end_pos <= start_pos:
+            return
+        log_text_widget.tag_add(
+            tag_name,
+            f"{line_start_index}+{start_pos}c",
+            f"{line_start_index}+{end_pos}c"
+        )
+    except Exception:
+        return
+
+def _insert_styled_log_line(log_text_widget, formatted_message):
+    _ensure_log_style_tags(log_text_widget)
+
+    text = str(formatted_message)
+    line_start = log_text_widget.index(tk.END + "-1c")
+    log_text_widget.insert(tk.END, text + "\n")
+
+    main_portal = re.search(r"^\[[^\]]+\]\[[^\]]+\]\s(\[[^\]]+\])", text)
+    if main_portal:
+        _apply_tag_by_span(log_text_widget, line_start, main_portal, "portal_name", group_index=1)
+    else:
+        batch_portal = re.search(r"^\[[^\]]+\](\[[^\]]+\])", text)
+        if batch_portal:
+            _apply_tag_by_span(log_text_widget, line_start, batch_portal, "portal_name", group_index=1)
+
+    for level_match in re.finditer(r"\b(CRITICAL|ERROR|WARNING|INFO|DEBUG)\b", text, flags=re.IGNORECASE):
+        level_token = level_match.group(1).upper()
+        tag_name = {
+            "CRITICAL": "level_critical",
+            "ERROR": "level_error",
+            "WARNING": "level_warning",
+            "INFO": "level_info",
+            "DEBUG": "level_debug"
+        }.get(level_token)
+        if tag_name:
+            _apply_tag_by_span(log_text_widget, line_start, level_match, tag_name)
+
+    department_patterns = [
+        r"processing department\s+\d+\s*/\s*\d+\s*:\s*(.+)",
+        r"processing department\s+(.+?)\.\.\.",
+        r"found\s+\d+\s+tenders?\s+in department\s+(.+)",
+        r"no tenders found/extracted from department\s+(.+)",
+        r"resume:\s+skipping already-processed department:\s+(.+)",
+    ]
+    for pattern in department_patterns:
+        for dept_match in re.finditer(pattern, text, flags=re.IGNORECASE):
+            _apply_tag_by_span(log_text_widget, line_start, dept_match, "department_name", group_index=1)
+
+    icon_tag_map = {
+        "✅": "icon_success",
+        "✓": "icon_success",
+        "❌": "icon_error",
+        "⚠": "icon_warn",
+        "🚀": "icon_info",
+        "🎯": "icon_info",
+        "ℹ": "icon_info",
+    }
+    for icon, tag_name in icon_tag_map.items():
+        for icon_match in re.finditer(re.escape(icon), text):
+            _apply_tag_by_span(log_text_widget, line_start, icon_match, tag_name)
+
+    for number_match in re.finditer(r"\d+(?:[\.,:/-]\d+)*", text):
+        _apply_tag_by_span(log_text_widget, line_start, number_match, "number_token")
+
+def append_styled_log_line(log_text_widget, formatted_message):
+    if not (log_text_widget and log_text_widget.winfo_exists()):
+        return
+    try:
+        current_state = log_text_widget['state']
+        if current_state != tk.NORMAL:
+            log_text_widget.config(state=tk.NORMAL)
+        _insert_styled_log_line(log_text_widget, formatted_message)
+        log_text_widget.see(tk.END)
+        if current_state != tk.NORMAL:
+            log_text_widget.config(state=current_state)
+    except Exception as e:
+        if log_text_widget.winfo_exists():
+            logger.warning(f"Error appending styled log line: {e}")
 
 def clear_log(log_text_widget, log_callback):
     """Clears the log ScrolledText widget."""

@@ -214,8 +214,20 @@ def fetch_department_list_from_site(target_url, log_callback):
                     continue
                     
                 if not s_no and not dept_name: continue
-                dept_info = {'s_no': s_no, 'name': dept_name, 'count_text': count_text, 'has_link': False, 'processed': False, 'tenders_found': 0}
+                dept_info = {'s_no': s_no, 'name': dept_name, 'count_text': count_text, 'has_link': False, 'processed': False, 'tenders_found': 0, 'direct_url': ''}
                 has_link = False
+                direct_url = ''
+                try:
+                    link_candidates = count_cell.find_elements(By.TAG_NAME, "a")
+                    if link_candidates:
+                        direct_url = str(link_candidates[0].get_attribute('href') or '').strip()
+                except Exception:
+                    direct_url = ''
+
+                if direct_url:
+                    has_link = True
+                    dept_info['direct_url'] = direct_url
+
                 if count_text.isdigit():
                     tender_count_int = int(count_text)
                     if tender_count_int > 0:
@@ -295,6 +307,70 @@ def _click_department_link(driver, target_row, s_no, name, log_callback):
     except StaleElementReferenceException:
         log_callback(f"    WARN: Link cell/element stale S.No '{s_no}'. Retrying.")
         return False
+
+
+def _navigate_department_direct_url(driver, dept_info, log_callback):
+    """Navigate directly to department tenders page using captured direct URL."""
+    direct_url_raw = str(dept_info.get('direct_url', '')).strip()
+    if not direct_url_raw:
+        return False
+
+    try:
+        current_url = driver.current_url
+    except Exception as session_err:
+        log_callback(f"    Direct URL skipped (session invalid): {session_err}")
+        return False
+
+    target_url = urljoin(current_url, direct_url_raw)
+    log_callback(f"    Direct URL attempt: {target_url}")
+
+    try:
+        driver.get(target_url)
+        time.sleep(STABILIZE_WAIT)
+
+        try:
+            WebDriverWait(driver, ELEMENT_WAIT_TIMEOUT).until(
+                EC.presence_of_element_located(BACK_BUTTON_FROM_DEPT_LIST_LOCATOR)
+            )
+            log_callback("    ✓ Direct URL opened department page")
+            return True
+        except TimeoutException:
+            WebDriverWait(driver, ELEMENT_WAIT_TIMEOUT / 2).until(
+                EC.presence_of_element_located(DETAILS_TABLE_LOCATOR)
+            )
+
+            landed_url = driver.current_url
+            if TENDERS_BY_ORG_URL_PATTERN in landed_url and "DirectLink" not in landed_url:
+                log_callback(f"    ✗ Direct URL returned to organization page: {landed_url}")
+                return False
+
+            log_callback("    ✓ Direct URL appears valid (details table detected)")
+            return True
+    except Exception as direct_err:
+        log_callback(f"    ✗ Direct URL navigation failed: {direct_err}")
+        return False
+
+
+def _open_department_page(driver, dept_info, log_callback):
+    """Open department page using direct URL first, then row-click fallback."""
+    has_direct = bool(str(dept_info.get('direct_url', '')).strip())
+    if has_direct and _navigate_department_direct_url(driver, dept_info, log_callback):
+        return True, "direct"
+
+    if has_direct:
+        try:
+            current_url = driver.current_url
+            if TENDERS_BY_ORG_URL_PATTERN not in current_url:
+                log_callback("    Direct URL fallback: restoring organization list before click flow")
+                navigate_to_org_list(driver, log_callback)
+                time.sleep(STABILIZE_WAIT)
+        except Exception:
+            pass
+
+    if _find_and_click_dept_link(driver, dept_info, log_callback):
+        return True, "click"
+
+    return False, "failed"
 
 def _find_and_click_dept_link(driver, dept_info, log_callback):
     """Finds and clicks the specific department link by S.No with retries."""
@@ -699,23 +775,41 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
     expected_total_tenders = 0
     department_summaries = []
     processed_department_names = set()
+    direct_nav_attempted = 0
+    direct_nav_success = 0
+    direct_nav_fallback_click = 0
+    click_only_success = 0
     portal_name = str(base_url_config.get('Name', 'Unknown')).strip() or "Unknown"
     scope_mode = "only_new" if existing_tender_ids or existing_department_names else "all"
 
     sqlite_db_path = kwargs.get("sqlite_db_path") or os.path.join(download_dir, "blackforest_tenders.sqlite3")
+    sqlite_backup_dir = kwargs.get("sqlite_backup_dir")
+    sqlite_backup_retention_days = kwargs.get("sqlite_backup_retention_days", 30)
     data_store = None
     sqlite_run_id = None
 
     try:
         data_store = TenderDataStore(sqlite_db_path)
+        try:
+            backup_path = data_store.backup_if_due(
+                backup_dir=sqlite_backup_dir,
+                retention_days=int(sqlite_backup_retention_days or 30)
+            )
+            if backup_path:
+                log_callback(f"[PERSIST] SQLite backup created: {backup_path}")
+        except Exception as backup_err:
+            log_callback(f"[PERSIST][WARN] SQLite backup skipped: {backup_err}")
         sqlite_run_id = data_store.start_run(
             portal_name=portal_name,
             base_url=base_url_config.get('BaseURL', ''),
             scope_mode=scope_mode
         )
-        log_callback(f"SQLite datastore active: {sqlite_db_path} (run_id={sqlite_run_id})")
+        log_callback("[PERSIST] SQLite datastore active")
+        log_callback(f"[PERSIST] SQLite DB path: {sqlite_db_path}")
+        log_callback(f"[PERSIST] SQLite run id: {sqlite_run_id}")
     except Exception as ds_err:
         log_callback(f"WARNING: SQLite datastore unavailable ({ds_err}). Falling back to direct file export.")
+        log_callback(f"[PERSIST] SQLite DB path (unavailable): {sqlite_db_path}")
         data_store = None
         sqlite_run_id = None
 
@@ -774,7 +868,8 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
             if data_store is not None and sqlite_run_id is not None:
                 try:
                     saved_rows = data_store.replace_run_tenders(sqlite_run_id, prepared_rows)
-                    log_callback(f"SQLite updated for run {sqlite_run_id}: {saved_rows} row(s)")
+                    log_callback(f"[PERSIST] SQLite save: SUCCESS | run_id={sqlite_run_id} | rows={saved_rows}")
+                    log_callback(f"[PERSIST] SQLite DB path: {sqlite_db_path}")
                     exported_path, exported_type = data_store.export_run(
                         run_id=sqlite_run_id,
                         output_dir=target_dir,
@@ -783,11 +878,12 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
                     )
                     if exported_path:
                         label = "PARTIAL" if mark_partial else "FINAL"
-                        log_callback(f"\\n[{label}] Exported {len(prepared_rows)} tenders from SQLite view to: {os.path.basename(exported_path)}")
-                        log_callback(f"[{label}] Full path: {exported_path}")
+                        log_callback(f"\n[{label}] File export: SUCCESS | format={str(exported_type or '').upper()}")
+                        log_callback(f"[{label}] Export path: {exported_path}")
                         return exported_path, exported_type
                 except Exception as sqlite_export_err:
                     log_callback(f"WARNING: SQLite export failed, using direct file export: {sqlite_export_err}")
+                    log_callback(f"[PERSIST] SQLite save may exist, but file export from SQLite failed. DB path: {sqlite_db_path}")
 
             df = pd.DataFrame(prepared_rows)
             if DEPARTMENT_NAME_KEY in df.columns:
@@ -796,8 +892,8 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
             try:
                 df.to_excel(excel_path, index=False, engine='openpyxl')
                 label = "PARTIAL" if mark_partial else "FINAL"
-                log_callback(f"\\n[{label}] Saved {len(data_to_save)} tender details to: {os.path.basename(excel_path)}")
-                log_callback(f"[{label}] Full path: {excel_path}")
+                log_callback(f"\n[{label}] File export: SUCCESS | format=EXCEL")
+                log_callback(f"[{label}] Export path: {excel_path}")
                 return excel_path, "excel"
             except PermissionError:
                 timestamp_ms = datetime.now().strftime("%Y%m%d_%H%M%S_%f")[:-3]
@@ -809,8 +905,8 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
                 log_callback(f"File locked or permission denied. Trying alternate name: {excel_filename_alt}")
                 df.to_excel(excel_path_alt, index=False, engine='openpyxl')
                 label = "PARTIAL" if mark_partial else "FINAL"
-                log_callback(f"\\n[{label}] Saved {len(data_to_save)} tender details to: {os.path.basename(excel_path_alt)}")
-                log_callback(f"[{label}] Full path: {excel_path_alt}")
+                log_callback(f"\n[{label}] File export: SUCCESS | format=EXCEL")
+                log_callback(f"[{label}] Export path: {excel_path_alt}")
                 return excel_path_alt, "excel"
             except Exception as save_err:
                 log_callback(f"ERROR saving Excel file: {save_err}")
@@ -819,13 +915,29 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
                 log_callback(f"Attempting to save as CSV instead: {csv_filename}")
                 df.to_csv(csv_path, index=False, encoding='utf-8-sig')
                 label = "PARTIAL" if mark_partial else "FINAL"
-                log_callback(f"\\n[{label}] Saved {len(data_to_save)} tender details to CSV: {os.path.basename(csv_path)}")
-                log_callback(f"[{label}] Full path: {csv_path}")
+                log_callback(f"\n[{label}] File export: SUCCESS | format=CSV")
+                log_callback(f"[{label}] Export path: {csv_path}")
                 return csv_path, "csv"
         except Exception as save_outer_err:
             log_callback(f"CRITICAL ERROR in snapshot save: {save_outer_err}")
             logger.error(f"Snapshot save error: {save_outer_err}", exc_info=True)
             return None, None
+
+    def _log_persistence_summary(file_path, file_type, sqlite_saved=False, sqlite_note=None):
+        log_callback("[PERSIST] ---------- Persistence Summary ----------")
+        if sqlite_saved and sqlite_run_id is not None:
+            note = f" | {sqlite_note}" if sqlite_note else ""
+            log_callback(f"[PERSIST] SQLite: SAVED | run_id={sqlite_run_id} | path={sqlite_db_path}{note}")
+        else:
+            note = f" | {sqlite_note}" if sqlite_note else ""
+            log_callback(f"[PERSIST] SQLite: NOT SAVED | path={sqlite_db_path}{note}")
+
+        if file_path:
+            export_fmt = str(file_type or "unknown").upper()
+            log_callback(f"[PERSIST] File: SAVED | format={export_fmt} | path={file_path}")
+        else:
+            log_callback("[PERSIST] File: NOT GENERATED")
+        log_callback("[PERSIST] -----------------------------------------")
 
     saved_output_path = None
     saved_output_type = None
@@ -911,9 +1023,22 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
                 log_callback(f"Driver session lost before dept {dept_name}: {session_err}")
                 break  # Stop processing if session is lost
             
-            # Click department link and get tender data
-            if not _find_and_click_dept_link(driver, dept_info, log_callback):
+            # Open department page (direct URL first, click fallback)
+            has_direct_url = bool(str(dept_info.get('direct_url', '')).strip())
+            if has_direct_url:
+                direct_nav_attempted += 1
+
+            opened_dept, nav_mode = _open_department_page(driver, dept_info, log_callback)
+            if not opened_dept:
                 continue
+
+            if nav_mode == "direct":
+                direct_nav_success += 1
+            elif nav_mode == "click":
+                if has_direct_url:
+                    direct_nav_fallback_click += 1
+                else:
+                    click_only_success += 1
                  
             time.sleep(STABILIZE_WAIT * 2)
             
@@ -1020,6 +1145,11 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
         if skipped_resume_departments > 0:
             log_callback(f"Resume skipped departments: {skipped_resume_departments}")
         log_callback(f"Total tenders found: {total_tenders}")
+        log_callback(
+            f"Department navigation summary: "
+            f"direct_success={direct_nav_success}/{direct_nav_attempted}, "
+            f"fallback_click={direct_nav_fallback_click}, click_only={click_only_success}"
+        )
         if expected_total_tenders > 0:
             log_callback(f"Verification: expected approx {expected_total_tenders}, extracted {total_tenders}")
             if total_tenders < expected_total_tenders:
@@ -1048,8 +1178,17 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
                     output_file_path=saved_output_path,
                     output_file_type=saved_output_type
                 )
+                log_callback(f"[PERSIST] SQLite finalize: SUCCESS | run_id={sqlite_run_id}")
+                log_callback(f"[PERSIST] SQLite DB path: {sqlite_db_path}")
             except Exception as finalize_err:
                 log_callback(f"WARNING: Failed to finalize SQLite run metadata: {finalize_err}")
+
+        _log_persistence_summary(
+            file_path=saved_output_path,
+            file_type=saved_output_type,
+            sqlite_saved=(data_store is not None and sqlite_run_id is not None),
+            sqlite_note=status_msg,
+        )
 
         return {
             "status": status_msg,
@@ -1059,6 +1198,10 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
             "skipped_existing_total": skipped_existing_total,
             "skipped_resume_departments": skipped_resume_departments,
             "department_summaries": department_summaries,
+            "direct_nav_attempted": direct_nav_attempted,
+            "direct_nav_success": direct_nav_success,
+            "direct_nav_fallback_click": direct_nav_fallback_click,
+            "click_only_success": click_only_success,
             "extracted_tender_ids": extracted_tender_ids,
             "processed_department_names": sorted(processed_department_names),
             "output_file_path": saved_output_path,
@@ -1110,8 +1253,17 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
                     output_file_path=saved_output_path,
                     output_file_type=saved_output_type
                 )
+                log_callback(f"[PERSIST] SQLite finalize: SUCCESS | run_id={sqlite_run_id}")
+                log_callback(f"[PERSIST] SQLite DB path: {sqlite_db_path}")
             except Exception as finalize_err:
                 log_callback(f"WARNING: Failed to finalize SQLite run metadata: {finalize_err}")
+
+        _log_persistence_summary(
+            file_path=saved_output_path,
+            file_type=saved_output_type,
+            sqlite_saved=(data_store is not None and sqlite_run_id is not None),
+            sqlite_note="Error during scraping",
+        )
 
         return {
             "status": "Error during scraping",
@@ -1121,6 +1273,10 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
             "skipped_existing_total": skipped_existing_total,
             "skipped_resume_departments": skipped_resume_departments,
             "department_summaries": department_summaries,
+            "direct_nav_attempted": direct_nav_attempted,
+            "direct_nav_success": direct_nav_success,
+            "direct_nav_fallback_click": direct_nav_fallback_click,
+            "click_only_success": click_only_success,
             "extracted_tender_ids": extracted_tender_ids,
             "processed_department_names": sorted(processed_department_names),
             "output_file_path": saved_output_path,
@@ -1142,9 +1298,10 @@ def process_department(dept_info, base_url_config, download_dir, driver,
             log_callback(f"Skipping department {dept_info['name']}: already processed or no link")
             return None
 
-        # Click department link
-        if not _find_and_click_dept_link(driver, dept_info, log_callback):
-            log_callback(f"Failed to click link for department: {dept_info['name']}")
+        # Open department page (direct URL first, click fallback)
+        opened_dept, _nav_mode = _open_department_page(driver, dept_info, log_callback)
+        if not opened_dept:
+            log_callback(f"Failed to open department page: {dept_info['name']}")
             return None
 
         log_callback(f"Processing department {dept_info['name']}...")
@@ -1948,8 +2105,20 @@ def fetch_department_list_from_site_v2(target_url, log_callback=None):
                     continue
                     
                 if not s_no and not dept_name: continue
-                dept_info = {'s_no': s_no, 'name': dept_name, 'count_text': count_text, 'has_link': False, 'processed': False, 'tenders_found': 0}
+                dept_info = {'s_no': s_no, 'name': dept_name, 'count_text': count_text, 'has_link': False, 'processed': False, 'tenders_found': 0, 'direct_url': ''}
                 has_link = False
+                direct_url = ''
+                try:
+                    link_candidates = count_cell.find_elements(By.TAG_NAME, "a")
+                    if link_candidates:
+                        direct_url = str(link_candidates[0].get_attribute('href') or '').strip()
+                except Exception:
+                    direct_url = ''
+
+                if direct_url:
+                    has_link = True
+                    dept_info['direct_url'] = direct_url
+
                 if count_text.isdigit():
                     tender_count_int = int(count_text)
                     if tender_count_int > 0:
