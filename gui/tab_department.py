@@ -1,4 +1,4 @@
-# gui/tab_department.py v2.1.4
+# gui/tab_department.py v2.2.1
 # Widgets and logic for the "Scrape by Department" tab
 
 import tkinter as tk

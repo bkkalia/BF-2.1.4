@@ -1,4 +1,4 @@
-# gui/tab_url_process.py v2.1.4
+# gui/tab_url_process.py v2.2.1
 # Widgets and logic for the "Process by Direct URL" tab
 
 import tkinter as tk

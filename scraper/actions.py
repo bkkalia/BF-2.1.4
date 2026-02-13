@@ -1,4 +1,4 @@
-# scraper/actions.py v2.1.4
+# scraper/actions.py v2.2.1
 # Low-level Selenium actions and file operations
 
 import time

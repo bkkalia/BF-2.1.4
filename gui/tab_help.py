@@ -131,7 +131,7 @@ class HelpTab(ttk.Frame):
 
     def _get_developer_help_content(self):
         return """
-Black Forest Tender Scraper - Developer Documentation (v2.1.10)
+Black Forest Tender Scraper - Developer Documentation (v2.2.1)
 ===============================================================
 
 1. Core Architecture

@@ -117,7 +117,7 @@ if not defined ISCC_CMD (
     exit /b 1
 )
 echo.
-echo Rebuilding installer with version 2.1.4...
+echo Rebuilding installer with version 2.2.1...
 echo.
 "%ISCC_CMD%" setup.iss
 
@@ -128,7 +128,7 @@ if %ERRORLEVEL% EQU 0 (
     echo ============================================
     echo.
     echo New installer created:
-    echo installer_output\BlackForest_Tender_Scraper_2.1.4_Setup.exe
+    echo installer_output\BlackForest_Tender_Scraper_2.2.1_Setup.exe
     echo.
 ) else (
     echo.

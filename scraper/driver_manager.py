@@ -1,4 +1,4 @@
-# scraper/driver_manager.py v2.1.4
+# scraper/driver_manager.py v2.2.1
 # Manages Selenium WebDriver setup and configuration
 
 import os

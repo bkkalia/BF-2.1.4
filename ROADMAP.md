@@ -1,7 +1,7 @@
 # Black Forest Tender Scraper - Roadmap
 
 ## Baseline (Current)
-- Version: **2.1.10**
+- Version: **2.2.1**
 - SQLite-first persistence active
 - Tiered backup policy active (daily/weekly/monthly/yearly)
 - Tender integrity rules active (latest per portal+tender ID, missing IDs removed)

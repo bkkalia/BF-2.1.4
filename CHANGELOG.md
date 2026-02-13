@@ -9,6 +9,15 @@ Run the helper tool (from project root) to infer and update version dates:
 The tool makes a backup of CHANGELOG.md (CHANGELOG.md.bak.TIMESTAMP) before editing.
 -->
 
+## Version 2.2.1 (February 13, 2026)
+
+### 🔖 Release
+- Version bump to **2.2.1** across runtime config, installer metadata, and Windows file/product version info.
+
+### 🧵 Parallel Department Safety
+- Added department task de-duplication before worker queueing.
+- Added ambiguous direct-link guard to avoid multiple workers scraping the same department.
+
 ## Version 2.1.10 (February 13, 2026)
 
 ### ⚡ Delta Strategy Optimization

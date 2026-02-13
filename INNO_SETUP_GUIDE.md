@@ -39,7 +39,7 @@ dir dist\
 
 4. **Find the Output**
    - The installer will be created in `installer_output\` directory
-   - Filename: `BlackForest_Tender_Scraper_2.1.4_Setup.exe`
+  - Filename: `BlackForest_Tender_Scraper_2.2.1_Setup.exe`
 
 ### Method 2: Command Line Compilation
 
@@ -161,7 +161,7 @@ end;
 ### 1. Test Installation
 ```bash
 # Run the installer
-BlackForest_Tender_Scraper_2.1.4_Setup.exe
+BlackForest_Tender_Scraper_2.2.1_Setup.exe
 
 # Follow installation wizard
 # Choose installation options
@@ -211,7 +211,7 @@ BlackForest.exe department --all --dry-run
 3. **Package for distribution:**
    ```
    installer_output/
-   ├── BlackForest_Tender_Scraper_2.1.4_Setup.exe  # Main installer
+  ├── BlackForest_Tender_Scraper_2.2.1_Setup.exe  # Main installer
    ├── CLI_HELP.md                                 # CLI documentation
    ├── GUI_HELP.md                                 # GUI documentation
    └── README.md                                   # Installation guide
@@ -236,7 +236,7 @@ BlackForest.exe department --all --dry-run
 #### ✅ File Structure:
 ```
 Your_Distribution_Package/
-├── BlackForest_Tender_Scraper_2.1.4_Setup.exe
+├── BlackForest_Tender_Scraper_2.2.1_Setup.exe
 ├── CLI_HELP.md
 ├── GUI_HELP.md
 ├── README.md

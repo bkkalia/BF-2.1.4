@@ -1,4 +1,4 @@
-# Cloud84 Black Forest Project v2.1.10
+# Cloud84 Black Forest Project v2.2.1
 
 ## Project Overview
 Black Forest is a Python desktop application for scraping and managing government tender listings across multiple portals.
@@ -17,7 +17,7 @@ It focuses on:
 - Datastore: SQLite (primary source of truth)
 - Packaging: PyInstaller + Inno Setup
 
-## Current Architecture (v2.1.10)
+## Current Architecture (v2.2.1)
 - `main.py`: app startup, dependency checks, lifecycle handling.
 - `gui/main_window.py`: top-level shell, tabs, status/progress orchestration.
 - `gui/tab_department.py`: department-based scraping.
@@ -63,7 +63,7 @@ Retention:
 - Department URL coverage tracking and report export (auto + manual).
 
 ## Current Status
-- Version: 2.1.10
+- Version: 2.2.1
 - Branch: `main`
 - Central datastore and backup system are active.
 - Documentation and website are aligned with latest release.

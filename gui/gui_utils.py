@@ -1,4 +1,4 @@
-# gui/gui_utils.py v2.1.4
+# gui/gui_utils.py v2.2.1
 # Utility functions specifically for the GUI components
 
 import tkinter as tk

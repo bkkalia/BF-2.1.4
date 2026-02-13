@@ -2,7 +2,7 @@
 ; This is a minimal version to test compilation
 
 #define MyAppName "Black Forest Tender Scraper"
-#define MyAppVersion "2.1.4"
+#define MyAppVersion "2.2.1"
 #define MyAppExeName "BlackForest.exe"
 
 [Setup]

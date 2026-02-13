@@ -72,6 +72,10 @@ class MainWindow:
             self.timer_id = None
             self.total_estimated_tenders_for_run = 0
             self._all_log_messages = []
+            self._max_log_history = 20000
+            self._max_log_widget_lines = 2000
+            self._pending_log_messages = deque()
+            self._log_flush_job = None
             self.log_filter_var = StringVar(value="All")
             self.logs_portal_rows = {}
             self.status_context = {
@@ -579,17 +583,53 @@ class MainWindow:
             thread_name = threading.current_thread().name
             formatted_message = f"[{timestamp}][{thread_name}] {message}"
             self._all_log_messages.append(formatted_message)
+            if len(self._all_log_messages) > self._max_log_history:
+                self._all_log_messages = self._all_log_messages[-self._max_log_history:]
 
             lowered = message.lower()
             if "watch" in lowered or "refresh" in lowered or "department" in lowered:
                 self._queue_status_message(message)
 
             if hasattr(self, 'log_text') and self.log_text and self.log_text.winfo_exists() and self._passes_log_filter(formatted_message):
-                self.log_text.after(0, gui_utils._append_log_message, self.log_text, formatted_message)
+                self._pending_log_messages.append(formatted_message)
+                if self._log_flush_job is None:
+                    self._log_flush_job = self.log_text.after(120, self._flush_log_buffer)
 
             logger.debug(f"Log updated: {message[:100]}")
         except Exception as e:
             logger.error(f"Error updating log: {e}")
+
+    def _flush_log_buffer(self):
+        self._log_flush_job = None
+        if not hasattr(self, 'log_text') or not self.log_text or not self.log_text.winfo_exists():
+            self._pending_log_messages.clear()
+            return
+        if not self._pending_log_messages:
+            return
+
+        try:
+            batch = []
+            while self._pending_log_messages and len(batch) < 300:
+                batch.append(self._pending_log_messages.popleft())
+
+            self.log_text.config(state=tk.NORMAL)
+            self.log_text.insert(tk.END, "\n".join(batch) + "\n")
+
+            try:
+                line_count = int(self.log_text.index('end-1c').split('.')[0])
+            except Exception:
+                line_count = 0
+            overflow = line_count - int(self._max_log_widget_lines)
+            if overflow > 0:
+                self.log_text.delete('1.0', f'{overflow + 1}.0')
+
+            self.log_text.see(tk.END)
+            self.log_text.config(state=tk.DISABLED)
+        except Exception as e:
+            logger.error(f"Error flushing log buffer: {e}")
+
+        if self._pending_log_messages and self.log_text.winfo_exists():
+            self._log_flush_job = self.log_text.after(120, self._flush_log_buffer)
 
     def _passes_log_filter(self, formatted_message):
         """Check whether a log message matches the selected log level filter."""
@@ -622,9 +662,11 @@ class MainWindow:
             self.log_text.config(state=tk.NORMAL)
             self.log_text.delete('1.0', tk.END)
 
-            for msg in self._all_log_messages:
-                if self._passes_log_filter(msg):
-                    gui_utils.append_styled_log_line(self.log_text, msg)
+            filtered = [msg for msg in self._all_log_messages if self._passes_log_filter(msg)]
+            if len(filtered) > self._max_log_widget_lines:
+                filtered = filtered[-self._max_log_widget_lines:]
+            if filtered:
+                self.log_text.insert(tk.END, "\n".join(filtered) + "\n")
 
             self.log_text.see(tk.END)
             self.log_text.config(state=tk.DISABLED)
@@ -826,9 +868,9 @@ class MainWindow:
 
         self.sidebar_buttons = {}
         nav_items = [
+            ("Dashboard", self._show_dashboard),
             ("By Department", self._show_department),
             ("Batch Scrape", self._show_batch_scrape),
-            ("Refresh Watch", self._show_refresh_watch),
             ("By Tender ID", self._show_id_search),
             ("By Direct URL", self._show_url_process),
             ("Settings", self._show_settings),
@@ -1016,6 +1058,8 @@ class MainWindow:
                 height=f"-{global_panel_height + status_bar_height}"
             )
 
+        self._show_dashboard()
+
     def get_or_create_global_search_var(self):
         """Ensure a global search_var exists for department filtering."""
         if not hasattr(self, 'global_search_var'):
@@ -1026,9 +1070,9 @@ class MainWindow:
         """Create and place the frames for each navigable section."""
         logger.debug("Initializing section frames...")
         sections_to_create = {
+            "Dashboard": RefreshWatchTab,
             "By Department": DepartmentTab,
             "Batch Scrape": BatchScrapeTab,
-            "Refresh Watch": RefreshWatchTab,
             "By Tender ID": IdSearchTab,
             "By Direct URL": UrlProcessTab,
             "Settings": SettingsTab,
@@ -1172,8 +1216,9 @@ class MainWindow:
                 del self._filter_trace_id
 
     def _show_department(self): self._show_section("By Department")
+    def _show_dashboard(self): self._show_section("Dashboard")
     def _show_batch_scrape(self): self._show_section("Batch Scrape")
-    def _show_refresh_watch(self): self._show_section("Refresh Watch")
+    def _show_refresh_watch(self): self._show_section("Dashboard")
     def _show_id_search(self): self._show_section("By Tender ID")
     def _show_url_process(self): self._show_section("By Direct URL")
     def _show_settings(self): self._show_section("Settings")
@@ -1315,6 +1360,7 @@ class MainWindow:
     def _clear_log(self):
         """Clear the log text widget."""
         self._all_log_messages = []
+        self._pending_log_messages.clear()
         gui_utils.clear_log(self.log_text, None)
 
     def get_available_themes(self):
@@ -1488,6 +1534,7 @@ class MainWindow:
             try:
                 # Create WebDriver instance for this task
                 driver = setup_driver(initial_download_dir=self.download_dir_var.get())
+                self.driver = driver
 
                 # Start timer for task
                 self.root.after(0, self.start_timer_updates)
@@ -1517,6 +1564,8 @@ class MainWindow:
             finally:
                 if driver:
                     safe_quit_driver(driver, self.update_log)
+                if self.driver is driver:
+                    self.driver = None
                 self.scraping_in_progress = False
                 self.root.after(0, self.stop_timer_updates)
                 self.root.after(0, lambda: self.set_controls_state(tk.NORMAL))
@@ -1657,17 +1706,36 @@ class MainWindow:
                 # Note: In Python, we can't forcefully terminate threads easily
                 # This will set the stop event and log the kill request
                 self.stop_event.set()
+                self._notify_tabs_emergency_stop()
+                if self.driver:
+                    try:
+                        safe_quit_driver(self.driver, self.update_log)
+                    except Exception as close_err:
+                        self.update_log(f"Warning: failed to close active browser during kill: {close_err}")
+                    finally:
+                        self.driver = None
                 self.update_status("Kill requested...")
                 self.update_log("Kill request sent to background task - attempting forceful termination.")
                 # For more forceful termination, we could use process-based approach
                 # but for now, we'll rely on the stop event
                 self.stop_button.config(state=tk.DISABLED)
-                self.root.after(2000, lambda: self.stop_button.config(state=tk.NORMAL) if not self.scraping_in_progress else None)
+                self.root.after(2000, self._sync_stop_button_state)
             except Exception as e:
                 self.update_log(f"Error during kill operation: {e}")
                 logger.error(f"Kill operation error: {e}")
         else:
             self.update_log("Kill requested but no task is running.")
+
+    def _notify_tabs_emergency_stop(self):
+        for frame in self.section_frames.values():
+            if not frame.winfo_children():
+                continue
+            tab_instance = frame.winfo_children()[0]
+            if hasattr(tab_instance, "request_emergency_stop"):
+                try:
+                    tab_instance.request_emergency_stop(self.stop_event)
+                except Exception as tab_err:
+                    logger.warning(f"Emergency-stop notify failed for tab {type(tab_instance).__name__}: {tab_err}")
 
     def _pause_current_process(self):
         """Pause the current running process."""
@@ -1678,22 +1746,29 @@ class MainWindow:
             self.update_status("Pause requested...")
             self.update_log("Pause request sent to background task - stopping gracefully.")
             self.stop_button.config(state=tk.DISABLED)
-            self.root.after(2000, lambda: self.stop_button.config(state=tk.NORMAL) if not self.scraping_in_progress else None)
+            self.root.after(2000, self._sync_stop_button_state)
         else:
             self.update_log("Pause requested but no task is running.")
+
+    def _sync_stop_button_state(self):
+        if not hasattr(self, "stop_button"):
+            return
+        try:
+            self.stop_button.config(state=tk.NORMAL if self.scraping_in_progress else tk.DISABLED)
+        except Exception:
+            pass
 
     def set_controls_state(self, state):
         """Enable or disable main interaction controls based on state (tk.NORMAL or tk.DISABLED)."""
         logger.debug(f"Setting controls state to: {state}")
         for label, button in self.sidebar_buttons.items():
-            # Keep Logs tab clickable during scraping
-            if label == "Logs":
+            if label in {"Logs", "Dashboard"}:
                 continue
             is_pressed = 'pressed' in button.state()
             button.config(state=state)
             if state == tk.DISABLED and is_pressed:
                 button.state(['pressed', 'disabled'])
-        self.stop_button.config(state=tk.NORMAL if self.scraping_in_progress and state == tk.DISABLED else tk.DISABLED)
+        self._sync_stop_button_state()
         for name, frame in self.section_frames.items():
             if frame.winfo_children():
                 tab_instance = frame.winfo_children()[0]
@@ -1836,7 +1911,7 @@ class MainWindow:
             self._status_message_job = None
 
         # Stop refresh watcher if active
-        refresh_watch_frame = self.section_frames.get("Refresh Watch")
+        refresh_watch_frame = self.section_frames.get("Dashboard")
         if refresh_watch_frame and refresh_watch_frame.winfo_children():
             watch_tab = refresh_watch_frame.winfo_children()[0]
             if hasattr(watch_tab, "shutdown"):

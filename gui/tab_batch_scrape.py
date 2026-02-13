@@ -48,6 +48,8 @@ class BatchScrapeTab(ttk.Frame):
         self.main_app = main_app_ref
         self.log_callback = self.main_app.update_log
         self.batch_memory = get_batch_memory()
+        self._active_drivers = set()
+        self._active_drivers_lock = threading.Lock()
 
         self.mode_var = StringVar(value="sequential")
         self.max_parallel_var = IntVar(value=2)
@@ -85,6 +87,45 @@ class BatchScrapeTab(ttk.Frame):
 
         self._create_widgets()
         self._load_initial_data()
+
+    def _interruptible_sleep(self, seconds, stop_event=None, step=0.2):
+        remaining = max(0.0, float(seconds or 0.0))
+        while remaining > 0:
+            if stop_event and stop_event.is_set():
+                return False
+            wait_for = min(step, remaining)
+            time.sleep(wait_for)
+            remaining -= wait_for
+        return True
+
+    def _register_active_driver(self, driver):
+        if not driver:
+            return
+        with self._active_drivers_lock:
+            self._active_drivers.add(driver)
+
+    def _unregister_active_driver(self, driver):
+        if not driver:
+            return
+        with self._active_drivers_lock:
+            self._active_drivers.discard(driver)
+
+    def request_emergency_stop(self, stop_event=None):
+        if stop_event is not None:
+            try:
+                stop_event.set()
+            except Exception:
+                pass
+
+        with self._active_drivers_lock:
+            active_drivers = list(self._active_drivers)
+            self._active_drivers.clear()
+
+        for driver in active_drivers:
+            try:
+                safe_quit_driver(driver, self.log_callback)
+            except Exception:
+                pass
 
     def _create_widgets(self):
         section = ttk.Labelframe(self, text="Batch Scrape", style="Section.TLabelframe")
@@ -603,22 +644,33 @@ class BatchScrapeTab(ttk.Frame):
             for name in portal_data.get("processed_departments", [])
             if str(name).strip()
         }
+        known_department_keys = {
+            self._normalize_department_key(name)
+            for name in known_departments
+            if self._normalize_department_key(name)
+        }
         dept_url_map = portal_data.get("department_url_map", {})
         if not isinstance(dept_url_map, dict):
             dept_url_map = {}
 
-        mapped = 0
-        for _key, row in dept_url_map.items():
+        mapped_total = 0
+        mapped_known = 0
+        for key, row in dept_url_map.items():
             if not isinstance(row, dict):
                 continue
             if str(row.get("direct_url", "") or "").strip():
-                mapped += 1
+                mapped_total += 1
+                dept_key = self._normalize_department_key(key)
+                if dept_key and dept_key in known_department_keys:
+                    mapped_known += 1
 
-        known_total = len(known_departments)
-        coverage = int(round((mapped / max(1, known_total)) * 100)) if known_total > 0 else 0
+        known_total = len(known_department_keys)
+        coverage = int(round((mapped_known / max(1, known_total)) * 100)) if known_total > 0 else 0
+        coverage = max(0, min(100, coverage))
         return {
             "known_departments": known_total,
-            "mapped_departments": mapped,
+            "mapped_departments": mapped_known,
+            "mapped_total": mapped_total,
             "coverage_percent": coverage,
         }
 
@@ -1273,7 +1325,7 @@ class BatchScrapeTab(ttk.Frame):
                     watchdog_trigger.set()
                     return
 
-                time.sleep(10)
+                self._interruptible_sleep(10, stop_event=stop_event)
 
         thread = threading.Thread(target=_watchdog_loop, daemon=True)
         thread.start()
@@ -1658,6 +1710,7 @@ class BatchScrapeTab(ttk.Frame):
         )
 
         summary = None
+        self._register_active_driver(shared_driver)
         try:
             for attempt in range(2):
                 if composite_stop.is_set() and attempt == 0:
@@ -1685,9 +1738,11 @@ class BatchScrapeTab(ttk.Frame):
                     try:
                         if shared_driver:
                             safe_quit_driver(shared_driver, portal_log)
+                            self._unregister_active_driver(shared_driver)
                     except Exception:
                         pass
                     shared_driver = setup_driver(initial_download_dir=download_dir)
+                    self._register_active_driver(shared_driver)
                     watchdog_trigger.clear()
                     _touch_activity()
                     continue
@@ -1845,6 +1900,7 @@ class BatchScrapeTab(ttk.Frame):
             watchdog_done.set()
             if watchdog_thread:
                 watchdog_thread.join(timeout=1)
+            self._unregister_active_driver(shared_driver)
 
         status_text = str(summary.get("status", "")).lower()
         if "no departments" in status_text:
@@ -1966,6 +2022,9 @@ class BatchScrapeTab(ttk.Frame):
         min_delay = ip_safety.get("min_delay_sec", 1.0)
         max_delay = ip_safety.get("max_delay_sec", 3.0)
 
+        if driver:
+            self._register_active_driver(driver)
+
         for idx, portal_name in enumerate(selected_portals, start=1):
             if stop_event and stop_event.is_set():
                 log_callback("Batch stop requested. Ending remaining portals.")
@@ -1974,7 +2033,9 @@ class BatchScrapeTab(ttk.Frame):
             if idx > 1:
                 delay = random.uniform(min_delay, max_delay)
                 log_callback(f"Sequential IP safety delay: sleeping {delay:.1f}s before next portal.")
-                time.sleep(delay)
+                if not self._interruptible_sleep(delay, stop_event=stop_event):
+                    log_callback("Batch stop requested during sequential delay.")
+                    break
 
             portal_config = self._portal_config_by_name(portal_name)
             if not portal_config:
@@ -2014,16 +2075,23 @@ class BatchScrapeTab(ttk.Frame):
                     pass
             progress_callback(completed, total_portals, f"Completed {completed}/{total_portals}")
 
-        status_callback("Batch scraping completed")
-        self._push_global_progress(state="Completed")
+        stopped = bool(stop_event and stop_event.is_set())
+        status_callback("Batch scraping stopped by user" if stopped else "Batch scraping completed")
+        self._push_global_progress(state="Stopped" if stopped else "Completed")
         if hasattr(self.main_app, "set_status_context"):
             try:
-                self.main_app.set_status_context(state="Completed", completed_portals=total_portals)
+                self.main_app.set_status_context(
+                    state="Stopped" if stopped else "Completed",
+                    completed_portals=completed if stopped else total_portals
+                )
             except Exception:
                 pass
         self._export_department_url_coverage_report(log_callback=log_callback)
         if self.current_batch_report_dir:
             log_callback(f"Batch run reports saved in: {self.current_batch_report_dir}")
+
+        if driver:
+            self._unregister_active_driver(driver)
 
     def _run_parallel(self, selected_portals, download_dir, max_parallel, ip_safety, only_new, log_callback, status_callback, progress_callback, stop_event, common_kwargs):
         lock = threading.Lock()
@@ -2070,10 +2138,12 @@ class BatchScrapeTab(ttk.Frame):
 
                         startup_delay = random.uniform(min_delay, max_delay)
                         portal_log(f"IP safety delay {startup_delay:.1f}s (attempt {attempt + 1}/{max_retries + 1})")
-                        time.sleep(startup_delay)
+                        if not self._interruptible_sleep(startup_delay, stop_event=stop_event):
+                            return
 
                         try:
                             local_driver = setup_driver(initial_download_dir=download_dir)
+                            self._register_active_driver(local_driver)
                             self._run_single_portal(
                                 portal_name=portal_name,
                                 portal_config=portal_config,
@@ -2091,7 +2161,8 @@ class BatchScrapeTab(ttk.Frame):
                             if attempt < max_retries and blocked:
                                 sleep_for = max(cooldown_sec, 5) * (attempt + 1)
                                 portal_log(f"probable IP/rate block detected ({error}); retrying after {sleep_for}s")
-                                time.sleep(sleep_for)
+                                if not self._interruptible_sleep(sleep_for, stop_event=stop_event):
+                                    return
                                 continue
                             portal_log(f"ERROR in parallel portal (attempt {attempt + 1}): {error}")
                             self._update_dashboard_threadsafe(portal_name, state="Error")
@@ -2099,11 +2170,12 @@ class BatchScrapeTab(ttk.Frame):
                         finally:
                             if local_driver:
                                 safe_quit_driver(local_driver, portal_log)
+                                self._unregister_active_driver(local_driver)
                                 local_driver = None
 
                     if cooldown_sec > 0 and not (stop_event and stop_event.is_set()):
                         portal_log(f"cooldown {cooldown_sec}s before releasing domain slot")
-                        time.sleep(cooldown_sec)
+                        self._interruptible_sleep(cooldown_sec, stop_event=stop_event)
             finally:
                 with lock:
                     completed["count"] += 1
@@ -2128,11 +2200,15 @@ class BatchScrapeTab(ttk.Frame):
                     break
                 future.result()
 
-        status_callback("Batch scraping completed")
-        self._push_global_progress(state="Completed")
+        stopped = bool(stop_event and stop_event.is_set())
+        status_callback("Batch scraping stopped by user" if stopped else "Batch scraping completed")
+        self._push_global_progress(state="Stopped" if stopped else "Completed")
         if hasattr(self.main_app, "set_status_context"):
             try:
-                self.main_app.set_status_context(state="Completed", completed_portals=total)
+                self.main_app.set_status_context(
+                    state="Stopped" if stopped else "Completed",
+                    completed_portals=completed["count"] if stopped else total
+                )
             except Exception:
                 pass
         self._export_department_url_coverage_report(log_callback=log_callback)

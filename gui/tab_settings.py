@@ -1,4 +1,4 @@
-# gui/tab_settings.py v2.1.4
+# gui/tab_settings.py v2.2.1
 # Widgets and logic for the Settings tab
 
 import tkinter as tk

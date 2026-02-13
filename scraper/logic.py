@@ -17,7 +17,7 @@ import logging
 from datetime import datetime
 import re
 from queue import Queue, Empty
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urljoin, urlparse, parse_qsl, urlencode, urlunparse
 
 # Third-party imports - with error checking
 try:
@@ -105,6 +105,38 @@ UNEXPECTED_ERROR_MSG = "Unexpected error"
 CRITICAL_ERROR_MSG = "CRITICAL"
 
 
+def _sleep_with_stop(seconds, stop_event=None, step=0.2):
+    remaining = max(0.0, float(seconds or 0.0))
+    while remaining > 0:
+        if stop_event and stop_event.is_set():
+            return False
+        chunk = min(step, remaining)
+        time.sleep(chunk)
+        remaining -= chunk
+    return True
+
+
+def _wait_for_presence_with_stop(driver, locator, timeout, stop_event=None, poll=0.3):
+    timeout = max(0.1, float(timeout or 0.1))
+    deadline = time.monotonic() + timeout
+    last_error = None
+
+    while time.monotonic() < deadline:
+        if stop_event and stop_event.is_set():
+            raise TimeoutException("Stop requested")
+        remaining = max(0.05, deadline - time.monotonic())
+        try:
+            return WebDriverWait(driver, min(poll, remaining)).until(
+                EC.presence_of_element_located(locator)
+            )
+        except TimeoutException as err:
+            last_error = err
+
+    if last_error:
+        raise last_error
+    raise TimeoutException(f"Timeout waiting for locator: {locator}")
+
+
 def normalize_tender_id(value):
     """Normalize tender IDs for reliable matching when portal formatting varies."""
     text = str(value or "").strip()
@@ -119,6 +151,39 @@ def normalize_tender_id(value):
     text = re.sub(r'[\s\-\./]+', '_', text)
     text = re.sub(r'_+', '_', text).strip('_')
     return text
+
+
+def sanitize_department_direct_url(url):
+    """Strip volatile session parameters from department direct URLs."""
+    raw = str(url or "").strip()
+    if not raw:
+        return ""
+
+    try:
+        parsed = urlparse(raw)
+        if not parsed.query:
+            return raw
+
+        blocked_keys = {"session", "sp", "jsessionid", "sid", "phpsessid"}
+        filtered_params = []
+        for key, value in parse_qsl(parsed.query, keep_blank_values=True):
+            key_norm = str(key or "").strip().lower()
+            if key_norm in blocked_keys or "session" in key_norm:
+                continue
+            filtered_params.append((key, value))
+
+        filtered_query = urlencode(filtered_params, doseq=True)
+        cleaned = urlunparse((
+            parsed.scheme,
+            parsed.netloc,
+            parsed.path,
+            parsed.params,
+            filtered_query,
+            "",
+        ))
+        return cleaned or raw
+    except Exception:
+        return raw
 
 # --- GUI Import Check ---
 # Use absolute import based on sys.path modification in main.py
@@ -245,6 +310,7 @@ def fetch_department_list_from_site(target_url, log_callback):
                     direct_url = ''
 
                 if direct_url:
+                    direct_url = sanitize_department_direct_url(direct_url)
                     has_link = True
                     dept_info['direct_url'] = direct_url
 
@@ -331,7 +397,7 @@ def _click_department_link(driver, target_row, s_no, name, log_callback):
 
 def _navigate_department_direct_url(driver, dept_info, log_callback):
     """Navigate directly to department tenders page using captured direct URL."""
-    direct_url_raw = str(dept_info.get('direct_url', '')).strip()
+    direct_url_raw = sanitize_department_direct_url(dept_info.get('direct_url', ''))
     if not direct_url_raw:
         return False
 
@@ -470,11 +536,13 @@ def _scrape_tender_details(driver, department_name, base_url, log_callback, exis
             # Add extra stabilization wait for large tables
             if table_attempt > 0:
                 log_callback(f"    Retry {table_attempt}/{MAX_TABLE_REFETCH_RETRIES-1} for table fetch...")
-                time.sleep(STABILIZE_WAIT * 2)
+                if not _sleep_with_stop(STABILIZE_WAIT * 2, stop_event=stop_event):
+                    return tender_data, skipped_existing_count
             
-            table = WebDriverWait(driver, ELEMENT_WAIT_TIMEOUT).until(EC.presence_of_element_located(DETAILS_TABLE_LOCATOR))
+            table = _wait_for_presence_with_stop(driver, DETAILS_TABLE_LOCATOR, ELEMENT_WAIT_TIMEOUT, stop_event=stop_event)
             log_callback("    Details table located.")
-            time.sleep(STABILIZE_WAIT)  # Extra wait for table to stabilize
+            if not _sleep_with_stop(STABILIZE_WAIT, stop_event=stop_event):
+                return tender_data, skipped_existing_count
             
             try: 
                 body = table.find_element(*DETAILS_TABLE_BODY_LOCATOR)
@@ -645,7 +713,8 @@ def _scrape_tender_details(driver, department_name, base_url, log_callback, exis
                             if stop_event and stop_event.is_set():
                                 return tender_data, skipped_existing_count
                             log_callback(f"{prefix} WARN - Stale element, retrying ({row_attempt + 1}/{MAX_ROW_RETRIES})...")
-                            time.sleep(0.3)  # Brief wait before retry
+                            if not _sleep_with_stop(0.3, stop_event=stop_event):
+                                return tender_data, skipped_existing_count
                             # Re-fetch the row from the table
                             try:
                                 table = driver.find_element(*DETAILS_TABLE_LOCATOR)
@@ -685,7 +754,8 @@ def _scrape_tender_details(driver, department_name, base_url, log_callback, exis
                 return tender_data, skipped_existing_count
             if table_attempt < MAX_TABLE_REFETCH_RETRIES - 1:
                 log_callback(f"  WARN: Table fetch error (attempt {table_attempt + 1}/{MAX_TABLE_REFETCH_RETRIES}): {table_err}")
-                time.sleep(STABILIZE_WAIT * 2)
+                if not _sleep_with_stop(STABILIZE_WAIT * 2, stop_event=stop_event):
+                    return tender_data, skipped_existing_count
                 continue
             else:
                 log_callback(f"  ERROR: Details table ({DETAILS_TABLE_LOCATOR}) not found after {MAX_TABLE_REFETCH_RETRIES} attempts for {department_name}: {table_err}")
@@ -704,7 +774,7 @@ def _scrape_tender_details(driver, department_name, base_url, log_callback, exis
             return [], 0
 
 
-def _click_on_page_back_button(driver, log_callback, org_list_url=None):
+def _click_on_page_back_button(driver, log_callback, org_list_url=None, stop_event=None):
     """Return to organization list page.
 
     Strategy order:
@@ -727,8 +797,11 @@ def _click_on_page_back_button(driver, log_callback, org_list_url=None):
         org_url = org_list_url or f"{base_url}?page=FrontEndTendersByOrganisation&service=page"
         log_callback(f"    Direct navigation first: {org_url}")
         
+        if stop_event and stop_event.is_set():
+            return False
         driver.get(org_url)
-        time.sleep(STABILIZE_WAIT * 2)
+        if not _sleep_with_stop(STABILIZE_WAIT * 2, stop_event=stop_event):
+            return False
         
         # Verify we're on the correct page
         final_url = driver.current_url
@@ -737,9 +810,7 @@ def _click_on_page_back_button(driver, log_callback, org_list_url=None):
             
             # Verify table is present
             try:
-                WebDriverWait(driver, ELEMENT_WAIT_TIMEOUT).until(
-                    EC.presence_of_element_located(MAIN_TABLE_LOCATOR)
-                )
+                _wait_for_presence_with_stop(driver, MAIN_TABLE_LOCATOR, ELEMENT_WAIT_TIMEOUT, stop_event=stop_event)
                 log_callback("    ✓ Direct navigation successful and organization table confirmed")
                 return True
             except TimeoutException:
@@ -761,7 +832,8 @@ def _click_on_page_back_button(driver, log_callback, org_list_url=None):
 
     if back_button_clicked:
         log_callback("    Site 'Back' button clicked.")
-        time.sleep(STABILIZE_WAIT * 1.5)
+        if not _sleep_with_stop(STABILIZE_WAIT * 1.5, stop_event=stop_event):
+            return False
 
         try:
             current_url = driver.current_url
@@ -793,6 +865,60 @@ def _click_on_page_back_button(driver, log_callback, org_list_url=None):
         log_callback(f"    ⚠ Fallback navigate_to_org_list error: {nav_err}")
 
     return False
+
+
+def _normalize_department_task_key(dept_info):
+    s_no = str((dept_info or {}).get("s_no", "")).strip().lower()
+    name = str((dept_info or {}).get("name", "")).strip().lower()
+    direct_url = sanitize_department_direct_url((dept_info or {}).get("direct_url", ""))
+
+    if s_no and s_no not in HEADER_SNO_KEYWORDS:
+        return f"sno::{s_no}"
+    if name:
+        return f"name::{name}"
+    if direct_url:
+        return f"url::{direct_url}"
+    return ""
+
+
+def _prepare_department_tasks(departments, log_callback):
+    prepared = []
+    seen_task_keys = set()
+    duplicate_rows = 0
+
+    for raw in departments or []:
+        dept = dict(raw or {})
+        task_key = _normalize_department_task_key(dept)
+        if task_key and task_key in seen_task_keys:
+            duplicate_rows += 1
+            continue
+        if task_key:
+            seen_task_keys.add(task_key)
+        prepared.append(dept)
+
+    direct_url_buckets = {}
+    for index, dept in enumerate(prepared):
+        direct_url = sanitize_department_direct_url(dept.get("direct_url", ""))
+        if not direct_url:
+            continue
+        direct_url_buckets.setdefault(direct_url, []).append(index)
+
+    ambiguous_direct_count = 0
+    for _url, indices in direct_url_buckets.items():
+        if len(indices) <= 1:
+            continue
+        for idx in indices:
+            prepared[idx]["direct_url"] = ""
+        ambiguous_direct_count += len(indices)
+
+    if duplicate_rows > 0:
+        log_callback(f"De-dup task filter removed {duplicate_rows} duplicate department row(s).")
+    if ambiguous_direct_count > 0:
+        log_callback(
+            f"Direct URL safety: disabled ambiguous direct-link navigation for {ambiguous_direct_count} department row(s); using row-click fallback."
+        )
+
+    return prepared
 
 
 def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
@@ -836,6 +962,7 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
     portal_name = str(base_url_config.get('Name', 'Unknown')).strip() or "Unknown"
     portal_base_url = str(base_url_config.get('BaseURL', '')).strip()
     scope_mode = "only_new" if existing_tender_ids or existing_department_names else "all"
+    departments_to_scrape = _prepare_department_tasks(departments_to_scrape, log_callback)
 
     try:
         portal_host = (urlparse(portal_base_url).hostname or "").strip().lower()
@@ -1031,10 +1158,30 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
         if not navigate_to_org_list(driver, log_callback):
             log_callback("WARNING: Could not verify organization list page navigation")
         
-        WebDriverWait(driver, PAGE_LOAD_TIMEOUT).until(
-            EC.presence_of_element_located(MAIN_TABLE_LOCATOR)
-        )
-        time.sleep(STABILIZE_WAIT)
+        _wait_for_presence_with_stop(driver, MAIN_TABLE_LOCATOR, PAGE_LOAD_TIMEOUT, stop_event=stop_event)
+        if not _sleep_with_stop(STABILIZE_WAIT, stop_event=stop_event):
+            status_callback("Scraping stopped by user")
+            timer_callback(start_time)
+            return {
+                "status": "Scraping stopped by user",
+                "processed_departments": 0,
+                "expected_total_tenders": expected_total_tenders,
+                "extracted_total_tenders": 0,
+                "skipped_existing_total": 0,
+                "skipped_resume_departments": 0,
+                "department_summaries": [],
+                "direct_nav_attempted": 0,
+                "direct_nav_success": 0,
+                "direct_nav_fallback_click": 0,
+                "click_only_success": 0,
+                "extracted_tender_ids": [],
+                "processed_department_names": [],
+                "output_file_path": None,
+                "output_file_type": None,
+                "sqlite_db_path": sqlite_db_path,
+                "sqlite_run_id": sqlite_run_id,
+                "partial_saved": False,
+            }
 
         total_depts = len(departments_to_scrape)
         log_callback(f"Starting to process {total_depts} departments...")
@@ -1115,7 +1262,8 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
                     else:
                         click_only_success += 1
 
-            time.sleep(STABILIZE_WAIT * 2)
+            if not _sleep_with_stop(STABILIZE_WAIT * 2, stop_event=stop_event):
+                return
 
             try:
                 active_driver.current_url
@@ -1195,7 +1343,7 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
                 log_callback(f"[{worker_label}] Driver session lost before back navigation for {dept_name}: {session_err}")
                 return
 
-            back_clicked = _click_on_page_back_button(active_driver, log_callback, base_url_config.get('OrgListURL'))
+            back_clicked = _click_on_page_back_button(active_driver, log_callback, base_url_config.get('OrgListURL'), stop_event=stop_event)
             if not back_clicked:
                 log_callback(f"[{worker_label}] WARNING: Back button click failed, returning to org list URL")
                 try:
@@ -1203,10 +1351,9 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
                     active_driver.get(base_url_config['OrgListURL'])
                     if not navigate_to_org_list(active_driver, log_callback):
                         log_callback(f"[{worker_label}] ERROR: Could not navigate back to organization list")
-                    WebDriverWait(active_driver, PAGE_LOAD_TIMEOUT).until(
-                        EC.presence_of_element_located(MAIN_TABLE_LOCATOR)
-                    )
-                    time.sleep(STABILIZE_WAIT * 2)
+                    _wait_for_presence_with_stop(active_driver, MAIN_TABLE_LOCATOR, PAGE_LOAD_TIMEOUT, stop_event=stop_event)
+                    if not _sleep_with_stop(STABILIZE_WAIT * 2, stop_event=stop_event):
+                        return
                 except Exception as nav_err:
                     log_callback(f"[{worker_label}] ERROR: Failed to navigate back (session may be lost): {nav_err}")
 
@@ -1434,7 +1581,8 @@ def process_department(dept_info, base_url_config, download_dir, driver,
             return None
 
         log_callback(f"Processing department {dept_info['name']}...")
-        time.sleep(STABILIZE_WAIT)
+        if not _sleep_with_stop(STABILIZE_WAIT, stop_event=stop_event):
+            return None
 
         # Extract tender details
         tender_data, _skipped_existing = _scrape_tender_details(
@@ -1457,12 +1605,12 @@ def process_department(dept_info, base_url_config, download_dir, driver,
         log_callback(f"Found {len(tender_data)} tenders in department {dept_info['name']}")
 
         # Click back to department list
-        back_clicked = _click_on_page_back_button(driver, log_callback, base_url_config.get('OrgListURL'))
+        back_clicked = _click_on_page_back_button(driver, log_callback, base_url_config.get('OrgListURL'), stop_event=stop_event)
         if not back_clicked:
             log_callback("Warning: Back button click failed, returning to org list URL")
             try:
                 driver.get(base_url_config['OrgListURL'])
-                time.sleep(STABILIZE_WAIT)
+                _sleep_with_stop(STABILIZE_WAIT, stop_event=stop_event)
             except Exception as nav_err:
                 log_callback(f"Error navigating back: {nav_err}")
                 return tender_data  # Still return data even if navigation fails
@@ -2246,6 +2394,7 @@ def fetch_department_list_from_site_v2(target_url, log_callback=None):
                     direct_url = ''
 
                 if direct_url:
+                    direct_url = sanitize_department_direct_url(direct_url)
                     has_link = True
                     dept_info['direct_url'] = direct_url
 

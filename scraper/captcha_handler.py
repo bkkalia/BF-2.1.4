@@ -1,4 +1,4 @@
-# scraper/captcha_handler.py v2.1.4
+# scraper/captcha_handler.py v2.2.1
 # Logic for detecting and handling CAPTCHA prompts
 
 # Add project root to sys.path
