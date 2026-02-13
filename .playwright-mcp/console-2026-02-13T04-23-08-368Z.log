@@ -1,0 +1,21 @@
+[   21096ms] [WARNING] Error with Permissions-Policy header: Unrecognized feature: 'speaker'. @ :0
+[   21096ms] [WARNING] Error with Permissions-Policy header: Unrecognized feature: 'vibrate'. @ :0
+[   21285ms] [WARNING] Error with Permissions-Policy header: Unrecognized feature: 'speaker'. @ :0
+[   21286ms] [WARNING] Error with Permissions-Policy header: Unrecognized feature: 'vibrate'. @ :0
+[   21460ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ https://hptenders.gov.in/favicon.ico:0
+[   23580ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ https://mahatenders.gov.in/favicon.ico:0
+[   25091ms] [WARNING] Error with Permissions-Policy header: Unrecognized feature: 'speaker'. @ :0
+[   25091ms] [WARNING] Error with Permissions-Policy header: Unrecognized feature: 'vibrate'. @ :0
+[   25289ms] [WARNING] Error with Permissions-Policy header: Unrecognized feature: 'speaker'. @ :0
+[   25289ms] [WARNING] Error with Permissions-Policy header: Unrecognized feature: 'vibrate'. @ :0
+[   25466ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ https://assamtenders.gov.in/favicon.ico:0
+[   27191ms] [WARNING] Error with Permissions-Policy header: Unrecognized feature: 'speaker'. @ :0
+[   27192ms] [WARNING] Error with Permissions-Policy header: Unrecognized feature: 'vibrate'. @ :0
+[   27413ms] [WARNING] Error with Permissions-Policy header: Unrecognized feature: 'speaker'. @ :0
+[   27413ms] [WARNING] Error with Permissions-Policy header: Unrecognized feature: 'vibrate'. @ :0
+[   27593ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ https://eproc.punjab.gov.in/favicon.ico:0
+[   29185ms] [WARNING] Error with Permissions-Policy header: Unrecognized feature: 'speaker'. @ :0
+[   29185ms] [WARNING] Error with Permissions-Policy header: Unrecognized feature: 'vibrate'. @ :0
+[   29401ms] [WARNING] Error with Permissions-Policy header: Unrecognized feature: 'speaker'. @ :0
+[   29401ms] [WARNING] Error with Permissions-Policy header: Unrecognized feature: 'vibrate'. @ :0
+[   29574ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ https://iocletenders.nic.in/favicon.ico:0

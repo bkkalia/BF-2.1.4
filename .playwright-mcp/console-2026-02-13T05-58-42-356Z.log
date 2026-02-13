@@ -1,0 +1,5 @@
+[      -3ms] [WARNING] Error with Permissions-Policy header: Unrecognized feature: 'speaker'. @ :0
+[      -3ms] [WARNING] Error with Permissions-Policy header: Unrecognized feature: 'vibrate'. @ :0
+[     167ms] [WARNING] Error with Permissions-Policy header: Unrecognized feature: 'speaker'. @ :0
+[     167ms] [WARNING] Error with Permissions-Policy header: Unrecognized feature: 'vibrate'. @ :0
+[     317ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ https://eproc.punjab.gov.in/favicon.ico:0

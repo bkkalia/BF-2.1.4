@@ -1,0 +1,16 @@
+[     793ms] [WARNING] Error with Permissions-Policy header: Unrecognized feature: 'speaker'. @ :0
+[     793ms] [WARNING] Error with Permissions-Policy header: Unrecognized feature: 'vibrate'. @ :0
+[    2816ms] [WARNING] Error with Permissions-Policy header: Unrecognized feature: 'speaker'. @ :0
+[    2817ms] [WARNING] Error with Permissions-Policy header: Unrecognized feature: 'vibrate'. @ :0
+[    2862ms] TypeError: Cannot set properties of null (setting 'onclick')
+    at https://etenders.kerala.gov.in/nicgep/includes/CsrfdeleteBlock.js:605:44
+[    3069ms] TypeError: Cannot read properties of null (reading 'style')
+    at InitializeMarquee2 (https://etenders.kerala.gov.in/nicgep/app:671:17)
+[    3071ms] TypeError: Cannot read properties of null (reading 'style')
+    at InitializeMarquee3 (https://etenders.kerala.gov.in/nicgep/app:710:17)
+[    3092ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ https://etenders.kerala.gov.in/favicon.ico:0
+[    3529ms] Uncaught Error: SignalR: SignalR is not loaded. Please ensure jquery.signalR-x.js is referenced before ~/signalr/js.
+    at <anonymous> (https://niccicms.raj.nic.in/nicci//signalr/hubs:16:14)
+    at <anonymous> (https://niccicms.raj.nic.in/nicci//signalr/hubs:122:1)
+[    3530ms] Uncaught TypeError: Cannot read properties of undefined (reading 'hub')
+    at <anonymous> (https://niccicms.raj.nic.in/nicci/nicci/js/livesupport.js:7:13)

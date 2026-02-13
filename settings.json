@@ -2,7 +2,7 @@
     "version": "1.0",
     "download_directory": "C:\\Users\\kalia\\Downloads",
     "selected_url_name": "HP Tenders",
-    "window_geometry": "1518x775+27+0",
+    "window_geometry": "2560x1369+1809+102",
     "dl_more_details": true,
     "dl_zip": true,
     "dl_notice_pdfs": true,
@@ -10,11 +10,65 @@
     "selected_theme": "clam",
     "use_undetected_driver": true,
     "headless_mode": false,
+    "department_parallel_workers": 4,
+    "batch_delta_mode": "quick",
     "refresh_watch_enabled": false,
     "refresh_watch_loop_seconds": 30,
-    "refresh_watch_portals": [],
-    "refresh_watch_state": {},
-    "refresh_watch_history": [],
+    "refresh_watch_portals": [
+        {
+            "name": "Odisha",
+            "enabled": true,
+            "interval_min": 60
+        }
+    ],
+    "refresh_watch_state": {
+        "Odisha": {
+            "status": "Baseline captured (59 depts)",
+            "signature": "3e6ca66e02c8ba6152cd992ffdf2a9aa1258aa26",
+            "department_count": 59,
+            "last_check_epoch": 1770980291.5991373
+        }
+    },
+    "refresh_watch_history": [
+        {
+            "ts": "16:27:53",
+            "portal": "Odisha",
+            "event": "RULE",
+            "detail": "Rule updated (enabled=True, interval=60m)"
+        },
+        {
+            "ts": "16:27:55",
+            "portal": "-",
+            "event": "WATCHER",
+            "detail": "Watcher started"
+        },
+        {
+            "ts": "16:27:55",
+            "portal": "Odisha",
+            "event": "STATUS",
+            "detail": "Checking for changes..."
+        },
+        {
+            "ts": "16:28:11",
+            "portal": "Odisha",
+            "event": "STATUS",
+            "detail": "Baseline captured (59 depts)"
+        },
+        {
+            "ts": "17:11:40",
+            "iso_ts": "2026-02-13T17:11:40",
+            "portal": "-",
+            "event": "WATCHER",
+            "detail": "Watcher started"
+        },
+        {
+            "ts": "17:23:04",
+            "iso_ts": "2026-02-13T17:23:04",
+            "portal": "-",
+            "event": "WATCHER",
+            "detail": "Watcher stop requested"
+        }
+    ],
     "central_sqlite_db_path": "D:\\Dev84\\BF 2.1.4\\data\\blackforest_tenders.sqlite3",
     "sqlite_backup_directory": "D:\\Dev84\\BF 2.1.4\\db_backups",
     "sqlite_backup_retention_days": 30,
@@ -27,6 +81,7 @@
     "DOWNLOAD_WAIT_TIMEOUT": 5.0,
     "POPUP_WAIT_TIMEOUT": 8.0,
     "POST_DOWNLOAD_CLICK_WAIT": 3.0,
+    "dashboard_daily_last_run_date": "2026-02-13",
     "enable_sounds": true,
     "sound_ding_file": "",
     "sound_success_file": "",

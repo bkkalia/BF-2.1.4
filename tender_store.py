@@ -47,6 +47,9 @@ class TenderDataStore:
                     portal_name TEXT,
                     department_name TEXT,
                     tender_id_extracted TEXT,
+                    lifecycle_status TEXT DEFAULT 'active',
+                    cancelled_detected_at TEXT,
+                    cancelled_source TEXT,
                     published_date TEXT,
                     closing_date TEXT,
                     opening_date TEXT,
@@ -63,12 +66,17 @@ class TenderDataStore:
                 CREATE INDEX IF NOT EXISTS idx_tenders_portal_tender_norm
                     ON tenders(LOWER(TRIM(COALESCE(portal_name, ''))), TRIM(COALESCE(tender_id_extracted, '')));
 
-                CREATE VIEW IF NOT EXISTS v_tender_export AS
+                DROP VIEW IF EXISTS v_tender_export;
+
+                CREATE VIEW v_tender_export AS
                 SELECT
                     t.run_id AS run_id,
                     t.portal_name AS portal_name,
                     t.department_name AS department_name,
                     t.tender_id_extracted AS tender_id_extracted,
+                    t.lifecycle_status AS lifecycle_status,
+                    t.cancelled_detected_at AS cancelled_detected_at,
+                    t.cancelled_source AS cancelled_source,
                     t.published_date AS published_date,
                     t.closing_date AS closing_date,
                     t.opening_date AS opening_date,
@@ -84,6 +92,24 @@ class TenderDataStore:
                 JOIN runs r ON r.id = t.run_id;
                 """
             )
+
+            self._ensure_column(conn, "tenders", "lifecycle_status", "TEXT DEFAULT 'active'")
+            self._ensure_column(conn, "tenders", "cancelled_detected_at", "TEXT")
+            self._ensure_column(conn, "tenders", "cancelled_source", "TEXT")
+            conn.execute(
+                """
+                UPDATE tenders
+                SET lifecycle_status = 'active'
+                WHERE trim(coalesce(lifecycle_status, '')) = ''
+                """
+            )
+
+    def _ensure_column(self, conn, table_name, column_name, ddl):
+        columns = conn.execute(f"PRAGMA table_info({table_name})").fetchall()
+        existing = {str(row[1]).strip().lower() for row in columns}
+        if column_name.strip().lower() in existing:
+            return
+        conn.execute(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {ddl}")
 
     def backup_if_due(self, backup_dir, retention_days=30):
         backup_target = str(backup_dir or "").strip()
@@ -304,6 +330,9 @@ class TenderDataStore:
                 title_ref AS [Title and Ref.No./Tender ID],
                 organisation_chain AS [Organisation Chain],
                 tender_id_extracted AS [Tender ID (Extracted)],
+                lifecycle_status AS [Lifecycle Status],
+                cancelled_detected_at AS [Cancelled Detected At],
+                cancelled_source AS [Cancelled Source],
                 emd_amount AS [EMD Amount],
                 emd_amount_numeric AS [EMD Amount (Numeric)],
                 portal_name AS [Portal],
@@ -365,3 +394,28 @@ class TenderDataStore:
                     int(run_id)
                 )
             )
+
+    def mark_tenders_cancelled(self, portal_name, tender_ids, source="cancelled_page"):
+        portal_key = str(portal_name or "").strip().lower()
+        clean_ids = sorted({str(item).strip() for item in (tender_ids or []) if str(item).strip()})
+        if not portal_key or not clean_ids:
+            return 0
+
+        now = datetime.now().isoformat(timespec="seconds")
+        placeholders = ",".join(["?"] * len(clean_ids))
+        params = [now, str(source or "cancelled_page"), portal_key] + clean_ids
+
+        with self._connect() as conn:
+            cur = conn.execute(
+                f"""
+                UPDATE tenders
+                SET
+                    lifecycle_status = 'cancelled',
+                    cancelled_detected_at = ?,
+                    cancelled_source = ?
+                WHERE lower(trim(coalesce(portal_name, ''))) = ?
+                  AND trim(coalesce(tender_id_extracted, '')) IN ({placeholders})
+                """,
+                params
+            )
+            return int(cur.rowcount or 0)
