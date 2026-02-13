@@ -131,107 +131,61 @@ class HelpTab(ttk.Frame):
 
     def _get_developer_help_content(self):
         return """
-Black Forest Tender Scraper - Developer Documentation
-=================================================
+Black Forest Tender Scraper - Developer Documentation (v2.1.10)
+===============================================================
 
-1. Project Structure
--------------------
-/BF 2.1.4/
-├── gui/                 # GUI components
-│   ├── main_window.py  # Main application window
-│   ├── tab_*.py        # Individual tab implementations
-│   └── gui_utils.py    # Shared GUI utilities
-├── scraper/            # Core scraping logic
-│   ├── logic.py        # Main scraping implementation
-│   ├── actions.py      # Low-level Selenium actions
-│   └── driver_manager.py # WebDriver management
-├── config.py           # Configuration constants
-├── main.py            # Application entry point
-└── requirements.txt   # Dependencies
+1. Core Architecture
+--------------------
+Entry and shell:
+- `main.py`            : app lifecycle, startup checks, logging bootstrap
+- `gui/main_window.py` : tab host, background task orchestration, status/progress hub
 
-2. Dependencies
---------------
-Core:
-- selenium: Web automation
-- undetected-chromedriver: Browser automation
-- PyPDF2: PDF processing
-- pytesseract: OCR capability
-- Pillow: Image processing
+GUI tabs:
+- `gui/tab_department.py`    : department scraping flow
+- `gui/tab_batch_scrape.py`  : batch multi-portal flow
+- `gui/tab_refresh_watch.py` : watch rules + change-triggered batch execution
+- `gui/tab_id_search.py`     : tender ID-based processing
+- `gui/tab_url_process.py`   : direct URL processing
+- `gui/tab_settings.py`      : settings and persistence controls
 
-Development:
-- debugpy: Debugging support
-- black: Code formatting
-- pylint: Code analysis
+Scraper and persistence:
+- `scraper/logic.py`   : extraction orchestration and persistence callbacks
+- `tender_store.py`    : SQLite datastore, dedupe, export, backup policy
 
-3. Module Overview
------------------
-main.py:
-- Application entry point
-- Dependency checks
-- Error handling
-- GUI initialization
+2. Persistence Model (Current)
+------------------------------
+SQLite is primary source of truth using:
+- `runs` table for run metadata
+- `tenders` table for tender rows
 
-gui/main_window.py:
-- Main window management
-- Tab coordination
-- Settings management
-- Progress tracking
+Runtime integrity rules:
+- keep latest row per `(portal, Tender ID (Extracted))`
+- remove missing/invalid tender IDs (`nan`, `none`, `null`, empty, etc.)
 
-scraper/logic.py:
-- Core scraping implementation
-- Data extraction
-- File downloads
-- Error handling
+3. Backup Model (Current)
+-------------------------
+Backups are generated in tiers:
+- daily in backup root
+- weekly in `weekly/`
+- monthly in `monthly/`
+- yearly in `yearly/`
 
-scraper/actions.py:
-- Selenium action wrappers
-- Reliable element interaction
-- Download management
-- Safety checks
+Retention windows:
+- daily = `sqlite_backup_retention_days` (minimum 7)
+- weekly ≈ 16 weeks
+- monthly ≈ 24 months
+- yearly ≈ 7 years
 
-4. Key Classes
--------------
-MainWindow:
-- Main application window
-- Settings management
-- Background task handling
-- Progress updates
+4. Development Workflow Guidelines
+----------------------------------
+- Keep UI updates thread-safe (use callback pattern from `main_window.py`).
+- Preserve backward compatibility in scraper callbacks and summary payloads.
+- Prefer root-cause fixes over one-off patches.
+- Update Help-tab source docs (`PROJECT_CONTEXT.md`, `GUI_HELP.md`, `ROADMAP.md`, `CHANGELOG.md`) when behavior changes.
+- Run `py_compile` checks for touched modules before release commits.
 
-DepartmentTab:
-- Department list management
-- Scraping initiation
-- Progress tracking
-
-IdSearchTab:
-- ID input management
-- Multiple import methods
-- Search coordination
-
-5. Function Interactions
------------------------
-start_background_task:
-- Called by tabs to initiate scraping
-- Creates WebDriver instance
-- Manages threading
-- Handles callbacks
-
-search_and_download_tenders:
-- Core scraping function
-- Called by background tasks
-- Manages downloads
-- Reports progress
-
-update_progress:
-- Thread-safe progress updates
-- Called by scraping functions
-- Updates UI elements
-- Handles time estimates
-
-6. Development Guidelines
+5. Diagnostic Data Notes
 ------------------------
-- Use thread-safe operations for UI updates
-- Implement proper error handling
-- Follow existing naming conventions
-- Document new features
-- Test thoroughly with different inputs
+- `.playwright-mcp/` logs are for portal-change debugging only.
+- SQLite remains the business data source for analytics/history.
 """

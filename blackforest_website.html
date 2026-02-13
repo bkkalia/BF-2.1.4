@@ -116,6 +116,45 @@
         }
         .links a { color: #93c5fd; text-decoration: none; margin: 0 8px; }
         .links a:hover { color: var(--accent); }
+        .diagram-stack {
+            display: grid;
+            gap: 12px;
+            margin-top: 10px;
+        }
+        .diagram {
+            background: #0b1220;
+            border: 1px solid #273449;
+            border-radius: 10px;
+            padding: 12px;
+        }
+        .diagram h3 {
+            font-size: 0.98rem;
+            color: #93c5fd;
+            margin-bottom: 8px;
+        }
+        .diagram pre {
+            margin: 0;
+            color: #cbd5e1;
+            font-size: 0.86rem;
+            line-height: 1.5;
+            overflow-x: auto;
+            white-space: pre;
+            font-family: Consolas, "Courier New", monospace;
+        }
+        .flow-list {
+            margin-top: 8px;
+            display: grid;
+            gap: 8px;
+        }
+        .flow-step {
+            background: var(--soft);
+            border: 1px solid #273449;
+            border-radius: 10px;
+            padding: 10px 12px;
+            font-size: 0.92rem;
+            color: #cbd5e1;
+        }
+        .flow-step b { color: #e2e8f0; }
     </style>
 </head>
 <body>
@@ -125,6 +164,7 @@
             <nav>
                 <a href="#about">About</a>
                 <a href="#features">Features</a>
+                <a href="#how-it-works">How It Works</a>
                 <a href="#innovation">Innovation</a>
                 <a href="#versions">Versions</a>
             </nav>
@@ -204,6 +244,96 @@
             <div class="note">
                 Archive handling foundation is in place through retention-ready data modeling and backup tiers,
                 with live/archive query separation planned as part of the evolving DB foundation phases.
+            </div>
+        </section>
+
+        <section class="card" id="how-it-works">
+            <h2>How the Scraper Works (Tech View)</h2>
+            <p class="sub">Detailed run lifecycle for technical users: control plane, scrape engine, and persistence pipeline.</p>
+
+            <div class="flow-list">
+                <div class="flow-step"><b>1) Run bootstrap:</b> GUI/CLI resolves portal config, mode (full/only-new), output paths, and SQLite/backup settings, then opens a new run context.</div>
+                <div class="flow-step"><b>2) Navigation strategy:</b> for each department, engine tries direct URL navigation first; if blocked, it falls back to org-list click flow with recovery and retries.</div>
+                <div class="flow-step"><b>3) Tender extraction:</b> list + detail parsing collects normalized fields (portal, department, tender ID, title, dates, links, metadata) and applies validation gates.</div>
+                <div class="flow-step"><b>4) Only-new intelligence:</b> manifest + DB memory identify known tender IDs, skip duplicates, and continue scanning so progress reflects resolved (new + known) coverage.</div>
+                <div class="flow-step"><b>5) Persistence & export:</b> run/tender rows are committed to SQLite with latest-per-portal+tender policy, then Excel/CSV outputs are generated from DB-safe views.</div>
+            </div>
+
+            <div class="diagram-stack">
+                <div class="diagram">
+                    <h3>Diagram A — End-to-End Pipeline</h3>
+                    <pre>
+[User: GUI/CLI]
+      |
+      v
+[Run Config Loader] ---> [Portal Mapping + Dept Targets]
+      |                               |
+      |                               v
+      |                    [Navigation Planner]
+      |                   (direct URL -> fallback click)
+      |                               |
+      v                               v
+[Scrape Executor] ------------> [Extractor + Normalizer]
+                                         |
+                                         v
+                            [Only-New Filter (Manifest + DB)]
+                                         |
+                                         v
+                           [SQLite Commit (runs + tenders)]
+                                         |
+                          +--------------+--------------+
+                          |                             |
+                          v                             v
+                  [Excel/CSV Export]         [Tiered DB Backup Policy]
+                    </pre>
+                </div>
+
+                <div class="diagram">
+                    <h3>Diagram B — Department Processing Sequence</h3>
+                    <pre>
+For each department D in selected portal:
+
+  Start D
+    |
+    +--> Try open direct department URL
+    |        |
+    |        +-- success --> scrape list/details --> next department
+    |        |
+    |        +-- fail ----> ensure org list context
+    |                        |
+    |                        +--> click department entry
+    |                                |
+    |                                +-- success --> scrape --> return to org list --> next
+    |                                |
+    |                                +-- fail ----> retry policy / recovery / log warning
+    |
+    +--> Update metrics: departments done, tenders extracted, tenders skipped-known
+                    </pre>
+                </div>
+
+                <div class="diagram">
+                    <h3>Diagram C — Data Integrity + History Model</h3>
+                    <pre>
+Incoming tender row
+      |
+      +--> validate tender ID present?
+      |        |
+      |        +-- no  --> drop row (invalid)
+      |        +-- yes --> continue
+      |
+      +--> build dedupe key: (portal, tender_id_normalized)
+      |
+      +--> compare against existing records
+      |        |
+      |        +-- newer/better row? --> replace latest snapshot
+      |        +-- same/older row?  --> keep existing
+      |
+      +--> write run linkage + timestamps
+      |
+      +--> scheduled backup_if_due
+               daily / weekly / monthly / yearly snapshots + retention pruning
+                    </pre>
+                </div>
             </div>
         </section>
 

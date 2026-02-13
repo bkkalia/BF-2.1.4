@@ -438,7 +438,7 @@ class EmergencyStopDialog:
 
         tk.Button(
             button_frame,
-            text="Pause Process",
+            text="Pause (Graceful Stop)",
             command=lambda: self._set_result("pause"),
             bg="orange",
             fg="white",

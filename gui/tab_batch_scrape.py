@@ -5,6 +5,7 @@ import json
 import os
 import random
 import re
+import sqlite3
 import threading
 import time
 import tkinter as tk
@@ -50,6 +51,9 @@ class BatchScrapeTab(ttk.Frame):
 
         self.mode_var = StringVar(value="sequential")
         self.max_parallel_var = IntVar(value=2)
+        self.department_workers_var = IntVar(value=1)
+        self.department_workers_var.trace_add("write", lambda *_args: self._sync_department_workers_setting())
+        self.delta_mode_var = StringVar(value="quick")
         self.only_new_var = BooleanVar(value=True)
         self.scrape_scope_var = StringVar(value="only_new")
 
@@ -74,6 +78,7 @@ class BatchScrapeTab(ttk.Frame):
         self.download_manifest = self._load_manifest()
 
         self.enable_delta_sweep = True
+        self.current_batch_delta_mode = "quick"
         self.portal_watchdog_inactivity_sec = 120
         self.portal_watchdog_sleep_jump_sec = 180
         self.current_batch_report_dir = None
@@ -95,11 +100,19 @@ class BatchScrapeTab(ttk.Frame):
         self.max_parallel_spin = ttk.Spinbox(top_controls, from_=1, to=4, width=5, textvariable=self.max_parallel_var)
         self.max_parallel_spin.pack(side=tk.LEFT)
 
+        ttk.Label(top_controls, text="Dept Workers:", font=self.main_app.label_font).pack(side=tk.LEFT, padx=(12, 4))
+        self.dept_workers_spin = ttk.Spinbox(top_controls, from_=1, to=5, width=5, textvariable=self.department_workers_var)
+        self.dept_workers_spin.pack(side=tk.LEFT)
+
         ttk.Label(top_controls, text="Scrape:", font=self.main_app.label_font).pack(side=tk.LEFT, padx=(12, 4))
         self.scope_new_radio = ttk.Radiobutton(top_controls, text="Only New", variable=self.scrape_scope_var, value="only_new")
         self.scope_new_radio.pack(side=tk.LEFT, padx=(0, 6))
         self.scope_all_radio = ttk.Radiobutton(top_controls, text="All", variable=self.scrape_scope_var, value="all")
         self.scope_all_radio.pack(side=tk.LEFT, padx=(0, 0))
+
+        ttk.Label(top_controls, text="Delta:", font=self.main_app.label_font).pack(side=tk.LEFT, padx=(12, 4))
+        self.delta_mode_combo = ttk.Combobox(top_controls, textvariable=self.delta_mode_var, values=["quick", "full"], state="readonly", width=8)
+        self.delta_mode_combo.pack(side=tk.LEFT)
 
         safety_frame = ttk.Frame(section)
         safety_frame.pack(fill=tk.X, padx=5, pady=(0, 8))
@@ -229,6 +242,26 @@ class BatchScrapeTab(ttk.Frame):
         self.only_new_var.set(bool(settings.get("only_new", True)))
         self.scrape_scope_var.set("only_new" if self.only_new_var.get() else "all")
 
+        raw_delta_mode = str(settings.get("delta_mode") or self.main_app.settings.get("batch_delta_mode", "quick") or "quick").strip().lower()
+        if raw_delta_mode not in ("quick", "full"):
+            raw_delta_mode = "quick"
+        self.delta_mode_var.set(raw_delta_mode)
+        try:
+            self.main_app.settings["batch_delta_mode"] = raw_delta_mode
+        except Exception:
+            pass
+
+        dept_workers = 1
+        try:
+            if hasattr(self.main_app, "department_parallel_workers_var"):
+                dept_workers = max(1, min(5, int(self.main_app.department_parallel_workers_var.get() or 1)))
+            else:
+                dept_workers = max(1, min(5, int(self.main_app.settings.get("department_parallel_workers", 1) or 1)))
+        except Exception:
+            dept_workers = 1
+        self.department_workers_var.set(dept_workers)
+        self._sync_department_workers_setting()
+
         ip_safety = settings.get("ip_safety", {})
         self.per_domain_max_var.set(ip_safety.get("per_domain_max", 1))
         self.min_delay_var.set(str(ip_safety.get("min_delay_sec", 1.0)))
@@ -240,6 +273,45 @@ class BatchScrapeTab(ttk.Frame):
         self._refresh_group_combo()
         self._refresh_portal_filter_values()
         self._init_dashboard_rows(self._get_selected_portals())
+
+    def _sync_department_workers_setting(self):
+        if getattr(self, "_syncing_dept_workers", False):
+            return
+        self._syncing_dept_workers = True
+        try:
+            value = max(1, min(5, int(self.department_workers_var.get() or 1)))
+        except Exception:
+            value = 1
+        try:
+            current = int(self.department_workers_var.get() or 1)
+        except Exception:
+            current = value
+        if current != value:
+            self.department_workers_var.set(value)
+
+        if hasattr(self.main_app, "department_parallel_workers_var"):
+            try:
+                self.main_app.department_parallel_workers_var.set(str(value))
+            except Exception:
+                pass
+        try:
+            self.main_app.settings["department_parallel_workers"] = value
+        except Exception:
+            pass
+        finally:
+            self._syncing_dept_workers = False
+
+    def _get_selected_delta_mode(self):
+        mode = str(self.delta_mode_var.get() or "quick").strip().lower()
+        if mode not in ("quick", "full"):
+            mode = "quick"
+        if str(self.delta_mode_var.get() or "").strip().lower() != mode:
+            self.delta_mode_var.set(mode)
+        try:
+            self.main_app.settings["batch_delta_mode"] = mode
+        except Exception:
+            pass
+        return mode
 
     def _load_manifest(self):
         if not os.path.exists(self.manifest_path):
@@ -400,7 +472,82 @@ class BatchScrapeTab(ttk.Frame):
     def _get_known_ids_for_portal(self, portal_name):
         self._ensure_portal_checkpoint(portal_name)
         portal_data = self.download_manifest.get("portals", {}).get(portal_name, {})
-        return set(portal_data.get("tender_ids", []))
+        known_ids = set(portal_data.get("tender_ids", []))
+
+        sqlite_known_ids = self._get_sqlite_known_ids_for_portal(portal_name)
+        if sqlite_known_ids:
+            added = len(sqlite_known_ids - known_ids)
+            if added > 0:
+                known_ids.update(sqlite_known_ids)
+                portal_data["tender_ids"] = sorted(known_ids)
+                portal_data["last_db_seed"] = datetime.now().isoformat(timespec="seconds")
+                self._save_manifest()
+                self.log_callback(
+                    f"Loaded {len(sqlite_known_ids)} known IDs from SQLite for '{portal_name}' (added {added} to manifest)."
+                )
+
+        return known_ids
+
+    def _get_sqlite_known_ids_for_portal(self, portal_name):
+        db_path = None
+        if hasattr(self.main_app, "_get_sqlite_runtime_settings"):
+            try:
+                runtime = self.main_app._get_sqlite_runtime_settings() or {}
+                db_path = str(runtime.get("sqlite_db_path") or "").strip()
+            except Exception:
+                db_path = None
+
+        if not db_path:
+            db_path = str(getattr(self.main_app, "settings", {}).get("central_sqlite_db_path") or "").strip()
+
+        if not db_path or not os.path.exists(db_path):
+            return set()
+
+        portal_config = self._portal_config_by_name(portal_name) or {}
+        base_url = str(portal_config.get("BaseURL") or "").strip()
+        keyword = str(portal_config.get("Keyword") or "").strip()
+
+        keyword_from_url = ""
+        try:
+            if base_url:
+                keyword_from_url = str(get_website_keyword_from_url(base_url) or "").strip()
+        except Exception:
+            keyword_from_url = ""
+
+        candidates_raw = {
+            str(portal_name or "").strip(),
+            keyword,
+            keyword_from_url,
+            keyword.replace(".", "_").replace("-", "_"),
+            keyword_from_url.replace(".", "_").replace("-", "_"),
+        }
+        portal_candidates = sorted({item.lower() for item in candidates_raw if item})
+        if not portal_candidates:
+            return set()
+
+        placeholders = ",".join(["?"] * len(portal_candidates))
+        query = (
+            "SELECT DISTINCT trim(tender_id_extracted) "
+            "FROM tenders "
+            "WHERE trim(coalesce(tender_id_extracted, '')) <> '' "
+            f"AND lower(trim(coalesce(portal_name, ''))) IN ({placeholders})"
+        )
+
+        try:
+            conn = sqlite3.connect(db_path)
+            try:
+                rows = conn.execute(query, portal_candidates).fetchall()
+            finally:
+                conn.close()
+        except Exception as error:
+            self.log_callback(f"SQLite known-ID seed failed for '{portal_name}': {error}")
+            return set()
+
+        return {
+            str(row[0]).strip()
+            for row in rows
+            if row and str(row[0]).strip()
+        }
 
     def _get_known_departments_for_portal(self, portal_name):
         self._ensure_portal_checkpoint(portal_name)
@@ -422,6 +569,25 @@ class BatchScrapeTab(ttk.Frame):
             if str(name).strip()
         }
         known_departments.update(summary.get("processed_department_names", []))
+
+        dept_url_map = portal_data.setdefault("department_url_map", {})
+        if not isinstance(dept_url_map, dict):
+            dept_url_map = {}
+            portal_data["department_url_map"] = dept_url_map
+        for dept in summary.get("source_departments", []) or []:
+            dept_name = str(dept.get("name", "")).strip()
+            direct_url = str(dept.get("direct_url", "") or "").strip()
+            if not dept_name or not direct_url:
+                continue
+            dept_key = self._normalize_department_key(dept_name)
+            if not dept_key:
+                continue
+            dept_url_map[dept_key] = {
+                "name": dept_name,
+                "direct_url": direct_url,
+                "last_seen": datetime.now().isoformat(timespec="seconds")
+            }
+
         portal_data["tender_ids"] = sorted(known)
         portal_data["processed_departments"] = sorted(known_departments)
         portal_data["last_run"] = datetime.now().isoformat(timespec="seconds")
@@ -429,6 +595,32 @@ class BatchScrapeTab(ttk.Frame):
         portal_data["last_extracted"] = summary.get("extracted_total_tenders", 0)
         self._save_manifest()
         return len(known)
+
+    def _get_department_url_stats(self, portal_name):
+        portal_data = self.download_manifest.get("portals", {}).get(portal_name, {})
+        known_departments = {
+            str(name).strip().lower()
+            for name in portal_data.get("processed_departments", [])
+            if str(name).strip()
+        }
+        dept_url_map = portal_data.get("department_url_map", {})
+        if not isinstance(dept_url_map, dict):
+            dept_url_map = {}
+
+        mapped = 0
+        for _key, row in dept_url_map.items():
+            if not isinstance(row, dict):
+                continue
+            if str(row.get("direct_url", "") or "").strip():
+                mapped += 1
+
+        known_total = len(known_departments)
+        coverage = int(round((mapped / max(1, known_total)) * 100)) if known_total > 0 else 0
+        return {
+            "known_departments": known_total,
+            "mapped_departments": mapped,
+            "coverage_percent": coverage,
+        }
 
     def _append_batch_log(self, portal_name, message):
         timestamp = datetime.now().strftime("%H:%M:%S")
@@ -503,6 +695,8 @@ class BatchScrapeTab(ttk.Frame):
 
     def _derive_state_from_message(self, message):
         text = str(message).lower()
+        if "delta sweep" in text or "delta sweeping" in text:
+            return "DeltaSweeping"
         if "error" in text or "failed" in text:
             return "Error"
         if "verification summary" in text or "output saved" in text or "completed" in text:
@@ -643,6 +837,7 @@ class BatchScrapeTab(ttk.Frame):
         active_portals = 0
         total_tenders = 0
         scraped_tenders = 0
+        skipped_tenders = 0
         active_names = []
 
         terminal_states = {"done", "error", "nodata"}
@@ -656,9 +851,11 @@ class BatchScrapeTab(ttk.Frame):
             state = str(values[1]).strip().lower()
             expected = self._safe_int(values[2])
             extracted = self._safe_int(values[3])
+            skipped = self._safe_int(values[4])
 
             total_tenders += max(0, expected)
             scraped_tenders += max(0, extracted)
+            skipped_tenders += max(0, skipped)
 
             if state in terminal_states:
                 completed_portals += 1
@@ -685,6 +882,7 @@ class BatchScrapeTab(ttk.Frame):
             "active_portals": active_portals,
             "total_tenders": total_tenders,
             "scraped_tenders": scraped_tenders,
+            "skipped_tenders": skipped_tenders,
             "total_departments": total_departments,
             "scraped_departments": scraped_departments,
             "active_portal_text": active_portal_text,
@@ -716,6 +914,7 @@ class BatchScrapeTab(ttk.Frame):
             total_portals=total_portals,
             total_tenders=metrics["total_tenders"],
             scraped_tenders=metrics["scraped_tenders"],
+            skipped_tenders=metrics["skipped_tenders"],
             total_departments=metrics["total_departments"],
             scraped_departments=metrics["scraped_departments"],
             active_portal=active_portal_value,
@@ -981,12 +1180,15 @@ class BatchScrapeTab(ttk.Frame):
 
         ip_safety = self._get_ip_safety_settings()
 
+        delta_mode = self._get_selected_delta_mode()
+
         if confirm:
             if not gui_utils.show_message(
                 "Confirm Batch",
                 f"Start batch scrape for {len(selected_portals)} portal(s)?\n"
                 f"Mode: {mode.title()}\n"
                 f"Scope: {'Only New' if only_new else 'All'}\n"
+            f"Delta Mode: {delta_mode.title()}\n"
                 f"Max Parallel: {max_parallel}\n"
                 f"Per-Domain: {ip_safety['per_domain_max']}\n"
                 f"Delay: {ip_safety['min_delay_sec']}s to {ip_safety['max_delay_sec']}s\n"
@@ -998,7 +1200,8 @@ class BatchScrapeTab(ttk.Frame):
                 return False
 
         self.only_new_var.set(bool(only_new))
-        self.batch_memory.save_last_settings(selected_portals, mode, max_parallel, ip_safety, only_new)
+        self.current_batch_delta_mode = delta_mode
+        self.batch_memory.save_last_settings(selected_portals, mode, max_parallel, ip_safety, only_new, delta_mode=delta_mode)
 
         self.main_app.total_estimated_tenders_for_run = len(selected_portals)
         self.main_app.reset_progress_and_timer()
@@ -1019,7 +1222,7 @@ class BatchScrapeTab(ttk.Frame):
         self._push_global_progress(state="Starting", active_portal="-")
         self.log_callback(
             f"Starting batch scrape for {len(selected_portals)} portal(s) in {mode} mode "
-            f"(scope={'Only New' if only_new else 'All'}, reason={reason})."
+            f"(scope={'Only New' if only_new else 'All'}, delta={delta_mode.title()}, reason={reason})."
         )
 
         self.main_app.start_background_task(
@@ -1091,9 +1294,125 @@ class BatchScrapeTab(ttk.Frame):
         ]
         return any(pattern in payload for pattern in patterns)
 
-    def _run_portal_pass(self, portal_name, portal_config, download_dir, stop_event, deep_scrape, only_new, shared_driver, portal_log, status_callback, resume_departments=True):
-        self._update_dashboard_threadsafe(portal_name, state="Fetching", message="Fetching departments...")
-        departments, _estimated = fetch_department_list_from_site_v2(portal_config.get("OrgListURL"), portal_log)
+    def _normalize_department_key(self, value):
+        text = str(value or "").strip().lower()
+        text = re.sub(r"\s+", " ", text)
+        return text
+
+    def _build_valid_departments(self, departments):
+        valid_departments = []
+        expected_total = 0
+        for dept in departments or []:
+            s_no = str(dept.get("s_no", "")).strip().lower()
+            dept_name = str(dept.get("name", "")).strip().lower()
+            count_text = str(dept.get("count_text", "")).strip()
+            if s_no.isdigit() and dept_name not in ["organisation name", "department name", "organization", "organization name"]:
+                valid_departments.append(dept)
+                if count_text.isdigit():
+                    expected_total += int(count_text)
+        return valid_departments, expected_total
+
+    def _build_department_snapshot(self, departments):
+        snapshot = {}
+        for dept in departments or []:
+            name = str(dept.get("name", "")).strip()
+            key = self._normalize_department_key(name)
+            if not key:
+                continue
+            count_text = str(dept.get("count_text", "")).strip()
+            try:
+                count_val = int(count_text) if count_text.isdigit() else 0
+            except Exception:
+                count_val = 0
+            snapshot[key] = {
+                "name": name,
+                "count": max(0, count_val),
+                "department": dept,
+            }
+        return snapshot
+
+    def _plan_quick_delta_departments(self, baseline_departments, latest_departments, portal_log):
+        baseline_snapshot = self._build_department_snapshot(baseline_departments)
+        latest_snapshot = self._build_department_snapshot(latest_departments)
+
+        baseline_keys = set(baseline_snapshot.keys())
+        latest_keys = set(latest_snapshot.keys())
+
+        added_keys = sorted(latest_keys - baseline_keys)
+        removed_keys = sorted(baseline_keys - latest_keys)
+        common_keys = sorted(latest_keys.intersection(baseline_keys))
+
+        changed_keys = []
+        unchanged_count = 0
+        count_changed = 0
+
+        for key in common_keys:
+            old_count = int(baseline_snapshot[key].get("count", 0))
+            new_count = int(latest_snapshot[key].get("count", 0))
+            if old_count != new_count:
+                changed_keys.append(key)
+                count_changed += 1
+                portal_log(
+                    f"Quick delta candidate: {latest_snapshot[key].get('name', key)} count changed {old_count}->{new_count}"
+                )
+            else:
+                unchanged_count += 1
+
+        for key in added_keys:
+            changed_keys.append(key)
+            portal_log(
+                f"Quick delta candidate: NEW department {latest_snapshot[key].get('name', key)} count={latest_snapshot[key].get('count', 0)}"
+            )
+
+        for key in removed_keys:
+            portal_log(
+                f"Quick delta notice: Department missing now {baseline_snapshot[key].get('name', key)} "
+                f"(previous count={baseline_snapshot[key].get('count', 0)})"
+            )
+
+        seen = set()
+        delta_departments = []
+        for key in changed_keys:
+            if key in seen:
+                continue
+            seen.add(key)
+            dept = latest_snapshot.get(key, {}).get("department")
+            if dept:
+                delta_departments.append(dept)
+
+        stats = {
+            "baseline_departments": len(baseline_snapshot),
+            "latest_departments": len(latest_snapshot),
+            "added_departments": len(added_keys),
+            "removed_departments": len(removed_keys),
+            "count_changed_departments": count_changed,
+            "unchanged_departments": unchanged_count,
+            "targeted_departments": len(delta_departments),
+        }
+        return delta_departments, stats
+
+    def _run_portal_pass(
+        self,
+        portal_name,
+        portal_config,
+        download_dir,
+        stop_event,
+        deep_scrape,
+        only_new,
+        shared_driver,
+        portal_log,
+        status_callback,
+        resume_departments=True,
+        pre_fetched_departments=None,
+        phase_label="PASS-1",
+        known_ids_seed=None,
+    ):
+        if pre_fetched_departments is None:
+            self._update_dashboard_threadsafe(portal_name, state="Fetching", message="Fetching departments...")
+            departments, _estimated = fetch_department_list_from_site_v2(portal_config.get("OrgListURL"), portal_log)
+        else:
+            departments = list(pre_fetched_departments)
+            _estimated = 0
         if not departments:
             portal_log("No departments found.")
             self._update_dashboard_threadsafe(portal_name, state="NoData", expected=0, extracted=0, skipped=0)
@@ -1111,28 +1430,21 @@ class BatchScrapeTab(ttk.Frame):
                 "sqlite_db_path": None,
                 "sqlite_run_id": None,
                 "partial_saved": False,
-                "department_summaries": []
+                "department_summaries": [],
+                "source_departments": []
             }
 
-        valid_departments = []
-        expected_total = 0
-        for dept in departments:
-            s_no = str(dept.get("s_no", "")).strip().lower()
-            dept_name = str(dept.get("name", "")).strip().lower()
-            count_text = str(dept.get("count_text", "")).strip()
-            if s_no.isdigit() and dept_name not in ["organisation name", "department name", "organization", "organization name"]:
-                valid_departments.append(dept)
-                if count_text.isdigit():
-                    expected_total += int(count_text)
+        valid_departments, expected_total = self._build_valid_departments(departments)
 
         known_ids = self._get_known_ids_for_portal(portal_name) if only_new else set()
+        known_ids.update({str(item).strip() for item in (known_ids_seed or set()) if str(item).strip()})
         known_departments = self._get_known_departments_for_portal(portal_name) if (only_new and resume_departments) else set()
         if only_new:
             portal_log(f"Known tender IDs for resume/new-only: {len(known_ids)}")
             if resume_departments:
                 portal_log(f"Known processed departments for resume: {len(known_departments)}")
             else:
-                portal_log("Delta sweep: re-checking all departments with tender-ID de-duplication.")
+                portal_log(f"{phase_label}: tender-ID de-duplication active; resume department skip disabled.")
 
         self._update_dashboard_threadsafe(portal_name, state="Scraping", expected=expected_total)
         if hasattr(self.main_app, "set_status_context"):
@@ -1149,6 +1461,15 @@ class BatchScrapeTab(ttk.Frame):
             except Exception:
                 sqlite_runtime_kwargs = {}
 
+        dept_workers = 1
+        try:
+            dept_workers = max(1, min(5, int(self.department_workers_var.get() or 1)))
+        except Exception:
+            dept_workers = 1
+        self._sync_department_workers_setting()
+        if dept_workers > 1:
+            portal_log(f"Department parallel workers enabled: {dept_workers}")
+
         summary = run_scraping_logic(
             departments_to_scrape=valid_departments,
             base_url_config=portal_config,
@@ -1162,6 +1483,7 @@ class BatchScrapeTab(ttk.Frame):
             deep_scrape=deep_scrape,
             existing_tender_ids=known_ids,
             existing_department_names=known_departments,
+            department_parallel_workers=dept_workers,
             **sqlite_runtime_kwargs
         )
         summary.setdefault("expected_total_tenders", expected_total)
@@ -1177,11 +1499,23 @@ class BatchScrapeTab(ttk.Frame):
         summary.setdefault("sqlite_db_path", None)
         summary.setdefault("sqlite_run_id", None)
         summary.setdefault("partial_saved", False)
+        summary.setdefault("source_departments", list(valid_departments))
         return summary
 
     def _merge_pass_summaries(self, first_summary, delta_summary):
         combined_ids = sorted(set(first_summary.get("extracted_tender_ids", [])).union(delta_summary.get("extracted_tender_ids", [])))
         combined_departments = sorted(set(first_summary.get("processed_department_names", [])).union(delta_summary.get("processed_department_names", [])))
+        combined_source_departments = []
+        seen_dept_keys = set()
+        for dept in list(first_summary.get("source_departments", []) or []) + list(delta_summary.get("source_departments", []) or []):
+            if not isinstance(dept, dict):
+                continue
+            dept_name = str(dept.get("name", "")).strip()
+            dept_key = self._normalize_department_key(dept_name)
+            if not dept_key or dept_key in seen_dept_keys:
+                continue
+            seen_dept_keys.add(dept_key)
+            combined_source_departments.append(dept)
         merged = {
             "status": first_summary.get("status", "Scraping completed"),
             "processed_departments": int(first_summary.get("processed_departments", 0)) + int(delta_summary.get("processed_departments", 0)),
@@ -1197,7 +1531,10 @@ class BatchScrapeTab(ttk.Frame):
             "sqlite_db_path": delta_summary.get("sqlite_db_path") or first_summary.get("sqlite_db_path"),
             "sqlite_run_id": delta_summary.get("sqlite_run_id") or first_summary.get("sqlite_run_id"),
             "partial_saved": bool(first_summary.get("partial_saved") or delta_summary.get("partial_saved")),
-            "delta_sweep_extracted": int(delta_summary.get("extracted_total_tenders", 0))
+            "delta_sweep_extracted": int(delta_summary.get("extracted_total_tenders", 0)),
+            "delta_mode": delta_summary.get("delta_mode") or first_summary.get("delta_mode") or "quick",
+            "delta_quick_stats": delta_summary.get("delta_quick_stats", {}),
+            "source_departments": combined_source_departments
         }
         if "error" in str(first_summary.get("status", "")).lower() or "error" in str(delta_summary.get("status", "")).lower():
             merged["status"] = "Error during scraping"
@@ -1235,9 +1572,71 @@ class BatchScrapeTab(ttk.Frame):
 
         return json_path, csv_path
 
+    def _export_department_url_coverage_report(self, log_callback=None):
+        logger = log_callback or self.log_callback or (lambda _msg: None)
+
+        if not self.current_batch_report_dir:
+            self._prepare_batch_report_dir()
+        report_dir = self.current_batch_report_dir or os.path.join(os.getcwd(), "batch_run_reports")
+        os.makedirs(report_dir, exist_ok=True)
+
+        stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        json_path = os.path.join(report_dir, f"department_url_coverage_{stamp}.json")
+        csv_path = os.path.join(report_dir, f"department_url_coverage_{stamp}.csv")
+
+        portals = self.download_manifest.get("portals", {})
+        rows = []
+        mapped_total = 0
+        known_total = 0
+
+        for portal_name in sorted(portals.keys()):
+            stats = self._get_department_url_stats(portal_name)
+            portal_data = portals.get(portal_name, {}) if isinstance(portals.get(portal_name, {}), dict) else {}
+            row = {
+                "portal": portal_name,
+                "mapped_departments": int(stats.get("mapped_departments", 0)),
+                "known_departments": int(stats.get("known_departments", 0)),
+                "coverage_percent": int(stats.get("coverage_percent", 0)),
+                "last_run": str(portal_data.get("last_run") or ""),
+            }
+            rows.append(row)
+            mapped_total += row["mapped_departments"]
+            known_total += row["known_departments"]
+
+        overall_coverage = int(round((mapped_total / max(1, known_total)) * 100)) if known_total > 0 else 0
+        summary = {
+            "generated_at": datetime.now().isoformat(timespec="seconds"),
+            "portal_count": len(rows),
+            "mapped_departments_total": mapped_total,
+            "known_departments_total": known_total,
+            "overall_coverage_percent": overall_coverage,
+            "portals": rows,
+        }
+
+        with open(json_path, "w", encoding="utf-8") as handle:
+            json.dump(summary, handle, indent=2, ensure_ascii=False)
+
+        with open(csv_path, "w", encoding="utf-8-sig", newline="") as handle:
+            fieldnames = ["portal", "mapped_departments", "known_departments", "coverage_percent", "last_run"]
+            writer = csv.DictWriter(handle, fieldnames=fieldnames)
+            writer.writeheader()
+            for row in rows:
+                writer.writerow(row)
+
+        logger(
+            "Department URL coverage report saved: "
+            f"overall={overall_coverage}% ({mapped_total}/{known_total}), portals={len(rows)}, "
+            f"json={json_path}, csv={csv_path}"
+        )
+        return json_path, csv_path
+
     def _run_single_portal(self, portal_name, portal_config, download_dir, stop_event, deep_scrape, only_new, shared_driver, portal_log, status_callback):
         started_at = datetime.now()
         portal_messages = []
+        first_pass_summary = {}
+        delta_mode = str(getattr(self, "current_batch_delta_mode", "quick") or "quick").strip().lower()
+        if delta_mode not in ("quick", "full"):
+            delta_mode = "quick"
         inactivity_state = {
             "last_mono": time.monotonic(),
             "last_wall": time.time()
@@ -1274,7 +1673,8 @@ class BatchScrapeTab(ttk.Frame):
                     shared_driver=shared_driver,
                     portal_log=portal_log,
                     status_callback=status_callback,
-                    resume_departments=True
+                    resume_departments=True,
+                    phase_label="PASS-1"
                 )
 
                 if not watchdog_trigger.is_set() and "error" not in str(summary.get("status", "")).lower():
@@ -1311,22 +1711,136 @@ class BatchScrapeTab(ttk.Frame):
                     "partial_saved": False
                 }
 
-            if self.enable_delta_sweep and only_new and not composite_stop.is_set() and "error" not in str(summary.get("status", "")).lower():
-                portal_log("Starting optional final delta sweep (quick second pass)...")
-                delta_summary = self._run_portal_pass(
-                    portal_name=portal_name,
-                    portal_config=portal_config,
-                    download_dir=download_dir,
-                    stop_event=composite_stop,
-                    deep_scrape=False,
-                    only_new=True,
-                    shared_driver=shared_driver,
-                    portal_log=portal_log,
-                    status_callback=status_callback,
-                    resume_departments=False
+            first_pass_summary = dict(summary)
+            first_extracted = int(first_pass_summary.get("extracted_total_tenders", 0))
+            first_skipped = int(first_pass_summary.get("skipped_existing_total", 0))
+            first_expected = int(first_pass_summary.get("expected_total_tenders", 0))
+            first_processed = int(first_pass_summary.get("processed_departments", 0))
+            first_resolved = first_extracted + first_skipped
+            portal_log(
+                f"MajorStep[PASS-1] expected={first_expected}, processed_depts={first_processed}, "
+                f"extracted={first_extracted}, skipped_known={first_skipped}, resolved={first_resolved}"
+            )
+
+            if only_new and not composite_stop.is_set() and "error" not in str(summary.get("status", "")).lower():
+                first_pass_ids = {
+                    str(item).strip()
+                    for item in first_pass_summary.get("extracted_tender_ids", [])
+                    if str(item).strip()
+                }
+                portal_log(
+                    f"MajorStep[DELTA-START] baseline_resolved={first_resolved}, "
+                    f"baseline_extracted={first_extracted}, baseline_skipped={first_skipped}"
+                )
+                self._update_dashboard_threadsafe(
+                    portal_name,
+                    state="DeltaSweeping",
+                    message="DELTA SWEEPING (final pass)"
+                )
+                self._push_global_progress(state="DeltaSweeping", active_portal=portal_name)
+                if hasattr(self.main_app, "set_status_context"):
+                    try:
+                        self.main_app.set_status_context(active_portal=portal_name, state="DeltaSweeping")
+                    except Exception:
+                        pass
+                status_callback(f"Delta sweeping: {portal_name}")
+                portal_log(f"Delta strategy selected: {delta_mode.upper()}")
+
+                delta_summary = None
+                if delta_mode == "full":
+                    portal_log("Starting FULL delta sweep (re-checking all listed departments)...")
+                    delta_summary = self._run_portal_pass(
+                        portal_name=portal_name,
+                        portal_config=portal_config,
+                        download_dir=download_dir,
+                        stop_event=composite_stop,
+                        deep_scrape=False,
+                        only_new=True,
+                        shared_driver=shared_driver,
+                        portal_log=portal_log,
+                        status_callback=status_callback,
+                        resume_departments=False,
+                        phase_label="DELTA-FULL",
+                        known_ids_seed=first_pass_ids
+                    )
+                else:
+                    portal_log("Starting QUICK delta sweep (org list count/name compare)...")
+                    latest_departments, _latest_estimated = fetch_department_list_from_site_v2(portal_config.get("OrgListURL"), portal_log)
+                    baseline_departments = list(first_pass_summary.get("source_departments", []))
+                    latest_valid, _latest_expected = self._build_valid_departments(latest_departments or [])
+                    delta_departments, quick_stats = self._plan_quick_delta_departments(baseline_departments, latest_valid, portal_log)
+
+                    portal_log(
+                        "MajorStep[DELTA-QUICK-COMPARE] "
+                        f"baseline_depts={quick_stats.get('baseline_departments', 0)}, "
+                        f"latest_depts={quick_stats.get('latest_departments', 0)}, "
+                        f"added={quick_stats.get('added_departments', 0)}, "
+                        f"removed={quick_stats.get('removed_departments', 0)}, "
+                        f"count_changed={quick_stats.get('count_changed_departments', 0)}, "
+                        f"targeted={quick_stats.get('targeted_departments', 0)}"
+                    )
+
+                    if delta_departments:
+                        names_preview = ", ".join([str(d.get("name", "")).strip() for d in delta_departments[:6] if str(d.get("name", "")).strip()])
+                        if len(delta_departments) > 6:
+                            names_preview += " ..."
+                        if names_preview:
+                            portal_log(f"Quick delta targeted departments: {names_preview}")
+
+                        delta_summary = self._run_portal_pass(
+                            portal_name=portal_name,
+                            portal_config=portal_config,
+                            download_dir=download_dir,
+                            stop_event=composite_stop,
+                            deep_scrape=False,
+                            only_new=True,
+                            shared_driver=shared_driver,
+                            portal_log=portal_log,
+                            status_callback=status_callback,
+                            resume_departments=False,
+                            pre_fetched_departments=delta_departments,
+                            phase_label="DELTA-QUICK",
+                            known_ids_seed=first_pass_ids
+                        )
+                    else:
+                        portal_log("Quick delta compare found no changed departments; skipping second pass scraping.")
+                        delta_summary = {
+                            "status": "Quick delta: no changed departments",
+                            "processed_departments": 0,
+                            "expected_total_tenders": int(first_pass_summary.get("expected_total_tenders", 0)),
+                            "extracted_total_tenders": 0,
+                            "skipped_existing_total": 0,
+                            "skipped_resume_departments": 0,
+                            "department_summaries": [],
+                            "extracted_tender_ids": [],
+                            "processed_department_names": [],
+                            "output_file_path": first_pass_summary.get("output_file_path"),
+                            "output_file_type": first_pass_summary.get("output_file_type"),
+                            "sqlite_db_path": first_pass_summary.get("sqlite_db_path"),
+                            "sqlite_run_id": first_pass_summary.get("sqlite_run_id"),
+                            "partial_saved": bool(first_pass_summary.get("partial_saved", False)),
+                            "source_departments": [],
+                        }
+                    delta_summary["delta_quick_stats"] = quick_stats
+
+                delta_extracted = int(delta_summary.get("extracted_total_tenders", 0))
+                delta_skipped = int(delta_summary.get("skipped_existing_total", 0))
+                delta_processed = int(delta_summary.get("processed_departments", 0))
+                portal_log(
+                    f"MajorStep[DELTA-END] processed_depts={delta_processed}, "
+                    f"delta_extracted={delta_extracted}, delta_skipped={delta_skipped}"
                 )
                 summary = self._merge_pass_summaries(summary, delta_summary)
+                summary["delta_mode"] = delta_mode
+                merged_extracted = int(summary.get("extracted_total_tenders", 0))
+                merged_skipped = int(summary.get("skipped_existing_total", 0))
+                merged_expected = int(summary.get("expected_total_tenders", 0))
+                portal_log(
+                    f"MajorStep[MERGED] expected={merged_expected}, extracted={merged_extracted}, "
+                    f"skipped_known={merged_skipped}, resolved={merged_extracted + merged_skipped}"
+                )
                 portal_log(f"Delta sweep extracted: {summary.get('delta_sweep_extracted', 0)}")
+                self._push_global_progress(state="Running", active_portal=portal_name)
         finally:
             watchdog_done.set()
             if watchdog_thread:
@@ -1339,6 +1853,13 @@ class BatchScrapeTab(ttk.Frame):
             state_value = "Done" if "completed" in status_text else "Error"
 
         known_total = self._update_manifest_for_portal(portal_name, summary)
+        dept_url_stats = self._get_department_url_stats(portal_name)
+        portal_log(
+            "Dept URL tracker -> "
+            f"mapped={dept_url_stats.get('mapped_departments', 0)}, "
+            f"known={dept_url_stats.get('known_departments', 0)}, "
+            f"coverage={dept_url_stats.get('coverage_percent', 0)}%"
+        )
         self._update_dashboard_threadsafe(
             portal_name,
             state=state_value,
@@ -1399,6 +1920,9 @@ class BatchScrapeTab(ttk.Frame):
             "completed_at": completed_at.isoformat(timespec="seconds"),
             "duration_sec": max(0.0, (completed_at - started_at).total_seconds()),
             "status": summary.get("status", "Unknown"),
+            "pass1_expected_tenders": int(first_pass_summary.get("expected_total_tenders", 0)),
+            "pass1_extracted_tenders": int(first_pass_summary.get("extracted_total_tenders", 0)),
+            "pass1_skipped_known_tenders": int(first_pass_summary.get("skipped_existing_total", 0)),
             "attempted_departments": int(summary.get("processed_departments", 0)) + int(summary.get("skipped_resume_departments", 0)),
             "processed_departments": int(summary.get("processed_departments", 0)),
             "resume_skipped_departments": int(summary.get("skipped_resume_departments", 0)),
@@ -1410,8 +1934,11 @@ class BatchScrapeTab(ttk.Frame):
             "sqlite_db_path": summary.get("sqlite_db_path"),
             "sqlite_run_id": summary.get("sqlite_run_id"),
             "partial_saved": bool(summary.get("partial_saved", False)),
-            "delta_sweep_enabled": bool(self.enable_delta_sweep and only_new),
+            "delta_sweep_enabled": bool(only_new),
+            "delta_mode": str(summary.get("delta_mode") or delta_mode),
             "delta_sweep_extracted": int(summary.get("delta_sweep_extracted", 0)),
+            "delta_quick_stats": summary.get("delta_quick_stats", {}),
+            "department_url_tracker": dept_url_stats,
             "error_count": len(errors),
             "errors": errors[:30]
         }
@@ -1494,6 +2021,7 @@ class BatchScrapeTab(ttk.Frame):
                 self.main_app.set_status_context(state="Completed", completed_portals=total_portals)
             except Exception:
                 pass
+        self._export_department_url_coverage_report(log_callback=log_callback)
         if self.current_batch_report_dir:
             log_callback(f"Batch run reports saved in: {self.current_batch_report_dir}")
 
@@ -1607,6 +2135,7 @@ class BatchScrapeTab(ttk.Frame):
                 self.main_app.set_status_context(state="Completed", completed_portals=total)
             except Exception:
                 pass
+        self._export_department_url_coverage_report(log_callback=log_callback)
         if self.current_batch_report_dir:
             log_callback(f"Batch run reports saved in: {self.current_batch_report_dir}")
 
@@ -1617,6 +2146,7 @@ class BatchScrapeTab(ttk.Frame):
             self.export_ps1_button,
             self.scope_new_radio,
             self.scope_all_radio,
+            self.delta_mode_combo,
             self.max_parallel_spin,
             self.per_domain_spin,
             self.min_delay_entry,

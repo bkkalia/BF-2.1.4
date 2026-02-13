@@ -36,6 +36,8 @@ DEFAULT_SETTINGS_STRUCTURE = {
     "selected_theme": DEFAULT_THEME,
     "use_undetected_driver": USE_UNDETECTED_DRIVER_DEFAULT,
     "headless_mode": HEADLESS_MODE_DEFAULT,
+    "department_parallel_workers": 1,
+    "batch_delta_mode": "quick",
     "refresh_watch_enabled": False,
     "refresh_watch_loop_seconds": 30,
     "refresh_watch_portals": [],

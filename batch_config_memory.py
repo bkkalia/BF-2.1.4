@@ -19,6 +19,7 @@ class BatchConfigMemory:
             "mode": "sequential",
             "max_parallel": 2,
             "only_new": True,
+            "delta_mode": "quick",
             "ip_safety": {
                 "per_domain_max": 1,
                 "min_delay_sec": 1.0,
@@ -79,10 +80,12 @@ class BatchConfigMemory:
             return self._save_config()
         return False
 
-    def save_last_settings(self, selection, mode, max_parallel, ip_safety=None, only_new=True):
+    def save_last_settings(self, selection, mode, max_parallel, ip_safety=None, only_new=True, delta_mode="quick"):
         self.config_data["last_selection"] = sorted(set(selection or []))
         self.config_data["mode"] = mode if mode in ("sequential", "parallel") else "sequential"
         self.config_data["only_new"] = bool(only_new)
+        clean_delta_mode = str(delta_mode or "quick").strip().lower()
+        self.config_data["delta_mode"] = clean_delta_mode if clean_delta_mode in ("quick", "full") else "quick"
         try:
             self.config_data["max_parallel"] = max(1, int(max_parallel))
         except Exception:
@@ -127,6 +130,7 @@ class BatchConfigMemory:
             "mode": self.config_data.get("mode", "sequential"),
             "max_parallel": self.config_data.get("max_parallel", 2),
             "only_new": bool(self.config_data.get("only_new", True)),
+            "delta_mode": str(self.config_data.get("delta_mode", "quick") or "quick").strip().lower(),
             "ip_safety": self.config_data.get("ip_safety", self._default_config()["ip_safety"].copy())
         }
 

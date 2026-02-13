@@ -88,6 +88,7 @@ class MainWindow:
                 "active_portals": 0,
                 "total_tenders": 0,
                 "scraped_tenders": 0,
+                "skipped_tenders": 0,
                 "total_departments": 0,
                 "scraped_departments": 0,
                 "overall_percent": 0,
@@ -98,6 +99,17 @@ class MainWindow:
             self._status_messages = deque(maxlen=16)
             self._status_message_index = 0
             self._status_message_job = None
+            self._delta_sweep_active = False
+            self._delta_flash_job = None
+            self._delta_flash_state = False
+            self._status_message_colors = {
+                "normal_bg": "#fff59d",
+                "normal_border": "#e6c200",
+                "normal_fg": "#4e342e",
+                "flash_bg": "#ffe082",
+                "flash_border": "#f59e0b",
+                "flash_fg": "#3e2723",
+            }
             print("State variables initialized")
 
             # Initialize Tkinter variables
@@ -162,6 +174,8 @@ class MainWindow:
             self.root.after(0, lambda: self.set_status_context(**kwargs))
             return
         self.status_context.update(kwargs)
+        state_text = str(self.status_context.get("state", "") or "").lower()
+        self._set_delta_sweep_visual("delta" in state_text)
         self._render_statusbar_summary()
 
     def _to_int(self, value, default=0):
@@ -243,12 +257,70 @@ class MainWindow:
         if not hasattr(self, "status_message_label"):
             return
         if not self._status_messages:
-            self.status_message_label.config(text="Messages: Ready")
+            prefix = "DELTA SWEEPING | " if self._delta_sweep_active else ""
+            self.status_message_label.config(text=f"Messages: {prefix}Ready")
             return
         if self._status_message_index >= len(self._status_messages):
             self._status_message_index = 0
         msg = self._status_messages[self._status_message_index]
-        self.status_message_label.config(text=f"Messages: {msg}")
+        prefix = "DELTA SWEEPING | " if self._delta_sweep_active else ""
+        self.status_message_label.config(text=f"Messages: {prefix}{msg}")
+
+    def _set_delta_sweep_visual(self, active):
+        is_active = bool(active)
+        if self._delta_sweep_active == is_active and (is_active or self._delta_flash_job is None):
+            return
+
+        self._delta_sweep_active = is_active
+        self._delta_flash_state = False
+        if self._delta_flash_job and self.root and self.root.winfo_exists():
+            try:
+                self.root.after_cancel(self._delta_flash_job)
+            except Exception:
+                pass
+        self._delta_flash_job = None
+
+        if not hasattr(self, "status_message_label"):
+            return
+
+        if is_active:
+            self._tick_delta_sweep_visual()
+        else:
+            if hasattr(self, "status_message_row"):
+                self.status_message_row.configure(
+                    bg=self._status_message_colors["normal_bg"],
+                    highlightbackground=self._status_message_colors["normal_border"]
+                )
+            self.status_message_label.configure(
+                bg=self._status_message_colors["normal_bg"],
+                fg=self._status_message_colors["normal_fg"]
+            )
+            self._refresh_status_message_line()
+
+    def _tick_delta_sweep_visual(self):
+        if not self._delta_sweep_active:
+            return
+        if not hasattr(self, "status_message_label"):
+            return
+
+        self._delta_flash_state = not self._delta_flash_state
+        bg_key = "flash_bg" if self._delta_flash_state else "normal_bg"
+        border_key = "flash_border" if self._delta_flash_state else "normal_border"
+        fg_key = "flash_fg" if self._delta_flash_state else "normal_fg"
+
+        if hasattr(self, "status_message_row"):
+            self.status_message_row.configure(
+                bg=self._status_message_colors[bg_key],
+                highlightbackground=self._status_message_colors[border_key]
+            )
+        self.status_message_label.configure(
+            bg=self._status_message_colors[bg_key],
+            fg=self._status_message_colors[fg_key]
+        )
+        self._refresh_status_message_line()
+
+        if self.root and self.root.winfo_exists():
+            self._delta_flash_job = self.root.after(550, self._tick_delta_sweep_visual)
 
     def _rotate_status_message_line(self):
         self._status_message_job = None
@@ -258,13 +330,15 @@ class MainWindow:
             self._status_message_index = (self._status_message_index + 1) % len(self._status_messages)
         self._refresh_status_message_line()
         if self.root and self.root.winfo_exists():
-            self._status_message_job = self.root.after(3500, self._rotate_status_message_line)
+            delay_ms = 1400 if self._delta_sweep_active else 3500
+            self._status_message_job = self.root.after(delay_ms, self._rotate_status_message_line)
 
-    def _calculate_overall_percent(self, scraped_departments, total_departments, scraped_tenders, total_tenders, completed_portals, total_portals):
+    def _calculate_overall_percent(self, scraped_departments, total_departments, scraped_tenders, skipped_tenders, total_tenders, completed_portals, total_portals):
+        if total_tenders > 0:
+            resolved_tenders = max(0, scraped_tenders) + max(0, skipped_tenders)
+            return max(0, min(100, int(round((resolved_tenders / max(1, total_tenders)) * 100))))
         if total_departments > 0:
             return max(0, min(100, int(round((scraped_departments / max(1, total_departments)) * 100))))
-        if total_tenders > 0:
-            return max(0, min(100, int(round((scraped_tenders / max(1, total_tenders)) * 100))))
         if total_portals > 0:
             return max(0, min(100, int(round((completed_portals / max(1, total_portals)) * 100))))
         return 0
@@ -280,6 +354,7 @@ class MainWindow:
 
         total_tenders = self._to_int(kwargs.get("total_tenders", self.global_progress_data.get("total_tenders", 0)))
         scraped_tenders = self._to_int(kwargs.get("scraped_tenders", self.global_progress_data.get("scraped_tenders", 0)))
+        skipped_tenders = self._to_int(kwargs.get("skipped_tenders", self.global_progress_data.get("skipped_tenders", 0)))
         total_departments = self._to_int(kwargs.get("total_departments", self.global_progress_data.get("total_departments", 0)))
         scraped_departments = self._to_int(kwargs.get("scraped_departments", self.global_progress_data.get("scraped_departments", 0)))
 
@@ -287,22 +362,27 @@ class MainWindow:
             scraped_departments,
             total_departments,
             scraped_tenders,
+            skipped_tenders,
             total_tenders,
             completed_portals,
             total_portals,
         )
+        state_text = str(kwargs.get("state", self.status_context.get("state", "")) or "").lower()
+        if "delta" in state_text and self.scraping_in_progress and overall_percent >= 100:
+            overall_percent = 99
 
         self.global_progress_data.update({
             "active_portals": active_portals,
             "total_tenders": total_tenders,
             "scraped_tenders": scraped_tenders,
+            "skipped_tenders": skipped_tenders,
             "total_departments": total_departments,
             "scraped_departments": scraped_departments,
             "overall_percent": overall_percent,
         })
 
         now = datetime.now()
-        progress_units = scraped_tenders + scraped_departments + completed_portals
+        progress_units = scraped_tenders + skipped_tenders + scraped_departments + completed_portals
         if self._last_progress_tick is None:
             self._last_progress_tick = now
             self._last_progress_units = progress_units
@@ -336,24 +416,44 @@ class MainWindow:
 
         if hasattr(self, "progress_bar") and hasattr(self, "progress_details_label"):
             tender_total_display = max(total_tenders, scraped_tenders)
-            tender_pct = int(round((scraped_tenders / max(1, tender_total_display)) * 100)) if tender_total_display > 0 else 0
+            resolved_tenders = max(0, scraped_tenders) + max(0, skipped_tenders)
+            tender_pct = int(round((resolved_tenders / max(1, tender_total_display)) * 100)) if tender_total_display > 0 else 0
             self.progress_bar["value"] = max(0, min(100, tender_pct))
-            pending_tenders = max(0, tender_total_display - scraped_tenders)
+            pending_tenders = max(0, tender_total_display - resolved_tenders)
             self.progress_details_label.config(
-                text=f"Scraped: {scraped_tenders}   Total: {tender_total_display}   Pending: {pending_tenders}"
+                text=f"Extracted: {scraped_tenders}   SkippedKnown: {skipped_tenders}   Total: {tender_total_display}   Pending: {pending_tenders}"
             )
 
         if hasattr(self, "global_kpi_label"):
             stall_text = f"   Stalled: {self._format_hms(stalled_seconds)}" if is_stalled else ""
-            tender_pending = max(0, max(total_tenders, scraped_tenders) - scraped_tenders)
+            tender_total_display = max(total_tenders, scraped_tenders)
+            tender_resolved = max(0, scraped_tenders) + max(0, skipped_tenders)
+            tender_pending = max(0, tender_total_display - tender_resolved)
             dept_pending = max(0, max(total_departments, scraped_departments) - scraped_departments)
             self.global_kpi_label.config(
                 text=(
                     f"Portals Active: {active_portals}   "
-                    f"Tenders S/T/P: {scraped_tenders}/{max(total_tenders, scraped_tenders)}/{tender_pending}   "
+                    f"Tenders E/K/T/P: {scraped_tenders}/{skipped_tenders}/{tender_total_display}/{tender_pending}   "
                     f"Departments S/T/P: {scraped_departments}/{max(total_departments, scraped_departments)}/{dept_pending}"
                     f"{stall_text}"
                 )
+            )
+
+        if hasattr(self, "kpi_portals_label"):
+            self.kpi_portals_label.config(text=f"Portals {completed_portals}/{total_portals}")
+        if hasattr(self, "kpi_tenders_label"):
+            tender_total_display = max(total_tenders, scraped_tenders)
+            tender_resolved = max(0, scraped_tenders) + max(0, skipped_tenders)
+            self.kpi_tenders_label.config(text=f"Tenders {tender_resolved}/{tender_total_display}")
+        if hasattr(self, "kpi_depts_label"):
+            self.kpi_depts_label.config(text=f"Depts {scraped_departments}/{max(total_departments, scraped_departments)}")
+
+        if hasattr(self, "status_metrics_label"):
+            tender_total_display = max(total_tenders, scraped_tenders)
+            tender_resolved = max(0, scraped_tenders) + max(0, skipped_tenders)
+            resolved_pct = int(round((tender_resolved / max(1, tender_total_display)) * 100)) if tender_total_display > 0 else 0
+            self.status_metrics_label.config(
+                text=f"Resolved: {tender_resolved}/{tender_total_display} ({resolved_pct}%)"
             )
 
         if hasattr(self, "rate_label"):
@@ -414,6 +514,8 @@ class MainWindow:
                 pass
         elif "batch scraping completed" in lowered or "idle" in lowered:
             updates["state"] = "Completed"
+        elif "delta sweep" in lowered or "delta sweeping" in lowered:
+            updates["state"] = "DeltaSweeping"
 
         self.set_status_context(**updates)
 
@@ -542,6 +644,7 @@ class MainWindow:
         self.selected_theme_var = StringVar(value=self.settings.get("selected_theme", DEFAULT_THEME))
         self.use_undetected_driver_var = BooleanVar(value=self.settings.get("use_undetected_driver", USE_UNDETECTED_DRIVER_DEFAULT))
         self.headless_mode_var = BooleanVar(value=self.settings.get("headless_mode", HEADLESS_MODE_DEFAULT))
+        self.department_parallel_workers_var = StringVar(value=str(self.settings.get("department_parallel_workers", 1)))
 
         # Initialize timeout variables
         self.timeout_vars = {}
@@ -792,7 +895,7 @@ class MainWindow:
         global_panel_height = self.global_panel.winfo_reqheight() + 5
         # Calculate status bar height after it's created
         # --- Enhanced Status Bar with Global Process Indicators ---
-        status_frame = ttk.Frame(self.root, style='Status.TFrame', height=136)
+        status_frame = ttk.Frame(self.root, style='Status.TFrame', height=152)
         status_frame.pack(side=tk.BOTTOM, fill=tk.X)
         status_frame.pack_propagate(False)  # Prevent shrinking
 
@@ -825,36 +928,44 @@ class MainWindow:
         self.overall_progress_bar = ttk.Progressbar(
             aggregate_row,
             orient="horizontal",
-            length=260,
+            length=280,
             mode="determinate",
             style="Overall.Horizontal.TProgressbar"
         )
-        self.overall_progress_bar.pack(side=tk.LEFT, padx=2)
+        self.overall_progress_bar.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(2, 4))
         self.overall_progress_label = ttk.Label(aggregate_row, text="0%", style='Status.TLabel', width=6, anchor='w')
         self.overall_progress_label.pack(side=tk.LEFT, padx=(5, 8))
+
+        self.kpi_portals_label = tk.Label(aggregate_row, text="Portals 0/0", bg="#dbeafe", fg="#1e40af", padx=8, pady=2, font=("Segoe UI", 9, "bold"))
+        self.kpi_portals_label.pack(side=tk.LEFT, padx=(0, 6))
+        self.kpi_tenders_label = tk.Label(aggregate_row, text="Tenders 0/0", bg="#dcfce7", fg="#166534", padx=8, pady=2, font=("Segoe UI", 9, "bold"))
+        self.kpi_tenders_label.pack(side=tk.LEFT, padx=(0, 6))
+        self.kpi_depts_label = tk.Label(aggregate_row, text="Depts 0/0", bg="#f3e8ff", fg="#6b21a8", padx=8, pady=2, font=("Segoe UI", 9, "bold"))
+        self.kpi_depts_label.pack(side=tk.LEFT, padx=(0, 10))
+
         self.global_kpi_label = ttk.Label(
             aggregate_row,
-            text="Portals Active: 0   Tenders: 0/0   Departments: 0/0",
+            text="",
             style='Status.TLabel',
             anchor='w'
         )
-        self.global_kpi_label.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 10))
+        self.global_kpi_label.pack_forget()
         
         # Detail Row (Departments + Tenders)
         tender_row = ttk.Frame(status_frame, style='Status.TFrame')
         tender_row.pack(side=tk.TOP, fill=tk.X, pady=(2, 3))
 
         ttk.Label(tender_row, text="Depts:", style='Status.TLabel', width=6).pack(side=tk.LEFT, padx=(10, 2))
-        self.dept_progress_bar = ttk.Progressbar(tender_row, orient="horizontal", length=150, mode="determinate", style="Dept.Horizontal.TProgressbar")
-        self.dept_progress_bar.pack(side=tk.LEFT, padx=2)
+        self.dept_progress_bar = ttk.Progressbar(tender_row, orient="horizontal", length=190, mode="determinate", style="Dept.Horizontal.TProgressbar")
+        self.dept_progress_bar.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=2)
         self.dept_progress_label = ttk.Label(tender_row, text="0/0", style='Status.TLabel', width=12, anchor='w')
         self.dept_progress_label.pack(side=tk.LEFT, padx=5)
 
         ttk.Label(tender_row, text="Tenders:", style='Status.TLabel', width=7).pack(side=tk.LEFT, padx=(6, 2))
-        self.progress_bar = ttk.Progressbar(tender_row, orient="horizontal", length=180, mode="determinate", style="Tender.Horizontal.TProgressbar")
-        self.progress_bar.pack(side=tk.LEFT, padx=2)
-        self.progress_details_label = ttk.Label(tender_row, text="Scraped: 0   Total: 0   Pending: 0", style='Status.TLabel', width=40, anchor='w')
-        self.progress_details_label.pack(side=tk.LEFT, padx=5)
+        self.progress_bar = ttk.Progressbar(tender_row, orient="horizontal", length=260, mode="determinate", style="Tender.Horizontal.TProgressbar")
+        self.progress_bar.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=2)
+        self.progress_details_label = ttk.Label(tender_row, text="Extracted: 0   SkippedKnown: 0   Total: 0   Pending: 0", style='Status.TLabel', anchor='w')
+        self.progress_details_label.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=5)
 
         # Time + message rows
         time_row = ttk.Frame(status_frame, style='Status.TFrame')
@@ -867,15 +978,28 @@ class MainWindow:
         self.timer_label = ttk.Label(time_row, text="Elapsed: 00:00:00", style='Status.TLabel', width=16, anchor='w')
         self.timer_label.pack(side=tk.LEFT, padx=3)
 
-        message_row = ttk.Frame(status_frame, style='Status.TFrame')
-        message_row.pack(side=tk.TOP, fill=tk.X, pady=(0, 3))
-        self.status_message_label = ttk.Label(
-            message_row,
-            text="Messages: Ready",
+        self.status_metrics_label = ttk.Label(
+            time_row,
+            text="Resolved: 0/0 (0%)",
             style='Status.TLabel',
-            anchor='w'
+            width=24,
+            anchor='e'
         )
-        self.status_message_label.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(10, 10))
+        self.status_metrics_label.pack(side=tk.RIGHT, padx=(6, 10))
+
+        self.status_message_row = tk.Frame(status_frame, bg="#fff59d", highlightbackground="#e6c200", highlightthickness=1)
+        self.status_message_row.pack(side=tk.TOP, fill=tk.X, pady=(0, 3), padx=(10, 10))
+        self.status_message_label = tk.Label(
+            self.status_message_row,
+            text="Messages: Ready",
+            bg="#fff59d",
+            fg="#4e342e",
+            font=("Segoe UI", 9, "bold"),
+            anchor='w',
+            padx=10,
+            pady=5
+        )
+        self.status_message_label.pack(side=tk.LEFT, fill=tk.X, expand=True)
 
         self._render_statusbar_summary()
         self._queue_status_message("Ready")
@@ -1303,6 +1427,10 @@ class MainWindow:
         self.settings["selected_theme"] = self.selected_theme_var.get()
         self.settings["use_undetected_driver"] = self.use_undetected_driver_var.get()
         self.settings["headless_mode"] = self.headless_mode_var.get()
+        try:
+            self.settings["department_parallel_workers"] = max(1, min(5, int(str(self.department_parallel_workers_var.get() or "1").strip())))
+        except (TypeError, ValueError):
+            self.settings["department_parallel_workers"] = 1
 
         # Sound settings
         self.settings["enable_sounds"] = self.enable_sounds_var.get()

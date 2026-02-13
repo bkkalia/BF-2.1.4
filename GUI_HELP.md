@@ -36,7 +36,7 @@ python main.py
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│ Black Forest Tender Scraper v2.1.9                    [_][□][X] │
+│ Black Forest Tender Scraper v2.1.10                   [_][□][X] │
 ├─────────────────────────────────────────────────────────────┤
 │ [By Department] [By Tender ID] [By Direct URL] [Settings] [Help] │
 ├─────────────────────────────────────────────────────────────┤
@@ -135,6 +135,8 @@ Run multiple portals in one execution with live per-portal feedback and IP-safe 
 - **Mode**: Sequential or Parallel processing
 - **IP Safety Controls**: Per-domain concurrency, min/max delay, cooldown, retries
 - **Only New Tenders**: Skips already-known Tender IDs using manifest tracking
+- **Delta Mode**: `Quick` (default) or `Full` (user selectable)
+- **Quick Delta Compare**: Detects change using department **names + tender counts**
 - **Live Dashboard**: Per-portal expected/extracted/skipped-known counters and current state
 - **Batch Logs Panel**: Filter logs by portal and search text quickly
 
@@ -145,11 +147,24 @@ Run multiple portals in one execution with live per-portal feedback and IP-safe 
    - skipped-known tenders (already in manifest)
    - remaining gap (approximate)
 - Known Tender IDs are persisted in `batch_tender_manifest.json`.
+- Department direct URLs are tracked per portal in manifest for stability coverage analysis.
+- Batch completion exports department URL coverage JSON/CSV report in batch report folder.
 
-### 5. Settings
+### 5. Refresh Watch
 
 #### Overview
-Configure application behavior, appearance, and advanced options.
+Automates portal monitoring and triggers scraping only when change signatures are detected.
+
+#### Key Features
+- Per-portal watch rules with configurable intervals
+- Change detection before scrape trigger
+- Watch event history for audit/review
+- Exportable watch history
+
+### 6. Settings
+
+#### Overview
+Configure application behavior, appearance, persistence paths, and advanced options.
 
 #### Main Settings:
 - **Download Directory**: Default location for saved files
@@ -157,6 +172,9 @@ Configure application behavior, appearance, and advanced options.
 - **Theme Selection**: Choose GUI appearance theme
 - **Driver Settings**: Configure Selenium WebDriver options
 - **Timeout Settings**: Adjust waiting times for web operations
+- **Central SQLite DB Path**: Fixed datastore location
+- **SQLite Backup Directory**: Tiered backup storage folder
+- **Backup Retention Days**: Daily backup retention window
 
 #### Advanced Settings:
 - **Deep Scraping**: Enable detailed tender information extraction
@@ -164,16 +182,17 @@ Configure application behavior, appearance, and advanced options.
 - **Verbose Logging**: Enable detailed logging
 - **Proxy Settings**: Configure proxy servers if needed
 
-### 6. Help
+### 7. Help
 
 #### Overview
 Access built-in help and documentation.
 
 #### Available Help Topics:
-- **Quick Start Guide**: Basic usage instructions
-- **CLI Mode**: Command-line interface documentation
-- **Troubleshooting**: Common issues and solutions
-- **About**: Application information and version details
+- **Project Scope & Goal** (`PROJECT_CONTEXT.md`)
+- **Changelog** (`CHANGELOG.md`)
+- **End User Help** (`GUI_HELP.md`)
+- **Roadmap** (`ROADMAP.md`)
+- **Developer Help** (in-tab technical guide)
 
 ## 🎛️ Global Controls
 
@@ -223,6 +242,17 @@ Access built-in help and documentation.
 - **Automatic Detection**: New portals appear in dropdown after restart
 
 ## 📊 Output and Results
+
+### Persistence & Data Integrity
+- Tender runs are persisted to SQLite as primary source of truth.
+- App enforces latest-per-portal+tender-ID behavior.
+- Missing/invalid tender IDs are excluded during persistence.
+
+### Backup Policy
+- Daily backups in backup root directory.
+- Weekly backups in `weekly/`.
+- Monthly backups in `monthly/`.
+- Yearly backups in `yearly/`.
 
 ### File Organization
 ```
@@ -356,6 +386,6 @@ Output_Directory/
 
 ---
 
-**Last Updated**: February 12, 2026
-**Version**: 2.1.9
+**Last Updated**: February 13, 2026
+**Version**: 2.1.10
 **GUI Mode**: Interactive tender scraping with visual progress monitoring

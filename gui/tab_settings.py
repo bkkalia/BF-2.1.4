@@ -63,6 +63,19 @@ class SettingsTab(ttk.Frame):
         ttk.Checkbutton(driver_frame, text="Headless Mode", 
                        variable=self.main_app.headless_mode_var).pack(side=tk.LEFT)
 
+        row += 1
+        ttk.Label(section, text="Dept Browser Workers:", font=self.main_app.label_font).grid(row=row, column=0, sticky="w", padx=5, pady=3)
+        ttk.Spinbox(
+            section,
+            from_=1,
+            to=5,
+            width=8,
+            textvariable=self.main_app.department_parallel_workers_var
+        ).grid(row=row, column=1, sticky="w", padx=5, pady=3)
+        ttk.Label(section, text="(1 = single browser, 2-5 = faster per-portal scraping)").grid(
+            row=row, column=2, sticky="w", padx=5, pady=3
+        )
+
         # Theme Selection
         row += 1
         ttk.Label(section, text="Application Theme:", font=self.main_app.label_font).grid(row=row, column=0, sticky="w", padx=5, pady=3)

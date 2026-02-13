@@ -1,126 +1,69 @@
-# Cloud84 Tender Scraper v2.1.4
-## PROJECT OVERVIEW
-This is a **Python desktop application** for web scraping tender/bid data from government websites like hptenders.gov.in and other government portals.
+# Cloud84 Black Forest Project v2.1.10
 
-## TECHNOLOGY STACK
-- **Language**: Python 3.7+
-- **GUI Framework**: Tkinter (NO web technologies)
-- **Web Scraping**: Selenium WebDriver, requests
-- **Data Processing**: pandas, openpyxl
-- **Architecture**: Desktop application (NOT web-based)
-- **Storage**: Local files (Excel, JSON, CSV)
+## Project Overview
+Black Forest is a Python desktop application for scraping and managing government tender listings across multiple portals.
 
-## CORE FUNCTIONALITY
-1. **High-Performance Web Scraping Engine**: Extract tender data from government portals using Selenium (can scrape 1000+ records in under 10 minutes)
-2. **Multi-Portal Support**: Support for 40+ government tender portals (12 currently configured)
-3. **Search & Filter Dashboard**: Advanced filtering by date, department, keywords in `gui/tab_search.py`
-4. **Data Management**: Load, filter, and display scraped tender data
-5. **Export Features**: Export filtered results to Excel files
-6. **URL Configuration**: Manage multiple tender portal URLs
-7. **Persistent Storage**: Save user preferences and folder paths
+It focuses on:
+- reliable multi-portal extraction,
+- operator-friendly GUI + CLI workflows,
+- centralized SQLite persistence,
+- robust backups and historical usability.
 
-## PROJECT STRUCTURE
-```
-d:\Dev84\BF 2.1.4\
-├── main.py                           # Application entry point
-├── config.py                         # Configuration constants
-├── app_settings.py                   # Settings management
-├── cli_parser.py                     # Command-line interface parser
-├── cli_runner.py                     # CLI execution logic
-├── utils.py                          # Utility functions
-├── test.py                           # Test scripts
-├── build_exe.py                      # Executable build script
-├── blackforest_launcher.py           # Launcher script
-├── rebuild_installer.bat             # Installer rebuild script
-├── run_hp_tenders.bat                # HP tenders batch script
-├── requirements.txt                  # Python dependencies
-├── settings.json                     # User settings
-├── base_urls.csv                     # Portal configurations
-├── search_folders.json               # Search folder configurations
-├── version_info.txt                  # Version information for builds
-├── AI_INSTRUCTIONS.md                # AI assistant guidelines
-├── CHANGELOG.md                      # Version changelog
-├── CLI_HELP.md                       # CLI help documentation
-├── GUI_HELP.md                       # GUI help documentation
-├── PROJECT_CONTEXT.md                # This file - project overview
-├── ROADMAP.md                        # Development roadmap
-├── LICENSE.txt                       # License information
-├── INSTRUCTIONS.md                   # General instructions
-├── GPT_Analysis.md                   # GPT analysis notes
-├── Cline Style AI Coding Assistant Instructions.md  # AI coding guidelines
-├── New Structure.txt                 # Structure documentation
-├── search Himachal Pradesh.pdf       # Sample search document
-├── BlackForest.spec                  # PyInstaller spec file
-├── BlackForest_Launcher.spec         # Launcher PyInstaller spec
-├── setup.iss                         # Inno Setup script
-├── setup_simple.iss                  # Simplified installer script
-├── BF 2.1.4.code-workspace           # VSCode workspace file
-├── build/                            # Build artifacts
-│   └── build/BlackForest_Launcher/
-├── gui/                              # GUI components
-│   ├── __init__.py
-│   ├── main_window.py                # Main GUI window with tabs
-│   ├── tab_department.py             # Department-based scraping tab
-│   ├── tab_help.py                   # Help and documentation tab
-│   ├── tab_id_search.py              # ID-based search tab
-│   ├── tab_settings.py               # Application settings tab
-│   ├── tab_url_process.py            # URL processing tab
-│   ├── global_panel.py               # Global control panel
-│   └── gui_utils.py                  # GUI utility functions
-├── installer_output/                 # Generated installers
-│   └── BlackForest_Tender_Scraper_2.1.4_Portable.zip
-├── logs/                             # Application logs
-│   ├── app_20250914.log
-│   ├── app_20250915.log
-│   ├── app_20250917.log
-│   ├── app_20250918.log
-│   ├── app_20250919.log
-│   └── app_20250920.log
-├── resources/                        # Application resources
-│   └── app_icon.ico                  # Application icon
-├── sample Excels/                    # Sample Excel files
-│   └── hptenders_gov_in_tenders_20250524_163439.xlsx
-├── scraper/                          # Core scraping logic
-│   ├── __init__.py
-│   ├── logic.py                      # Main scraping logic
-│   ├── actions.py                    # Selenium action wrappers
-│   ├── captcha_handler.py            # CAPTCHA handling
-│   ├── driver_manager.py             # WebDriver management
-│   ├── ocr_helper.py                 # OCR functionality
-│   ├── sound_helper.py               # Sound notification system
-│   └── webdriver_manager.py          # WebDriver setup
-├── Tender_Downloads/                 # Downloaded tender files
-│   └── hptenders_gov_in_tenders_20250919_182152.xlsx
-└── tools/                            # Development tools
-    └── generate_changelog.py         # Changelog generation tool
-```
+## Technology Stack
+- Language: Python 3.10+
+- GUI: Tkinter
+- Scraping: Selenium WebDriver
+- Data processing: pandas, openpyxl
+- Datastore: SQLite (primary source of truth)
+- Packaging: PyInstaller + Inno Setup
 
-## PRIMARY FOCUS AREAS
-1. **Search Dashboard** (`gui/tab_search.py`): Advanced data filtering and display
-2. **Data Processing**: pandas DataFrame operations for filtering
-3. **User Experience**: Tkinter GUI improvements
-4. **Export Functionality**: Excel data export features
+## Current Architecture (v2.1.10)
+- `main.py`: app startup, dependency checks, lifecycle handling.
+- `gui/main_window.py`: top-level shell, tabs, status/progress orchestration.
+- `gui/tab_department.py`: department-based scraping.
+- `gui/tab_batch_scrape.py`: multi-portal batch runs with dashboard.
+- `gui/tab_refresh_watch.py`: refresh watch automation with change detection.
+- `gui/tab_id_search.py`: tender ID-based lookup flow.
+- `gui/tab_url_process.py`: direct URL processing.
+- `gui/tab_help.py`: in-app help views from markdown sources.
+- `scraper/logic.py`: scraping execution and persistence callbacks.
+- `tender_store.py`: SQLite run/tender persistence, dedupe, export, backup policy.
 
-## STRICT TECHNOLOGY RULES
-- ❌ NO JavaScript, HTML, CSS (this is NOT a web app)
-- ❌ NO React, Node.js, Angular, or web frameworks
-- ❌ NO game development code or brain training apps
-- ❌ NO web servers or API endpoints
-- ✅ ONLY Python Tkinter desktop application
-- ✅ Focus on data scraping, filtering, and management
-- ✅ pandas for data manipulation
-- ✅ Selenium for web scraping
+## Data Model and Integrity
+Primary SQLite tables:
+- `runs`: run metadata and output references.
+- `tenders`: persisted tender rows.
 
-## CURRENT STATE
-- Application successfully loads and displays tender data
-- Search dashboard with department and keyword filtering
-- Date-based filtering (today, tomorrow, 7 days, etc.)
-- Data export to Excel functionality
-- Persistent folder management for data sources
+Current integrity behavior:
+- keeps latest row per `(portal, Tender ID (Extracted))`.
+- removes missing/invalid tender IDs (`nan`, `none`, `null`, empty, etc.).
+- allows same tender ID across different portals.
 
-## IMMEDIATE PRIORITIES
-1. Enhance search and filtering in `tab_search.py`
-2. Improve data sorting and display features
-3. Add custom date range filtering
-4. Optimize data loading and performance
-5. Better error handling and user feedback
+## Backup Strategy (Implemented)
+Backups are generated under configured backup directory in tiers:
+- Daily: root backup folder
+- Weekly: `weekly/`
+- Monthly: `monthly/`
+- Yearly: `yearly/`
+
+Retention:
+- daily = `sqlite_backup_retention_days` (min 7),
+- weekly ≈ 16 weeks,
+- monthly ≈ 24 months,
+- yearly ≈ 7 years.
+
+## User-Facing Capabilities
+- Department scraping with progress visibility.
+- Batch mode (sequential/parallel) with only-new and resume behavior.
+- Delta mode control with **Quick** (default) and **Full** options.
+- Quick delta compare using department names + counts for targeted second pass.
+- Refresh watch with event history and export.
+- Explicit persistence logging (SQLite path + output path).
+- Excel/CSV outputs generated from persisted run data.
+- Department URL coverage tracking and report export (auto + manual).
+
+## Current Status
+- Version: 2.1.10
+- Branch: `main`
+- Central datastore and backup system are active.
+- Documentation and website are aligned with latest release.

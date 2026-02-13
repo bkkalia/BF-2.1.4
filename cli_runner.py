@@ -278,6 +278,15 @@ class CLIRunner:
             if sqlite_backup_dir and not os.path.isabs(sqlite_backup_dir):
                 sqlite_backup_dir = str(Path(config_dir) / sqlite_backup_dir)
 
+            dept_workers = self.args.dept_workers
+            if dept_workers is None:
+                try:
+                    dept_workers = int(self.settings.get('department_parallel_workers', 1) or 1)
+                except (TypeError, ValueError):
+                    dept_workers = 1
+            dept_workers = max(1, min(5, int(dept_workers)))
+            self.logger.info(f"Department browser workers: {dept_workers}")
+
             run_scraping_logic(
                 departments_to_scrape=departments,
                 base_url_config=base_urls_config,
@@ -290,7 +299,8 @@ class CLIRunner:
                 deep_scrape=False,  # Keep it simple for CLI
                 sqlite_db_path=sqlite_db_path or None,
                 sqlite_backup_dir=sqlite_backup_dir or None,
-                sqlite_backup_retention_days=int(self.settings.get('sqlite_backup_retention_days', 30) or 30)
+                sqlite_backup_retention_days=int(self.settings.get('sqlite_backup_retention_days', 30) or 30),
+                department_parallel_workers=dept_workers
             )
 
             elapsed = time.time() - start_time

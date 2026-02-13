@@ -9,10 +9,14 @@ if PROJECT_ROOT not in sys.path:
 
 # Standard library imports
 import time
+import threading
+import concurrent.futures
+import socket
 import pandas as pd
 import logging
 from datetime import datetime
 import re
+from queue import Queue, Empty
 from urllib.parse import urljoin, urlparse
 
 # Third-party imports - with error checking
@@ -99,6 +103,22 @@ INVALID_SESSION_ERROR = "invalid session id"
 WEBDRIVER_EXCEPTION_MSG = "WebDriverException"
 UNEXPECTED_ERROR_MSG = "Unexpected error"
 CRITICAL_ERROR_MSG = "CRITICAL"
+
+
+def normalize_tender_id(value):
+    """Normalize tender IDs for reliable matching when portal formatting varies."""
+    text = str(value or "").strip()
+    if not text:
+        return ""
+
+    text = re.sub(r'(?i)^\s*(tender\s*id|tenderid|id)\s*[:#\-]?\s*', '', text)
+    if text.startswith('[') and text.endswith(']') and len(text) > 2:
+        text = text[1:-1]
+
+    text = text.upper().strip()
+    text = re.sub(r'[\s\-\./]+', '_', text)
+    text = re.sub(r'_+', '_', text).strip('_')
+    return text
 
 # --- GUI Import Check ---
 # Use absolute import based on sys.path modification in main.py
@@ -357,15 +377,19 @@ def _open_department_page(driver, dept_info, log_callback):
     if has_direct and _navigate_department_direct_url(driver, dept_info, log_callback):
         return True, "direct"
 
-    if has_direct:
-        try:
-            current_url = driver.current_url
-            if TENDERS_BY_ORG_URL_PATTERN not in current_url:
-                log_callback("    Direct URL fallback: restoring organization list before click flow")
-                navigate_to_org_list(driver, log_callback)
-                time.sleep(STABILIZE_WAIT)
-        except Exception:
-            pass
+    try:
+        current_url = driver.current_url
+    except Exception:
+        current_url = ""
+
+    # Click flow requires the organization table context.
+    if TENDERS_BY_ORG_URL_PATTERN not in str(current_url):
+        if has_direct:
+            log_callback("    Direct URL fallback: restoring organization list before click flow")
+        else:
+            log_callback("    No direct URL: ensuring organization list page before click flow")
+        navigate_to_org_list(driver, log_callback)
+        time.sleep(STABILIZE_WAIT)
 
     if _find_and_click_dept_link(driver, dept_info, log_callback):
         return True, "click"
@@ -411,12 +435,22 @@ def _find_and_click_dept_link(driver, dept_info, log_callback):
     return False
 
 
-def _scrape_tender_details(driver, department_name, base_url, log_callback, existing_tender_ids=None):
+def _scrape_tender_details(driver, department_name, base_url, log_callback, existing_tender_ids=None, existing_tender_ids_normalized=None, stop_event=None):
     """ Scrapes tender details from the department's tender list page with enhanced retry logic for large tables."""
     tender_data = []
     existing_tender_ids = existing_tender_ids or set()
+    if existing_tender_ids_normalized is None:
+        existing_tender_ids_normalized = {
+            normalize_tender_id(item)
+            for item in existing_tender_ids
+            if normalize_tender_id(item)
+        }
     skipped_existing_count = 0
     log_callback(f"  Scraping details for: {department_name}...")
+
+    if stop_event and stop_event.is_set():
+        log_callback(f"  Stop requested before scraping rows for {department_name}.")
+        return [], 0
     
     # Check session before starting
     try:
@@ -429,6 +463,9 @@ def _scrape_tender_details(driver, department_name, base_url, log_callback, exis
     MAX_TABLE_REFETCH_RETRIES = 3
     
     for table_attempt in range(MAX_TABLE_REFETCH_RETRIES):
+        if stop_event and stop_event.is_set():
+            log_callback(f"  Stop requested while preparing table for {department_name}.")
+            return tender_data, skipped_existing_count
         try:
             # Add extra stabilization wait for large tables
             if table_attempt > 0:
@@ -489,6 +526,10 @@ def _scrape_tender_details(driver, department_name, base_url, log_callback, exis
                     req_cols = min(req_cols, actual_cols)
             
             for i, row in enumerate(rows, 1):
+                if stop_event and stop_event.is_set():
+                    log_callback(f"  Stop requested during row scan for {department_name} at row {i}/{total_rows}.")
+                    return tender_data, skipped_existing_count
+
                 # Progress logging for large tables
                 if total_rows > 1000 and i % progress_interval == 0:
                     log_callback(f"    Processing row {i}/{total_rows} ({int(i/total_rows*100)}%)...")
@@ -501,6 +542,9 @@ def _scrape_tender_details(driver, department_name, base_url, log_callback, exis
                 row_processed = False
                 
                 for row_attempt in range(MAX_ROW_RETRIES):
+                    if stop_event and stop_event.is_set():
+                        log_callback(f"{prefix} Stop requested during row retry loop.")
+                        return tender_data, skipped_existing_count
                     try:
                         cells = row.find_elements(By.TAG_NAME, "td")
                         
@@ -582,7 +626,8 @@ def _scrape_tender_details(driver, department_name, base_url, log_callback, exis
                                 if TITLE_REF_KEY not in data:
                                     data[TITLE_REF_KEY] = "Error"
 
-                        if t_id and t_id in existing_tender_ids:
+                        t_id_normalized = normalize_tender_id(t_id)
+                        if t_id_normalized and t_id_normalized in existing_tender_ids_normalized:
                             skipped_existing_count += 1
                             row_processed = True
                             break
@@ -597,6 +642,8 @@ def _scrape_tender_details(driver, department_name, base_url, log_callback, exis
                         
                     except StaleElementReferenceException:
                         if row_attempt < MAX_ROW_RETRIES - 1:
+                            if stop_event and stop_event.is_set():
+                                return tender_data, skipped_existing_count
                             log_callback(f"{prefix} WARN - Stale element, retrying ({row_attempt + 1}/{MAX_ROW_RETRIES})...")
                             time.sleep(0.3)  # Brief wait before retry
                             # Re-fetch the row from the table
@@ -634,6 +681,8 @@ def _scrape_tender_details(driver, department_name, base_url, log_callback, exis
             return tender_data, skipped_existing_count
             
         except (TimeoutException, NoSuchElementException) as table_err:
+            if stop_event and stop_event.is_set():
+                return tender_data, skipped_existing_count
             if table_attempt < MAX_TABLE_REFETCH_RETRIES - 1:
                 log_callback(f"  WARN: Table fetch error (attempt {table_attempt + 1}/{MAX_TABLE_REFETCH_RETRIES}): {table_err}")
                 time.sleep(STABILIZE_WAIT * 2)
@@ -765,6 +814,11 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
     all_tender_details = []
     processed_depts = 0
     existing_tender_ids = set(kwargs.get("existing_tender_ids") or [])
+    existing_tender_ids_normalized = {
+        normalize_tender_id(item)
+        for item in existing_tender_ids
+        if normalize_tender_id(item)
+    }
     existing_department_names = {
         str(name).strip().lower()
         for name in (kwargs.get("existing_department_names") or [])
@@ -780,7 +834,19 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
     direct_nav_fallback_click = 0
     click_only_success = 0
     portal_name = str(base_url_config.get('Name', 'Unknown')).strip() or "Unknown"
+    portal_base_url = str(base_url_config.get('BaseURL', '')).strip()
     scope_mode = "only_new" if existing_tender_ids or existing_department_names else "all"
+
+    try:
+        portal_host = (urlparse(portal_base_url).hostname or "").strip().lower()
+        if portal_host:
+            try:
+                portal_ip = socket.gethostbyname(portal_host)
+                log_callback(f"[NETWORK] Portal host: {portal_host} | IP: {portal_ip}")
+            except Exception as dns_err:
+                log_callback(f"[NETWORK] Portal host: {portal_host} | IP lookup failed: {dns_err}")
+    except Exception:
+        pass
 
     sqlite_db_path = kwargs.get("sqlite_db_path") or os.path.join(download_dir, "blackforest_tenders.sqlite3")
     sqlite_backup_dir = kwargs.get("sqlite_backup_dir")
@@ -972,162 +1038,225 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
 
         total_depts = len(departments_to_scrape)
         log_callback(f"Starting to process {total_depts} departments...")
+        state_lock = threading.Lock()
+        dept_queue = Queue()
 
-        for dept_info in departments_to_scrape:
+        def _process_department_with_driver(active_driver, dept_info, worker_label="W1"):
+            nonlocal processed_depts, total_tenders, skipped_existing_total
+            nonlocal skipped_resume_departments, direct_nav_attempted, direct_nav_success
+            nonlocal direct_nav_fallback_click, click_only_success
+
             if stop_event and stop_event.is_set():
-                break
+                return
 
             dept_name = dept_info.get('name', 'Unknown')
-            dept_sno = dept_info.get('s_no', 'Unknown')
+            dept_sno = str(dept_info.get('s_no', 'Unknown')).strip()
             dept_name_norm = str(dept_name).strip().lower()
 
             if dept_name_norm and dept_name_norm in existing_department_names:
-                skipped_resume_departments += 1
                 expected_for_dept = int(str(dept_info.get('count_text', '0')).strip()) if str(dept_info.get('count_text', '')).strip().isdigit() else None
-                department_summaries.append({
-                    "department": dept_name,
-                    "expected": expected_for_dept,
-                    "scraped": 0,
-                    "resume_skipped": True
-                })
-                log_callback(f"RESUME: Skipping already-processed department: {dept_name}")
-                continue
+                with state_lock:
+                    skipped_resume_departments += 1
+                    department_summaries.append({
+                        "department": dept_name,
+                        "expected": expected_for_dept,
+                        "scraped": 0,
+                        "resume_skipped": True
+                    })
+                log_callback(f"[{worker_label}] RESUME: Skipping already-processed department: {dept_name}")
+                return
 
-            processed_depts += 1
-            pending_depts = max(0, total_depts - processed_depts)
-            
-            log_callback(f"\nProcessing department {processed_depts}/{total_depts}: {dept_name}")
-            
-            # Update progress with department info
+            if dept_sno.lower() in HEADER_SNO_KEYWORDS:
+                log_callback(f"[{worker_label}] SKIP: Department S.No '{dept_sno}' appears to be a header row")
+                return
+            if dept_name.lower() in HEADER_NAME_KEYWORDS:
+                log_callback(f"[{worker_label}] SKIP: Department name '{dept_name}' appears to be a header")
+                return
+
+            with state_lock:
+                processed_depts += 1
+                current_processed = processed_depts
+                pending_depts = max(0, total_depts - processed_depts)
+                current_total_tenders = total_tenders
+
+            log_callback("")
+            log_callback("**************")
+            log_callback(f"[{worker_label}] Processing department {current_processed}/{total_depts}: {dept_name}")
+            log_callback("**************")
             if progress_callback:
                 progress_details = (
-                    f"Dept {processed_depts}/{total_depts}: {dept_name[:30]}... "
-                    f"| Scraped: {total_tenders} | Pending: {pending_depts}"
+                    f"Dept {current_processed}/{total_depts}: {dept_name[:30]}... "
+                    f"| Scraped: {current_total_tenders} | Pending: {pending_depts}"
                 )
-                progress_callback(processed_depts, total_depts, progress_details, dept_name, 0, total_tenders, pending_depts)
-            
-            # Validate department info before processing
-            if dept_sno.lower() in ['s.no', 'sr.no', 'serial', '#']:
-                log_callback(f"SKIP: Department S.No '{dept_sno}' appears to be a header row")
-                continue
-                
-            if dept_name.lower() in ['organisation name', 'department name', 'organization']:
-                log_callback(f"SKIP: Department name '{dept_name}' appears to be a header")
-                continue
-            
-            # Check driver session before each department
+                progress_callback(current_processed, total_depts, progress_details, dept_name, 0, current_total_tenders, pending_depts)
+
             try:
-                current_url = driver.current_url
-                log_callback(f"Current URL before processing: {current_url}")
+                current_url = active_driver.current_url
+                log_callback(f"[{worker_label}] Current URL before processing: {current_url}")
             except Exception as session_err:
-                log_callback(f"Driver session lost before dept {dept_name}: {session_err}")
-                break  # Stop processing if session is lost
-            
-            # Open department page (direct URL first, click fallback)
+                log_callback(f"[{worker_label}] Driver session lost before dept {dept_name}: {session_err}")
+                return
+
             has_direct_url = bool(str(dept_info.get('direct_url', '')).strip())
             if has_direct_url:
-                direct_nav_attempted += 1
+                with state_lock:
+                    direct_nav_attempted += 1
 
-            opened_dept, nav_mode = _open_department_page(driver, dept_info, log_callback)
+            opened_dept, nav_mode = _open_department_page(active_driver, dept_info, log_callback)
             if not opened_dept:
-                continue
+                return
 
-            if nav_mode == "direct":
-                direct_nav_success += 1
-            elif nav_mode == "click":
-                if has_direct_url:
-                    direct_nav_fallback_click += 1
-                else:
-                    click_only_success += 1
-                 
+            with state_lock:
+                if nav_mode == "direct":
+                    direct_nav_success += 1
+                elif nav_mode == "click":
+                    if has_direct_url:
+                        direct_nav_fallback_click += 1
+                    else:
+                        click_only_success += 1
+
             time.sleep(STABILIZE_WAIT * 2)
-            
-            # Check session again after clicking
+
             try:
-                driver.current_url
+                active_driver.current_url
             except Exception as session_err:
-                log_callback(f"Driver session lost after clicking dept {dept_name}: {session_err}")
-                break
-            
+                log_callback(f"[{worker_label}] Driver session lost after opening dept {dept_name}: {session_err}")
+                return
+
             tender_data, skipped_existing = _scrape_tender_details(
-                driver=driver,
+                driver=active_driver,
                 department_name=dept_name,
                 base_url=base_url_config['BaseURL'],
                 log_callback=log_callback,
-                existing_tender_ids=existing_tender_ids
+                existing_tender_ids=existing_tender_ids,
+                existing_tender_ids_normalized=existing_tender_ids_normalized,
+                stop_event=stop_event
             )
-            skipped_existing_total += skipped_existing
-            if dept_name_norm:
-                processed_department_names.add(dept_name_norm)
-            
+
+            expected_for_dept = int(str(dept_info.get('count_text', '0')).strip()) if str(dept_info.get('count_text', '')).strip().isdigit() else None
+            with state_lock:
+                skipped_existing_total += skipped_existing
+                if dept_name_norm:
+                    processed_department_names.add(dept_name_norm)
+
             if tender_data:
                 dept_tender_count = len(tender_data)
-                total_tenders += dept_tender_count
-                all_tender_details.extend(tender_data)
-                dept_info['processed'] = True
-                dept_info['tenders_found'] = dept_tender_count
-                log_callback(f"Found {dept_tender_count} tenders in department {dept_name}")
-
                 new_ids = {
                     str(item.get("Tender ID (Extracted)")).strip()
                     for item in tender_data
                     if str(item.get("Tender ID (Extracted)", "")).strip()
                 }
-                existing_tender_ids.update(new_ids)
+                new_normalized_ids = {
+                    normalize_tender_id(item)
+                    for item in new_ids
+                    if normalize_tender_id(item)
+                }
+                with state_lock:
+                    total_tenders += dept_tender_count
+                    current_total = total_tenders
+                    all_tender_details.extend(tender_data)
+                    existing_tender_ids.update(new_ids)
+                    existing_tender_ids_normalized.update(new_normalized_ids)
+                    department_summaries.append({
+                        "department": dept_name,
+                        "expected": expected_for_dept,
+                        "scraped": dept_tender_count,
+                        "resume_skipped": False
+                    })
+                dept_info['processed'] = True
+                dept_info['tenders_found'] = dept_tender_count
+                log_callback(f"[{worker_label}] Found {dept_tender_count} tenders in department {dept_name}")
 
-                expected_for_dept = int(str(dept_info.get('count_text', '0')).strip()) if str(dept_info.get('count_text', '')).strip().isdigit() else None
-                department_summaries.append({
-                    "department": dept_name,
-                    "expected": expected_for_dept,
-                    "scraped": dept_tender_count,
-                    "resume_skipped": False
-                })
-                
-                # Update progress with detailed tender info
                 if progress_callback:
                     progress_details = (
-                        f"Dept {processed_depts}/{total_depts}: {dept_name[:28]}... "
-                        f"| Scraped: {total_tenders} | Pending: {pending_depts}"
+                        f"Dept {current_processed}/{total_depts}: {dept_name[:28]}... "
+                        f"| Scraped: {current_total} | Pending: {pending_depts}"
                     )
-                    progress_callback(processed_depts, total_depts, progress_details, dept_name, dept_tender_count, total_tenders, pending_depts)
+                    progress_callback(current_processed, total_depts, progress_details, dept_name, dept_tender_count, current_total, pending_depts)
             else:
-                log_callback(f"No tenders found/extracted from department {dept_name}")
+                with state_lock:
+                    department_summaries.append({
+                        "department": dept_name,
+                        "expected": expected_for_dept,
+                        "scraped": 0,
+                        "resume_skipped": False
+                    })
                 dept_info['processed'] = True
                 dept_info['tenders_found'] = 0
-                expected_for_dept = int(str(dept_info.get('count_text', '0')).strip()) if str(dept_info.get('count_text', '')).strip().isdigit() else None
-                department_summaries.append({
-                    "department": dept_name,
-                    "expected": expected_for_dept,
-                    "scraped": 0,
-                    "resume_skipped": False
-                })
-            
-            # Check session before navigation
+                log_callback(f"[{worker_label}] No tenders found/extracted from department {dept_name}")
+
+            if nav_mode == "direct":
+                log_callback(f"[{worker_label}] Direct navigation mode: skipping return-to-org and proceeding to next department")
+                return
+
             try:
-                driver.current_url
+                active_driver.current_url
             except Exception as session_err:
-                log_callback(f"Driver session lost before back navigation for {dept_name}: {session_err}")
-                break
-            
-            # Navigate back after each department with Site Compatibility recovery
-            back_clicked = _click_on_page_back_button(driver, log_callback, base_url_config.get('OrgListURL'))
+                log_callback(f"[{worker_label}] Driver session lost before back navigation for {dept_name}: {session_err}")
+                return
+
+            back_clicked = _click_on_page_back_button(active_driver, log_callback, base_url_config.get('OrgListURL'))
             if not back_clicked:
-                log_callback("WARNING: Back button click failed, returning to org list URL")
+                log_callback(f"[{worker_label}] WARNING: Back button click failed, returning to org list URL")
                 try:
-                    # Check session before recovery navigation
-                    driver.current_url
-                    
-                    driver.get(base_url_config['OrgListURL'])
-                    # Ensure we navigate to the correct page
-                    if not navigate_to_org_list(driver, log_callback):
-                        log_callback("ERROR: Could not navigate back to organization list")
-                    WebDriverWait(driver, PAGE_LOAD_TIMEOUT).until(
+                    active_driver.current_url
+                    active_driver.get(base_url_config['OrgListURL'])
+                    if not navigate_to_org_list(active_driver, log_callback):
+                        log_callback(f"[{worker_label}] ERROR: Could not navigate back to organization list")
+                    WebDriverWait(active_driver, PAGE_LOAD_TIMEOUT).until(
                         EC.presence_of_element_located(MAIN_TABLE_LOCATOR)
                     )
                     time.sleep(STABILIZE_WAIT * 2)
                 except Exception as nav_err:
-                    log_callback(f"ERROR: Failed to navigate back (session may be lost): {nav_err}")
+                    log_callback(f"[{worker_label}] ERROR: Failed to navigate back (session may be lost): {nav_err}")
+
+        department_parallel_workers = 1
+        try:
+            department_parallel_workers = max(1, min(5, int(kwargs.get("department_parallel_workers") or 1)))
+        except (TypeError, ValueError):
+            department_parallel_workers = 1
+
+        if department_parallel_workers > 1 and total_depts > 1:
+            log_callback(f"Department parallel mode enabled: workers={department_parallel_workers}")
+            for dept_item in departments_to_scrape:
+                dept_queue.put(dept_item)
+
+            worker_drivers = [("W1", driver, False)]
+            for worker_index in range(2, department_parallel_workers + 1):
+                try:
+                    extra_driver = setup_driver(initial_download_dir=download_dir)
+                    worker_drivers.append((f"W{worker_index}", extra_driver, True))
+                except Exception as driver_err:
+                    log_callback(f"WARNING: Could not start browser worker W{worker_index}: {driver_err}")
+
+            def _worker_loop(label, local_driver):
+                while not (stop_event and stop_event.is_set()):
+                    try:
+                        dept_task = dept_queue.get_nowait()
+                    except Empty:
+                        break
+                    try:
+                        _process_department_with_driver(local_driver, dept_task, label)
+                    finally:
+                        dept_queue.task_done()
+
+            try:
+                with concurrent.futures.ThreadPoolExecutor(max_workers=len(worker_drivers)) as executor:
+                    futures = [executor.submit(_worker_loop, label, drv) for label, drv, _owned in worker_drivers]
+                    for fut in concurrent.futures.as_completed(futures):
+                        fut.result()
+            finally:
+                for label, drv, owned in worker_drivers:
+                    if owned and drv is not None:
+                        try:
+                            safe_quit_driver(drv, log_callback)
+                        except Exception:
+                            log_callback(f"WARNING: Failed to close worker browser {label}")
+        else:
+            for dept_info in departments_to_scrape:
+                if stop_event and stop_event.is_set():
                     break
+                _process_department_with_driver(driver, dept_info, "W1")
 
         # Generate output file if we have data
         if all_tender_details:
@@ -1312,7 +1441,8 @@ def process_department(dept_info, base_url_config, download_dir, driver,
             driver=driver,
             department_name=dept_info['name'],
             base_url=base_url_config['BaseURL'],
-            log_callback=log_callback
+            log_callback=log_callback,
+            stop_event=stop_event
         )
 
         if not tender_data:

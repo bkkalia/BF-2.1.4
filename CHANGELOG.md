@@ -9,6 +9,25 @@ Run the helper tool (from project root) to infer and update version dates:
 The tool makes a backup of CHANGELOG.md (CHANGELOG.md.bak.TIMESTAMP) before editing.
 -->
 
+## Version 2.1.10 (February 13, 2026)
+
+### ⚡ Delta Strategy Optimization
+- **Quick Delta Default**: Batch `Only New` now uses quick delta as default to reduce second-pass runtime.
+- **Optional Full Delta**: Added user-selectable Full Delta mode for stricter end-of-run verification when needed.
+- **Batch Delta Mode Control**: Added Batch tab selector (`quick` / `full`) with persisted preference.
+
+### 🔎 Smarter Delta Detection
+- **Department Name + Count Comparison**: Quick delta now compares baseline vs latest organization list using both department names and tender counts.
+- **Department Churn Handling**: Detects add/remove department cases even when total tender counts look similar.
+- **Targeted Second Pass**: Quick delta scrapes only departments flagged by compare logic.
+
+### 🧭 Department URL Tracker
+- **Per-Portal URL Map Persistence**: Captures observed department direct URLs into manifest (`department_url_map`) for stability monitoring.
+- **Coverage Metrics in Logs/Reports**: Portal run logs and report payloads now include mapped/known coverage statistics.
+- **Coverage Report Export**:
+    - automatic JSON/CSV export at batch completion,
+    - manual CLI tool: `tools/report_department_url_coverage.py`.
+
 ## Version 2.1.9 (February 13, 2026)
 
 ### 🗄️ Archive & Backup Reliability

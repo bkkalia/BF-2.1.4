@@ -108,6 +108,13 @@ For Windows Task Scheduler, use the batch file: run_hp_tenders.bat
         )
 
         dept_parser.add_argument(
+            '--dept-workers',
+            type=int,
+            choices=[1, 2, 3, 4, 5],
+            help='Number of parallel browser workers per portal department run (1-5)'
+        )
+
+        dept_parser.add_argument(
             'departments',
             nargs='*',
             help='Specific department names to scrape (if not using --all)'
