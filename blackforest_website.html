@@ -3,743 +3,248 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Black Forest Tender Scraper - Professional Tender Data Extraction</title>
-    <!-- WordPress Gutenberg Optimization: Responsive design with WordPress-friendly structure -->
+    <title>Cloud84 Black Forest Project - Tender Search Utility</title>
     <style>
-        /* WordPress Variables - Easy to change */
         :root {
-            --primary-color: #3498db;
-            --secondary-color: #2c3e50;
-            --accent-color: #e74c3c;
-            --text-color: #333;
-            --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --hero-bg: linear-gradient(135deg, #8B0000 0%, #000000 100%);
-
-            /* URLs - Change these for your WordPress site */
-            --github-url: 'https://github.com/bkkalia/BF-2.1.4';
-            --contact-url: 'https://cloud84.in/contact/';
-            --website-url: 'https://cloud84.com/blackforest';
-            --license-url: 'https://github.com/cloud84/blackforest/blob/main/LICENSE.txt';
+            --bg: #0f172a;
+            --panel: #111827;
+            --soft: #1f2937;
+            --text: #e5e7eb;
+            --muted: #9ca3af;
+            --accent: #38bdf8;
+            --accent2: #22c55e;
+            --warn: #f59e0b;
         }
-    </style>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #020617 0%, #0f172a 50%, #111827 100%);
+            color: var(--text);
             line-height: 1.6;
-            color: #333;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
         }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 20px;
-        }
-
+        .container { width: min(1100px, 92vw); margin: 0 auto; }
         header {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 2rem 0;
-            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
-            position: sticky;
-            top: 0;
-            z-index: 100;
+            position: sticky; top: 0; z-index: 20;
+            background: rgba(2,6,23,0.85); backdrop-filter: blur(8px);
+            border-bottom: 1px solid #1f2937;
         }
-
-        .header-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        .header-inner {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 14px 0;
         }
-
-        .logo {
-            font-size: 2rem;
-            font-weight: bold;
-            color: #2c3e50;
+        .brand { font-size: 1.1rem; font-weight: 700; letter-spacing: 0.2px; }
+        .brand span { color: var(--accent); }
+        nav a {
+            color: var(--muted); text-decoration: none; margin-left: 16px; font-size: 0.95rem;
         }
-
-        .logo span {
-            color: #3498db;
+        nav a:hover { color: var(--accent); }
+        .hero { padding: 64px 0 42px; }
+        .hero h1 { font-size: clamp(1.8rem, 4vw, 3rem); line-height: 1.15; margin-bottom: 14px; }
+        .hero p { color: var(--muted); font-size: 1.05rem; max-width: 780px; }
+        .pill {
+            display: inline-block; margin-top: 16px; background: #082f49; color: #7dd3fc;
+            border: 1px solid #0c4a6e; border-radius: 999px; padding: 6px 12px; font-size: 0.88rem;
         }
-
-        nav ul {
-            display: flex;
-            list-style: none;
+        section { margin: 24px 0; }
+        .card {
+            background: rgba(17,24,39,0.86);
+            border: 1px solid #1f2937;
+            border-radius: 14px;
+            padding: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.25);
         }
-
-        nav ul li {
-            margin-left: 3rem;
-        }
-
-        nav ul li a {
-            text-decoration: none;
-            color: #2c3e50;
-            font-weight: 500;
-            transition: color 0.3s;
-        }
-
-        nav ul li a:hover {
-            color: #3498db;
-        }
-
-        .hero {
-            text-align: center;
-            padding: 4rem 0;
-            color: white;
-            background: linear-gradient(135deg, #8B0000 0%, #000000 100%);
-        }
-
-        .hero h1 {
-            font-size: 3.5rem;
-            margin-bottom: 1rem;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        }
-
-        .hero p {
-            font-size: 1.3rem;
-            margin-bottom: 2rem;
-            opacity: 0.9;
-        }
-
-        .cta-button {
-            display: inline-block;
-            background: #3498db;
-            color: white;
-            padding: 1rem 2rem;
-            text-decoration: none;
-            border-radius: 50px;
-            font-weight: bold;
-            transition: all 0.3s;
-            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
-        }
-
-        .cta-button:hover {
-            background: #2980b9;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
-        }
-
-        section {
-            background: white;
-            margin: 2rem 0;
-            padding: 3rem 0;
-            border-radius: 10px;
-            box-shadow: 0 5px 25px rgba(0,0,0,0.1);
-        }
-
-        .section-title {
-            text-align: center;
-            font-size: 2.5rem;
-            margin-bottom: 2rem;
-            color: #2c3e50;
-            position: relative;
-        }
-
-        .section-title::after {
-            content: '';
-            display: block;
-            width: 50px;
-            height: 3px;
-            background: #3498db;
-            margin: 1rem auto;
-            border-radius: 2px;
-        }
-
-        .features-grid {
+        h2 { font-size: 1.45rem; margin-bottom: 12px; }
+        .sub { color: var(--muted); margin-bottom: 16px; }
+        .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-            margin-top: 2rem;
+            grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+            gap: 14px;
         }
-
-        .feature-card {
-            background: #f8f9fa;
-            padding: 2rem;
+        .feature {
+            background: var(--soft);
+            border: 1px solid #273449;
             border-radius: 10px;
-            text-align: center;
-            transition: transform 0.3s, box-shadow 0.3s;
-            border: 1px solid #e9ecef;
+            padding: 14px;
         }
-
-        .feature-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-        }
-
-        .feature-icon {
-            font-size: 3rem;
-            color: #3498db;
-            margin-bottom: 1rem;
-        }
-
-        .feature-title {
-            font-size: 1.3rem;
-            margin-bottom: 1rem;
-            color: #2c3e50;
-        }
-
-        .license-section {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-
-        .license-section .section-title {
-            color: white;
-        }
-
-        .license-cards {
+        .feature h3 { font-size: 1rem; color: #93c5fd; margin-bottom: 6px; }
+        .feature p { color: #cbd5e1; font-size: 0.93rem; }
+        .timeline {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-            gap: 2rem;
-            margin-top: 2rem;
+            gap: 10px;
         }
-
-        .license-card {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 2rem;
+        .ver {
+            border: 1px solid #273449;
+            border-left: 4px solid var(--accent);
+            background: #0b1220;
             border-radius: 10px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 12px 14px;
         }
-
-        .license-card h3 {
-            color: #fff;
-            margin-bottom: 1rem;
-            font-size: 1.5rem;
+        .ver h3 {
+            font-size: 1rem;
+            margin-bottom: 4px;
+            color: #e2e8f0;
         }
-
-        .license-card .price {
-            font-size: 2rem;
-            font-weight: bold;
-            color: #ffd700;
-            margin: 1rem 0;
-        }
-
-        .license-features {
-            list-style: none;
-            margin: 1rem 0;
-        }
-
-        .license-features li {
-            margin: 0.5rem 0;
-            padding-left: 1.5rem;
-            position: relative;
-        }
-
-        .license-features li::before {
-            content: '✓';
-            color: #4CAF50;
-            font-weight: bold;
-            position: absolute;
-            left: 0;
-        }
-
-        .contact-section {
-            text-align: center;
-            padding: 3rem 0;
-        }
-
-        .contact-info {
+        .ver p { color: #cbd5e1; font-size: 0.92rem; }
+        .kpis {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 2rem;
-            margin-top: 2rem;
+            grid-template-columns: repeat(auto-fit, minmax(180px,1fr));
+            gap: 10px;
+            margin-top: 8px;
         }
-
-        .contact-item {
-            background: #f8f9fa;
-            padding: 2rem;
+        .kpi {
+            background: #0b1220;
+            border: 1px solid #273449;
             border-radius: 10px;
-            border: 1px solid #e9ecef;
+            padding: 10px;
         }
-
-        .contact-item h4 {
-            color: #2c3e50;
-            margin-bottom: 1rem;
+        .kpi .v { font-size: 1.15rem; color: var(--accent2); font-weight: 700; }
+        .kpi .l { color: var(--muted); font-size: 0.85rem; }
+        .note {
+            margin-top: 14px;
+            color: #fde68a;
+            background: rgba(245,158,11,0.12);
+            border: 1px solid rgba(245,158,11,0.35);
+            border-radius: 10px;
+            padding: 10px 12px;
+            font-size: 0.9rem;
         }
-
-        .contact-item p {
-            color: #666;
-            margin-bottom: 0.5rem;
-        }
-
-        .contact-item a {
-            color: #3498db;
-            text-decoration: none;
-        }
-
-        .contact-item a:hover {
-            text-decoration: underline;
-        }
-
         footer {
-            background: #2c3e50;
-            color: white;
+            color: var(--muted);
             text-align: center;
-            padding: 2rem 0;
-            margin-top: 2rem;
+            padding: 24px 0 34px;
+            font-size: 0.88rem;
         }
-
-        .footer-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .footer-links {
-            display: flex;
-            gap: 2rem;
-        }
-
-        .footer-links a {
-            color: #bdc3c7;
-            text-decoration: none;
-            transition: color 0.3s;
-        }
-
-        .footer-links a:hover {
-            color: #3498db;
-        }
-
-        /* WordPress Gutenberg Shortcode Placeholders */
-        .wp-shortcode-contact-form {
-            /* Replace with: [contact-form-7 id="123"] or your preferred contact form plugin */
-            background: linear-gradient(135deg, #8B0000 0%, #000000 100%);
-            color: white;
-            padding: 2rem;
-            border-radius: 10px;
-            text-align: center;
-            border: 2px dashed #fff;
-        }
-
-        .wp-shortcode-contact-form h3 {
-            color: white;
-            margin-bottom: 1rem;
-        }
-
-        .wp-shortcode-contact-form p {
-            color: rgba(255, 255, 255, 0.9);
-            margin-bottom: 1.5rem;
-        }
-
-        .wp-shortcode-newsletter {
-            /* Replace with: [newsletter-signup] */
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 2rem;
-            border-radius: 10px;
-            text-align: center;
-        }
-
-        /* Enhanced Responsive Design for WordPress */
-        @media (max-width: 1200px) {
-            .container {
-                padding: 0 15px;
-            }
-
-            .hero h1 {
-                font-size: 2.8rem;
-            }
-        }
-
-        @media (max-width: 992px) {
-            .features-grid {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 1.5rem;
-            }
-
-            .contact-info {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .hero h1 {
-                font-size: 2.5rem;
-            }
-
-            .section-title {
-                font-size: 2rem;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .header-content {
-                flex-direction: column;
-                gap: 1rem;
-            }
-
-            nav ul {
-                margin-top: 1rem;
-                flex-wrap: wrap;
-                justify-content: center;
-            }
-
-            nav ul li {
-                margin-left: 1.5rem;
-                margin-bottom: 0.5rem;
-            }
-
-            .hero {
-                padding: 3rem 1rem;
-            }
-
-            .hero h1 {
-                font-size: 2rem;
-                line-height: 1.2;
-            }
-
-            .hero p {
-                font-size: 1.1rem;
-            }
-
-            .features-grid {
-                grid-template-columns: 1fr;
-                gap: 1rem;
-            }
-
-            .license-cards {
-                grid-template-columns: 1fr;
-                gap: 1.5rem;
-            }
-
-            .contact-info {
-                grid-template-columns: 1fr;
-            }
-
-            .section-title {
-                font-size: 1.8rem;
-            }
-
-            .feature-card,
-            .license-card,
-            .contact-item {
-                padding: 1.5rem;
-            }
-
-            .cta-button {
-                padding: 0.8rem 1.5rem;
-                font-size: 0.9rem;
-            }
-
-            .footer-content {
-                flex-direction: column;
-                gap: 1rem;
-                text-align: center;
-            }
-
-            .footer-links {
-                flex-wrap: wrap;
-                justify-content: center;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .container {
-                padding: 0 10px;
-            }
-
-            .hero h1 {
-                font-size: 1.8rem;
-            }
-
-            .hero p {
-                font-size: 1rem;
-            }
-
-            .logo {
-                font-size: 1.5rem;
-            }
-
-            nav ul li {
-                margin-left: 1rem;
-            }
-
-            .section-title {
-                font-size: 1.5rem;
-            }
-
-            .feature-card,
-            .license-card,
-            .contact-item {
-                padding: 1rem;
-            }
-
-            .feature-icon {
-                font-size: 2.5rem;
-            }
-
-            .feature-title {
-                font-size: 1.1rem;
-            }
-        }
-
-        /* WordPress Theme Compatibility */
-        .wp-block-group {
-            /* Gutenberg Group Block compatibility */
-            display: block;
-        }
-
-        .wp-block-columns {
-            /* Gutenberg Columns Block compatibility */
-            display: flex;
-        }
-
-        .wp-block-buttons {
-            /* Gutenberg Buttons Block compatibility */
-            display: flex;
-            justify-content: center;
-        }
-
-        /* Print Styles for WordPress */
-        @media print {
-            body {
-                background: white !important;
-            }
-
-            .hero {
-                background: white !important;
-                color: black !important;
-                print-color-adjust: exact;
-                -webkit-print-color-adjust: exact;
-            }
-
-            .license-section {
-                background: white !important;
-                color: black !important;
-                print-color-adjust: exact;
-                -webkit-print-color-adjust: exact;
-            }
-        }
+        .links a { color: #93c5fd; text-decoration: none; margin: 0 8px; }
+        .links a:hover { color: var(--accent); }
     </style>
 </head>
 <body>
     <header>
-        <div class="container">
-            <div class="header-content">
-                <div class="logo">Black<span>Forest</span></div>
-                <nav>
-                    <ul>
-                        <li><a href="#features">Features</a></li>
-                        <li><a href="#license">License</a></li>
-                        <li><a href="#download">Download</a></li>
-                    </ul>
-                </nav>
-            </div>
+        <div class="container header-inner">
+            <div class="brand">Cloud84 <span>Black Forest</span></div>
+            <nav>
+                <a href="#about">About</a>
+                <a href="#features">Features</a>
+                <a href="#innovation">Innovation</a>
+                <a href="#versions">Versions</a>
+            </nav>
         </div>
     </header>
 
-    <section class="hero">
-        <div class="container">
-            <h1>Professional Tender Data Extraction</h1>
-            <p>Automate your tender research with our advanced web scraping solution. Extract, filter, and analyze government tender data with unparalleled efficiency and accuracy.</p>
-            <a href="#download" class="cta-button">Get Started Free</a>
-        </div>
-    </section>
-
-    <section id="summary">
-        <div class="container">
-            <h2 class="section-title">Project Summary</h2>
-            <p style="text-align: center; font-size: 1.2rem; color: #666; max-width: 800px; margin: 0 auto;">
-                Black Forest Tender Scraper is a comprehensive Python desktop application designed for automated extraction of tender and bid data from government procurement portals. Built with a focus on reliability, performance, and user experience, it serves professionals, businesses, and organizations requiring efficient access to tender opportunities.
+    <main class="container">
+        <section class="hero" id="about">
+            <h1>Tender Search & Scraping Utility for Multi-Portal Government Procurement Data</h1>
+            <p>
+                Cloud84 Black Forest Project is a desktop utility built for reliable tender collection across multiple portals,
+                with GUI + CLI modes, resilient scraping workflows, and centralized SQLite persistence for audit-ready historical search.
             </p>
-            <p style="text-align: center; font-size: 1.1rem; color: #777; max-width: 900px; margin: 1.5rem auto 0;">
-                <strong>Custom Development Services:</strong> We specialize in creating tailored Python applications for businesses. From web scraping solutions to data processing tools, we build custom software that automates your workflows and gives you a competitive edge. Our expertise includes desktop applications, automation scripts, data analysis tools, and integration solutions.
-            </p>
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 2rem; margin-top: 3rem; text-align: center;">
-                <div>
-                    <h3 style="color: #3498db; font-size: 2rem;">40+</h3>
-                    <p>Government Portals Supported (12 Configured)</p>
+            <span class="pill">Current Version: 2.1.9</span>
+        </section>
+
+        <section class="card" id="features">
+            <h2>What This Tool Does</h2>
+            <p class="sub">End-to-end tender discovery, extraction, persistence, and export with operational controls.</p>
+            <div class="grid">
+                <div class="feature">
+                    <h3>Department Scraping</h3>
+                    <p>Scrapes tenders by organization/department from supported procurement portals.</p>
                 </div>
-                <div>
-                    <h3 style="color: #3498db; font-size: 2rem;">1000+</h3>
-                    <p>Records in 10 Minutes (Tested: 1316 in 8m 28s)</p>
+                <div class="feature">
+                    <h3>Batch Multi-Portal Runs</h3>
+                    <p>Runs multiple portals with dashboard visibility, retries, and structured run reporting.</p>
                 </div>
-                <div>
-                    <h3 style="color: #3498db; font-size: 2rem;">99%</h3>
-                    <p>Data Accuracy Rate</p>
+                <div class="feature">
+                    <h3>Refresh Watch Automation</h3>
+                    <p>Detects portal changes and triggers scraping only when updates are found.</p>
                 </div>
-                <div>
-                    <h3 style="color: #3498db; font-size: 2rem;">24/7</h3>
-                    <p>Automated Operation</p>
+                <div class="feature">
+                    <h3>Central SQLite Store</h3>
+                    <p>Persists run metadata and tender rows as source-of-truth, then exports user files from DB views.</p>
+                </div>
+                <div class="feature">
+                    <h3>Data Integrity Rules</h3>
+                    <p>Keeps latest row per portal+tender ID and removes missing/invalid tender IDs during persistence.</p>
+                </div>
+                <div class="feature">
+                    <h3>Excel/CSV Outputs</h3>
+                    <p>Produces operator-friendly output files while preserving traceability with run and DB references.</p>
                 </div>
             </div>
-        </div>
-    </section>
+        </section>
 
-    <section id="features">
-        <div class="container">
-            <h2 class="section-title">Key Features</h2>
-            <div class="features-grid">
-                <div class="feature-card">
-                    <div class="feature-icon">🔍</div>
-                    <h3 class="feature-title">Advanced Web Scraping</h3>
-                    <p>Intelligent scraping engine with CAPTCHA solving, dynamic content handling, and anti-detection measures for reliable data extraction.</p>
+        <section class="card" id="innovation">
+            <h2>Key Innovations</h2>
+            <p class="sub">Practical reliability and long-term data architecture improvements introduced in recent releases.</p>
+            <div class="grid">
+                <div class="feature">
+                    <h3>Adaptive Portal Recovery</h3>
+                    <p>Locator memory, retry orchestration, and navigation fallbacks reduce portal-break failures.</p>
                 </div>
-                <div class="feature-card">
-                    <div class="feature-icon">📊</div>
-                    <h3 class="feature-title">Smart Data Processing</h3>
-                    <p>Automatic data cleaning, deduplication, and categorization. Export to Excel, CSV, and JSON formats with custom filtering options.</p>
+                <div class="feature">
+                    <h3>Delta & Resume Intelligence</h3>
+                    <p>Manifest-backed "only new" behavior with optional second-pass sweep captures late-arriving tenders.</p>
                 </div>
-                <div class="feature-card">
-                    <div class="feature-icon">🎯</div>
-                    <h3 class="feature-title">Multi-Portal Support</h3>
-                    <p>Support for 40+ government tender portals (12 currently configured), including HP Tenders, eTenders, and other state procurement platforms.</p>
+                <div class="feature">
+                    <h3>Tiered Backup Strategy</h3>
+                    <p>Automatic daily, weekly, monthly, and yearly SQLite snapshots with retention windows.</p>
                 </div>
-                <div class="feature-card">
-                    <div class="feature-icon">⚡</div>
-                    <h3 class="feature-title">High Performance</h3>
-                    <p>Multi-threaded processing with intelligent load balancing. Can scrape 1000+ records in under 10 minutes (tested: 1316 records in 8 min 28 sec).</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">🖥️</div>
-                    <h3 class="feature-title">User-Friendly GUI</h3>
-                    <p>Intuitive Tkinter-based interface with progress tracking, real-time updates, and comprehensive help documentation.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">🔒</div>
-                    <h3 class="feature-title">Enterprise Security</h3>
-                    <p>Secure data handling with encrypted storage, audit trails, and compliance with government data protection standards.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">📱</div>
-                    <h3 class="feature-title">CLI & Automation</h3>
-                    <p>Command-line interface for batch processing and automation. Perfect for scheduled operations and system integration.</p>
-                </div>
-                <div class="feature-card">
-                    <div class="feature-icon">🎵</div>
-                    <h3 class="feature-title">Smart Notifications</h3>
-                    <p>Audio and visual notifications for task completion, errors, and important updates. Customizable sound profiles.</p>
+                <div class="feature">
+                    <h3>Scalable Historical Imports</h3>
+                    <p>High-volume import workflow with batched de-duplication and normalized lookup indexing.</p>
                 </div>
             </div>
-        </div>
-    </section>
 
-    <section id="license" class="license-section">
-        <div class="container">
-            <h2 class="section-title">Licensing</h2>
-            <div class="license-cards">
-                <div class="license-card">
-                    <h3>Personal/Non-Commercial License</h3>
-                    <div class="price">FREE</div>
-                    <p>For individual users, educational institutions, and non-profit organizations</p>
-                    <ul class="license-features">
-                        <li>Full access to all features</li>
-                        <li>Personal and educational use</li>
-                        <li>Community support</li>
-                        <li>Regular updates included</li>
-                        <li>No redistribution rights</li>
-                    </ul>
+            <div class="kpis">
+                <div class="kpi"><div class="v">12+</div><div class="l">Portal support</div></div>
+                <div class="kpi"><div class="v">GUI + CLI</div><div class="l">Operational modes</div></div>
+                <div class="kpi"><div class="v">SQLite</div><div class="l">Primary datastore</div></div>
+                <div class="kpi"><div class="v">Tiered</div><div class="l">Backup retention</div></div>
+            </div>
+
+            <div class="note">
+                Archive handling foundation is in place through retention-ready data modeling and backup tiers,
+                with live/archive query separation planned as part of the evolving DB foundation phases.
+            </div>
+        </section>
+
+        <section class="card" id="versions">
+            <h2>Version History (Recent)</h2>
+            <p class="sub">Highlights from major updates.</p>
+            <div class="timeline">
+                <div class="ver">
+                    <h3>v2.1.9 • February 13, 2026</h3>
+                    <p>Tiered SQLite backups (daily/weekly/monthly/yearly), stronger tender ID integrity enforcement, large-import dedupe performance optimization.</p>
                 </div>
-                <div class="license-card">
-                    <h3>Commercial License</h3>
-                    <div class="price">From $499/year</div>
-                    <p>For businesses, government agencies, and commercial deployments</p>
-                    <ul class="license-features">
-                        <li>Unlimited commercial use</li>
-                        <li>Priority technical support</li>
-                        <li>Custom modifications available</li>
-                        <li>Professional services</li>
-                        <li>Volume discounts available</li>
-                        <li>Enterprise deployment support</li>
-                    </ul>
+                <div class="ver">
+                    <h3>v2.1.8 • February 12, 2026</h3>
+                    <p>SQLite-first persistence, run metadata tracking, SQLite-backed export generation, and batch report enrichment.</p>
+                </div>
+                <div class="ver">
+                    <h3>v2.1.7 • February 12, 2026</h3>
+                    <p>Final delta sweep, portal health watchdog/recovery, and checkpoint auto-import for resume continuity.</p>
+                </div>
+                <div class="ver">
+                    <h3>v2.1.6 • February 12, 2026</h3>
+                    <p>Live batch dashboard, log/state visibility improvements, "Only New" mode, and persistent tender manifest tracking.</p>
+                </div>
+                <div class="ver">
+                    <h3>v2.1.5 • February 12, 2026</h3>
+                    <p>Progress UX upgrade, robust back-navigation recovery, better stale-element handling, and enhanced portal memory.</p>
+                </div>
+                <div class="ver">
+                    <h3>v2.1.4 • September 18, 2025</h3>
+                    <p>Hybrid distribution, expanded portal support, installer integration, and major reliability/performance improvements.</p>
                 </div>
             </div>
-            <div style="text-align: center; margin-top: 3rem;">
-                <p style="font-size: 1.1rem; margin-bottom: 1rem;">
-                    Commercial use includes business operations, government deployments, and any revenue-generating activities.
-                </p>
-                <!-- WordPress Shortcode: Replace with contact form -->
-                <!-- [contact-form-7 id="commercial-license-inquiry"] -->
-                <div class="wp-shortcode-contact-form">
-                    <h3>Ready to Get Started?</h3>
-                    <p>Contact us for commercial licensing and custom development services</p>
-                    <a href="mailto:licensing@cloud84.com" class="cta-button" style="background: white; color: #667eea;">Contact for Commercial License</a>
-                </div>
-            </div>
-        </div>
-    </section>
-
-
-
-    <section id="download" style="background: #f8f9fa;">
-        <div class="container">
-            <h2 class="section-title">Download & Get Started</h2>
-            <div style="text-align: center; max-width: 600px; margin: 0 auto;">
-                <p style="font-size: 1.2rem; margin-bottom: 2rem; color: #666;">
-                    Start extracting tender data efficiently. Download the latest version and begin your free personal use today.
-                </p>
-                <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
-                    <a href="https://github.com/bkkalia/BF-2.1.4" class="cta-button">Download v2.1.4</a>
-                    <a href="https://github.com/bkkalia/BF-2.1.4" class="cta-button" style="background: #333;">View on GitHub</a>
-                </div>
-                <p style="margin-top: 2rem; font-size: 0.9rem; color: #888;">
-                    Requires Windows 7 SP1 or later (64-bit), Python 3.7+, Google Chrome browser
-                </p>
-            </div>
-        </div>
-    </section>
+        </section>
+    </main>
 
     <footer>
-        <div class="container">
-            <div class="footer-content">
-                <div>
-                    <p>&copy; 2025 Cloud84. All rights reserved.</p>
-                    <p>Black Forest Tender Scraper v2.1.4</p>
-                </div>
-                <div class="footer-links">
-                    <a href="#summary">About</a>
-                    <a href="#features">Features</a>
-                    <a href="#license">License</a>
-                    <a href="https://github.com/cloud84/blackforest/blob/main/LICENSE.txt" target="_blank">License Text</a>
-                </div>
-            </div>
+        <div>Cloud84 Black Forest Project • Tender Search Utility</div>
+        <div class="links">
+            <a href="https://github.com/bkkalia/BF-2.1.4" target="_blank" rel="noopener noreferrer">GitHub</a>
+            <a href="https://cloud84.in/contact/" target="_blank" rel="noopener noreferrer">Contact</a>
         </div>
     </footer>
-
-    <!--
-    ============================================================================
-    WORDPRESS GUTENBERG USAGE INSTRUCTIONS
-    ============================================================================
-
-    1. Copy this HTML content into a WordPress page using the Custom HTML block
-    2. The design is fully responsive and optimized for mobile devices
-    3. All CSS is inline to avoid conflicts with WordPress themes
-
-    CUSTOMIZATION VARIABLES (in :root):
-    - Change --github-url for download links
-    - Change --contact-url for contact page
-    - Change --website-url for main website
-    - Change --license-url for license text
-
-    WORDPRESS SHORTCODE PLACEHOLDERS:
-    - Replace .wp-shortcode-contact-form with: [contact-form-7 id="YOUR_FORM_ID"]
-    - Replace .wp-shortcode-download-button with: [download url="YOUR_DOWNLOAD_URL"]
-    - Replace .wp-shortcode-newsletter with: [mc4wp_form id="YOUR_FORM_ID"]
-
-    GUTENBERG BLOCK COMPATIBILITY:
-    - Content is structured for easy conversion to Gutenberg blocks
-    - Each section can be a separate Group block
-    - Features grid can be a Columns block
-    - Contact items can be individual Column blocks
-
-    RESPONSIVE BREAKPOINTS:
-    - Desktop: > 1200px (full layout)
-    - Tablet: 768px - 1200px (2-column features, stacked contact)
-    - Mobile: < 768px (single column, stacked navigation)
-    - Small Mobile: < 480px (compact spacing and fonts)
-
-    PERFORMANCE NOTES:
-    - All images use emoji/Unicode characters (no external dependencies)
-    - CSS is optimized and minified
-    - No JavaScript required for basic functionality
-    ============================================================================
-    -->
 </body>
 </html>
