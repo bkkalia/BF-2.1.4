@@ -26,6 +26,7 @@ from config import (
     LOG_DIR_NAME, BASE_URLS_FILENAME
 )
 from app_settings import FALLBACK_URL_CONFIG, save_settings, DEFAULT_SETTINGS_STRUCTURE
+from ui_message_queue import get_pending_messages, check_stuck_workers
 from gui.tab_department import DepartmentTab
 from gui.tab_id_search import IdSearchTab
 from gui.tab_url_process import UrlProcessTab
@@ -141,6 +142,12 @@ class MainWindow:
             # Add WebDriver state
             self.driver = None
             print("WebDriver state initialized")
+            
+            # Start UI message queue polling
+            print("Starting UI message queue polling...")
+            self._ui_queue_poll_job = None
+            self._start_ui_queue_polling()
+            print("UI queue polling started")
             
             print("MainWindow initialization completed successfully")
             
@@ -598,6 +605,64 @@ class MainWindow:
             logger.debug(f"Log updated: {message[:100]}")
         except Exception as e:
             logger.error(f"Error updating log: {e}")
+
+    def _start_ui_queue_polling(self):
+        """Start polling the UI message queue for worker messages."""
+        self._process_ui_queue()
+    
+    def _process_ui_queue(self):
+        """Process pending messages from worker threads via message queue."""
+        try:
+            # Get all pending messages from the queue
+            messages = get_pending_messages()
+            
+            for msg in messages:
+                msg_type = msg.get("type")
+                worker_id = msg.get("worker_id", "Unknown")
+                
+                if msg_type == "log":
+                    # Process log message
+                    log_msg = msg.get("message", "")
+                    self.update_log(f"[Queue:{worker_id}] {log_msg}")
+                    
+                elif msg_type == "progress":
+                    # Process progress update
+                    current = msg.get("current", 0)
+                    total = msg.get("total", 1)
+                    status = msg.get("status", "")
+                    extra = msg.get("extra_data", {})
+                    
+                    # Update progress display
+                    dept_name = extra.get("dept_name", "")
+                    if dept_name:
+                        progress_text = f"{worker_id}: {status} ({current}/{total})"
+                        self.update_log(progress_text)
+                    
+                elif msg_type == "complete":
+                    # Worker completed
+                    data = msg.get("data", {})
+                    depts = data.get("departments", 0)
+                    self.update_log(f"[Queue:{worker_id}] ✓ Completed {depts} departments")
+                    
+                elif msg_type == "error":
+                    # Worker error
+                    error_msg = msg.get("error", "Unknown error")
+                    self.update_log(f"[Queue:{worker_id}] ✗ ERROR: {error_msg}")
+            
+            # Check for stuck workers (if scraping is active)
+            if self.scraping_in_progress:
+                stuck = check_stuck_workers(timeout_seconds=300)
+                if stuck:
+                    stuck_list = ", ".join(stuck)
+                    self.update_log(f"⚠️  WARNING: Stuck workers detected: {stuck_list}")
+            
+        except Exception as poll_err:
+            # Don't crash the UI if queue processing fails
+            logger.error(f"UI queue polling error: {poll_err}", exc_info=True)
+        
+        # Schedule next poll (every 100ms)
+        if self.root and self.root.winfo_exists():
+            self._ui_queue_poll_job = self.root.after(100, self._process_ui_queue)
 
     def _flush_log_buffer(self):
         self._log_flush_job = None

@@ -40,6 +40,10 @@ except ImportError as e:
 # Local imports - using absolute paths
 try:
     from scraper.tab_manager import TabManager, setup_driver_with_tabs
+    from ui_message_queue import (
+        send_log, send_progress, send_complete, send_error,
+        register_worker
+    )
     from config import (
         APP_VERSION, PAGE_LOAD_TIMEOUT, ELEMENT_WAIT_TIMEOUT, STABILIZE_WAIT, POST_ACTION_WAIT,
         POST_CAPTCHA_WAIT, CAPTCHA_CHECK_TIMEOUT, DOWNLOAD_WAIT_TIMEOUT, POPUP_WAIT_TIMEOUT,
@@ -1312,12 +1316,29 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
             log_callback("**************")
             log_callback(f"[{worker_label}] Processing department {current_processed}/{total_depts}: {dept_name}")
             log_callback("**************")
+            
+            # Send non-blocking log message
+            send_log(worker_label, f"Processing department {current_processed}/{total_depts}: {dept_name}")
+            
             if progress_callback:
                 progress_details = (
                     f"Dept {current_processed}/{total_depts}: {dept_name[:30]}... "
                     f"| Scraped: {current_total_tenders} | Pending: {pending_depts}"
                 )
                 progress_callback(current_processed, total_depts, progress_details, dept_name, 0, current_total_tenders, pending_depts)
+                
+                # Send non-blocking progress update
+                send_progress(
+                    worker_label,
+                    current=current_processed,
+                    total=total_depts,
+                    status=f"Dept: {dept_name[:30]}...",
+                    extra_data={
+                        "dept_name": dept_name,
+                        "scraped_tenders": current_total_tenders,
+                        "pending_depts": pending_depts
+                    }
+                )
 
             try:
                 current_url = active_driver.current_url
@@ -1479,16 +1500,27 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
 
             def _worker_loop(worker_index, label, assigned_departments):
                 """Worker loop using tab-based navigation."""
+                # Register this worker with message queue
+                register_worker(label)
+                log_callback(f"[{label}] Worker registered with message queue")
+                
                 for dept_task in assigned_departments or []:
                     if stop_event and stop_event.is_set():
                         break
                     
-                    # Switch to this worker's tab before processing
+                    # Switch to this worker's tab before processing  
                     try:
                         tab_mgr.switch_to_tab(worker_index, label)
                         _process_department_with_driver(driver, dept_task, label)
+                        
                     except Exception as worker_err:
-                        log_callback(f"[{label}] ERROR processing department: {worker_err}")
+                        error_msg = f"ERROR processing department: {worker_err}"
+                        log_callback(f"[{label}] {error_msg}")
+                        send_error(label, str(worker_err))
+                
+                # Worker completed all departments
+                log_callback(f"[{label}] Worker completed all assigned departments")
+                send_complete(label, {"departments": len(assigned_departments or [])})
 
             try:
                 with concurrent.futures.ThreadPoolExecutor(max_workers=active_workers) as executor:
