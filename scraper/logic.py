@@ -12,6 +12,8 @@ import time
 import threading
 import concurrent.futures
 import socket
+import json
+import tempfile
 import pandas as pd
 import logging
 from datetime import datetime
@@ -270,7 +272,7 @@ def fetch_department_list_from_site(target_url, log_callback):
         
         # Navigate to organization list page using resilient method
         log_callback("Worker: Finding Tenders by Organisation link...")
-        if not navigate_to_org_list(driver, log_callback):
+        if not navigate_to_org_list(driver, log_callback, org_list_url=target_url):
             raise Exception("Failed to navigate to organization list page")
             
         log_callback("Worker: Waiting for main department table...");
@@ -395,7 +397,7 @@ def _click_department_link(driver, target_row, s_no, name, log_callback):
         return False
 
 
-def _navigate_department_direct_url(driver, dept_info, log_callback):
+def _navigate_department_direct_url(driver, dept_info, log_callback, base_reference_url=None):
     """Navigate directly to department tenders page using captured direct URL."""
     direct_url_raw = sanitize_department_direct_url(dept_info.get('direct_url', ''))
     if not direct_url_raw:
@@ -407,7 +409,18 @@ def _navigate_department_direct_url(driver, dept_info, log_callback):
         log_callback(f"    Direct URL skipped (session invalid): {session_err}")
         return False
 
-    target_url = urljoin(current_url, direct_url_raw)
+    parsed_direct = urlparse(direct_url_raw)
+    if parsed_direct.scheme in ("http", "https"):
+        target_url = direct_url_raw
+    else:
+        base_url = str(base_reference_url or "").strip() or str(current_url or "").strip()
+        if not base_url or base_url.lower().startswith("data:"):
+            log_callback(
+                f"    Direct URL skipped: invalid base URL '{base_url}' for relative direct link '{direct_url_raw}'"
+            )
+            return False
+        target_url = urljoin(base_url, direct_url_raw)
+
     log_callback(f"    Direct URL attempt: {target_url}")
 
     try:
@@ -437,10 +450,10 @@ def _navigate_department_direct_url(driver, dept_info, log_callback):
         return False
 
 
-def _open_department_page(driver, dept_info, log_callback):
+def _open_department_page(driver, dept_info, log_callback, base_reference_url=None):
     """Open department page using direct URL first, then row-click fallback."""
     has_direct = bool(str(dept_info.get('direct_url', '')).strip())
-    if has_direct and _navigate_department_direct_url(driver, dept_info, log_callback):
+    if has_direct and _navigate_department_direct_url(driver, dept_info, log_callback, base_reference_url=base_reference_url):
         return True, "direct"
 
     try:
@@ -454,7 +467,7 @@ def _open_department_page(driver, dept_info, log_callback):
             log_callback("    Direct URL fallback: restoring organization list before click flow")
         else:
             log_callback("    No direct URL: ensuring organization list page before click flow")
-        navigate_to_org_list(driver, log_callback)
+        navigate_to_org_list(driver, log_callback, org_list_url=base_reference_url)
         time.sleep(STABILIZE_WAIT)
 
     if _find_and_click_dept_link(driver, dept_info, log_callback):
@@ -858,7 +871,7 @@ def _click_on_page_back_button(driver, log_callback, org_list_url=None, stop_eve
 
     # Fallback 2: robust generic navigation helper
     try:
-        if navigate_to_org_list(driver, log_callback):
+        if navigate_to_org_list(driver, log_callback, org_list_url=org_list_url):
             log_callback("    ✓ Fallback navigate_to_org_list successful")
             return True
     except Exception as nav_err:
@@ -881,13 +894,25 @@ def _normalize_department_task_key(dept_info):
     return ""
 
 
-def _prepare_department_tasks(departments, log_callback):
+def _prepare_department_tasks(departments, log_callback, base_reference_url=None):
     prepared = []
     seen_task_keys = set()
     duplicate_rows = 0
+    base_reference_url = str(base_reference_url or "").strip()
 
     for raw in departments or []:
         dept = dict(raw or {})
+
+        direct_url = sanitize_department_direct_url(dept.get("direct_url", ""))
+        if direct_url:
+            parsed_direct = urlparse(direct_url)
+            if parsed_direct.scheme in ("http", "https"):
+                dept["direct_url"] = direct_url
+            elif base_reference_url and not base_reference_url.lower().startswith("data:"):
+                dept["direct_url"] = urljoin(base_reference_url, direct_url)
+            else:
+                dept["direct_url"] = ""
+
         task_key = _normalize_department_task_key(dept)
         if task_key and task_key in seen_task_keys:
             duplicate_rows += 1
@@ -919,6 +944,58 @@ def _prepare_department_tasks(departments, log_callback):
         )
 
     return prepared
+
+
+def _build_worker_assignments(departments, worker_count):
+    worker_count = max(1, int(worker_count or 1))
+    assignments = [[] for _ in range(worker_count)]
+    for index, dept in enumerate(departments or []):
+        assignments[index % worker_count].append(dept)
+    return assignments
+
+
+def _write_department_links_snapshot(portal_name, departments, assignments, log_callback):
+    try:
+        safe_portal = sanitise_filename(str(portal_name or "portal")) or "portal"
+        stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        target_dir = os.path.join(tempfile.gettempdir(), "blackforest_department_links")
+        os.makedirs(target_dir, exist_ok=True)
+        path = os.path.join(target_dir, f"{safe_portal}_dept_links_{stamp}.json")
+
+        payload = {
+            "portal": portal_name,
+            "generated_at": datetime.now().isoformat(timespec="seconds"),
+            "department_count": len(departments or []),
+            "departments": [
+                {
+                    "s_no": str(item.get("s_no", "")).strip(),
+                    "name": str(item.get("name", "")).strip(),
+                    "direct_url": str(item.get("direct_url", "")).strip(),
+                    "count_text": str(item.get("count_text", "")).strip(),
+                }
+                for item in (departments or [])
+            ],
+            "worker_assignments": {
+                f"W{idx + 1}": [
+                    {
+                        "s_no": str(item.get("s_no", "")).strip(),
+                        "name": str(item.get("name", "")).strip(),
+                        "direct_url": str(item.get("direct_url", "")).strip(),
+                    }
+                    for item in bucket
+                ]
+                for idx, bucket in enumerate(assignments or [])
+            },
+        }
+
+        with open(path, "w", encoding="utf-8") as handle:
+            json.dump(payload, handle, indent=2, ensure_ascii=False)
+
+        log_callback(f"Department links snapshot saved: {path}")
+        return path
+    except Exception as snapshot_err:
+        log_callback(f"WARNING: Could not save department links snapshot: {snapshot_err}")
+        return None
 
 
 def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
@@ -962,7 +1039,11 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
     portal_name = str(base_url_config.get('Name', 'Unknown')).strip() or "Unknown"
     portal_base_url = str(base_url_config.get('BaseURL', '')).strip()
     scope_mode = "only_new" if existing_tender_ids or existing_department_names else "all"
-    departments_to_scrape = _prepare_department_tasks(departments_to_scrape, log_callback)
+    departments_to_scrape = _prepare_department_tasks(
+        departments_to_scrape,
+        log_callback,
+        base_reference_url=base_url_config.get('OrgListURL') or base_url_config.get('BaseURL')
+    )
 
     try:
         portal_host = (urlparse(portal_base_url).hostname or "").strip().lower()
@@ -1155,7 +1236,7 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
         driver.get(base_url_config['OrgListURL'])
         
         # Make sure we're on the right page before starting
-        if not navigate_to_org_list(driver, log_callback):
+        if not navigate_to_org_list(driver, log_callback, org_list_url=base_url_config.get('OrgListURL')):
             log_callback("WARNING: Could not verify organization list page navigation")
         
         _wait_for_presence_with_stop(driver, MAIN_TABLE_LOCATOR, PAGE_LOAD_TIMEOUT, stop_event=stop_event)
@@ -1249,7 +1330,12 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
                 with state_lock:
                     direct_nav_attempted += 1
 
-            opened_dept, nav_mode = _open_department_page(active_driver, dept_info, log_callback)
+            opened_dept, nav_mode = _open_department_page(
+                active_driver,
+                dept_info,
+                log_callback,
+                base_reference_url=base_url_config.get('OrgListURL') or base_url_config.get('BaseURL')
+            )
             if not opened_dept:
                 return
 
@@ -1349,7 +1435,7 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
                 try:
                     active_driver.current_url
                     active_driver.get(base_url_config['OrgListURL'])
-                    if not navigate_to_org_list(active_driver, log_callback):
+                    if not navigate_to_org_list(active_driver, log_callback, org_list_url=base_url_config.get('OrgListURL')):
                         log_callback(f"[{worker_label}] ERROR: Could not navigate back to organization list")
                     _wait_for_presence_with_stop(active_driver, MAIN_TABLE_LOCATOR, PAGE_LOAD_TIMEOUT, stop_event=stop_event)
                     if not _sleep_with_stop(STABILIZE_WAIT * 2, stop_event=stop_event):
@@ -1364,32 +1450,38 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
             department_parallel_workers = 1
 
         if department_parallel_workers > 1 and total_depts > 1:
-            log_callback(f"Department parallel mode enabled: workers={department_parallel_workers}")
-            for dept_item in departments_to_scrape:
-                dept_queue.put(dept_item)
+            active_workers = min(department_parallel_workers, total_depts)
+            if active_workers < department_parallel_workers:
+                log_callback(
+                    f"Department worker cap applied: requested={department_parallel_workers}, active={active_workers}, departments={total_depts}"
+                )
+            log_callback(f"Department parallel mode enabled: workers={active_workers}")
+
+            worker_assignments = _build_worker_assignments(departments_to_scrape, active_workers)
+            _write_department_links_snapshot(portal_name, departments_to_scrape, worker_assignments, log_callback)
+            for idx, bucket in enumerate(worker_assignments, 1):
+                log_callback(f"Worker W{idx} assigned {len(bucket)} department(s)")
 
             worker_drivers = [("W1", driver, False)]
-            for worker_index in range(2, department_parallel_workers + 1):
+            for worker_index in range(2, active_workers + 1):
                 try:
                     extra_driver = setup_driver(initial_download_dir=download_dir)
                     worker_drivers.append((f"W{worker_index}", extra_driver, True))
                 except Exception as driver_err:
                     log_callback(f"WARNING: Could not start browser worker W{worker_index}: {driver_err}")
 
-            def _worker_loop(label, local_driver):
-                while not (stop_event and stop_event.is_set()):
-                    try:
-                        dept_task = dept_queue.get_nowait()
-                    except Empty:
+            def _worker_loop(label, local_driver, assigned_departments):
+                for dept_task in assigned_departments or []:
+                    if stop_event and stop_event.is_set():
                         break
-                    try:
-                        _process_department_with_driver(local_driver, dept_task, label)
-                    finally:
-                        dept_queue.task_done()
+                    _process_department_with_driver(local_driver, dept_task, label)
 
             try:
                 with concurrent.futures.ThreadPoolExecutor(max_workers=len(worker_drivers)) as executor:
-                    futures = [executor.submit(_worker_loop, label, drv) for label, drv, _owned in worker_drivers]
+                    futures = [
+                        executor.submit(_worker_loop, label, drv, worker_assignments[idx])
+                        for idx, (label, drv, _owned) in enumerate(worker_drivers)
+                    ]
                     for fut in concurrent.futures.as_completed(futures):
                         fut.result()
             finally:
@@ -1575,7 +1667,12 @@ def process_department(dept_info, base_url_config, download_dir, driver,
             return None
 
         # Open department page (direct URL first, click fallback)
-        opened_dept, _nav_mode = _open_department_page(driver, dept_info, log_callback)
+        opened_dept, _nav_mode = _open_department_page(
+            driver,
+            dept_info,
+            log_callback,
+            base_reference_url=base_url_config.get('OrgListURL') or base_url_config.get('BaseURL')
+        )
         if not opened_dept:
             log_callback(f"Failed to open department page: {dept_info['name']}")
             return None
@@ -2200,17 +2297,30 @@ def process_tender_page(driver, tender_info, deep_scrape=False):
         logger.error(f"Error processing tender page: {e}")
         return False
 
-def navigate_to_org_list(driver, log_callback=None):
+def navigate_to_org_list(driver, log_callback=None, org_list_url=None):
     """Navigate to the organization list page using resilient locator strategies with portal config memory."""
     log_callback = log_callback or (lambda x: None)
+    org_list_url = str(org_list_url or '').strip()
     
     # Get portal memory
     portal_memory = get_portal_memory()
     
     try:
-        current_url = driver.current_url
-        portal_name = get_website_keyword_from_url(current_url)
+        current_url = str(driver.current_url or '')
+        portal_seed_url = org_list_url or current_url
+        portal_name = get_website_keyword_from_url(portal_seed_url)
         log_callback(f"Worker: Current URL: {current_url}")
+
+        invalid_current = current_url.startswith('data:') or current_url.startswith('about:blank') or current_url.startswith('chrome-error://') or current_url.startswith('edge-error://')
+        if invalid_current and org_list_url:
+            log_callback(f"⚠ Invalid worker page detected ({current_url[:80]}), recovering via OrgListURL")
+            driver.get(org_list_url)
+            time.sleep(STABILIZE_WAIT * 2)
+            current_url = str(driver.current_url or '')
+            log_callback(f"Worker: Recovery URL: {current_url}")
+            if TENDERS_BY_ORG_URL_PATTERN in current_url:
+                log_callback("✓ Recovery landed on 'Tenders by Organisation' page")
+                return True
         
         # Check if we're already on the correct page
         if TENDERS_BY_ORG_URL_PATTERN in current_url:
@@ -2221,7 +2331,7 @@ def navigate_to_org_list(driver, log_callback=None):
         # Check if we're on the wrong page (Site Compatibility)
         if SITE_COMPATIBILITY_URL_PATTERN in current_url:
             log_callback("⚠ Detected Site Compatibility page - navigating back to home")
-            base_url = current_url.split('?')[0]  # Get base URL without parameters
+            base_url = org_list_url or current_url.split('?')[0]  # Get base URL without parameters
             log_callback(f"Navigating to base URL: {base_url}")
             driver.get(base_url)
             time.sleep(STABILIZE_WAIT * 2)
@@ -2313,8 +2423,17 @@ def navigate_to_org_list(driver, log_callback=None):
                 pass
             
             # Try direct URL navigation as final fallback
-            current_base = driver.current_url.split('?')[0]
-            direct_org_url = f"{current_base}?page=FrontEndTendersByOrganisation&service=page"
+            current_base = str(driver.current_url or '').split('?')[0]
+            if org_list_url:
+                direct_org_url = org_list_url
+            elif current_base.startswith("http://") or current_base.startswith("https://"):
+                direct_org_url = f"{current_base}?page=FrontEndTendersByOrganisation&service=page"
+            else:
+                direct_org_url = None
+                log_callback(f"✗ Cannot construct direct org URL from current page: {current_base}")
+
+            if not direct_org_url:
+                return False
             log_callback(f"Last resort: Direct navigation to {direct_org_url}")
             try:
                 driver.get(direct_org_url)
@@ -2354,7 +2473,7 @@ def fetch_department_list_from_site_v2(target_url, log_callback=None):
 
         # Use the new resilient navigation method
         log_callback("Worker: Finding Tenders by Organisation link...")
-        if not navigate_to_org_list(driver, log_callback):
+        if not navigate_to_org_list(driver, log_callback, org_list_url=target_url):
             log_callback("Could not navigate to organization list, trying to locate department table directly...")
 
         log_callback("Worker: Waiting for main department table...");

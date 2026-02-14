@@ -1,0 +1,107 @@
+Name,OriginalBaseURL,FinalURL,HTTPStatus,NICScore,Classification,Reason
+CPPP1 eProcure,https://eprocure.gov.in/eprocure/app,https://eprocure.gov.in/eprocure/app,200,7,nic,NIC markers present
+CPPP2 eTenders,https://etenders.gov.in/eprocure/app,https://etenders.gov.in/eprocure/app,200,7,nic,NIC markers present
+DefProc,https://defproc.gov.in/,https://defproc.gov.in/nicgep/app,200,6,nic,NIC markers present
+GePNIC,https://gepnic.gov.in/,https://gepnic.gov.in/,200,4,nic,NIC markers present
+GeM,https://gem.gov.in/nicgep/app,https://gem.gov.in/error_404,200,0,candidate_nic,NIC markers present
+GeM,https://gem.gov.in/,https://gem.gov.in/,200,0,non_nic,Not NIC-type portal content
+NRRDA,https://pmgsytenders.gov.in/,https://pmgsytenders.gov.in/nicgep/app,200,6,nic,NIC markers present
+Andaman Nicobar,https://and.eproc.in/nicgep/app,https://and.eproc.in/nicgep/app,0,0,candidate_invalid,Request failed: ConnectionError
+Andaman Nicobar,https://and.eproc.in/,https://and.eproc.in/,0,0,invalid,Request failed: ConnectionError
+Arunachal Pradesh,https://arunachalpradesh.gov.in/nicgep/app,https://arunachalpradesh.gov.in/nicgep/app,404,0,candidate_invalid,HTTP 404
+Arunachal Pradesh,https://arunachalpradesh.gov.in/etender/,https://arunachalpradesh.gov.in/etender/,404,0,invalid,HTTP 404
+Assam,https://assam.eproc.in/nicgep/app,https://assam.eproc.in/nicgep/app,0,0,candidate_invalid,Request failed: ConnectionError
+Assam,https://assam.eproc.in/,https://assam.eproc.in/,0,0,invalid,Request failed: ConnectionError
+Bihar,https://etender.bih.nic.in/nicgep/app,https://etender.bih.nic.in/nicgep/app,0,0,candidate_invalid,Request failed: ConnectionError
+Bihar,https://etender.bih.nic.in/,https://etender.bih.nic.in/,0,0,invalid,Request failed: ConnectionError
+Chandigarh,https://etenders.chd.nic.in/nicgep/app,https://etenders.chd.nic.in/nicgep/app,200,7,nic,NIC markers present
+Chhattisgarh,https://eproc.cgstate.gov.in/nicgep/app,https://eproc.cgstate.gov.in/nicgep/app,404,1,candidate_invalid,HTTP 404
+Chhattisgarh,https://eproc.cgstate.gov.in/,https://eproc.cgstate.gov.in/,200,0,non_nic,Not NIC-type portal content
+Dadra Nagar Haveli,https://dnhdd.eproc.in/nicgep/app,https://dnhdd.eproc.in/nicgep/app,0,0,candidate_invalid,Request failed: ConnectionError
+Dadra Nagar Haveli,https://dnhdd.eproc.in/,https://dnhdd.eproc.in/,0,0,invalid,Request failed: ConnectionError
+Daman Diu,https://dnhdd.eproc.in/nicgep/app,https://dnhdd.eproc.in/nicgep/app,0,0,candidate_invalid,Request failed: ConnectionError
+Daman Diu,https://dnhdd.eproc.in/,https://dnhdd.eproc.in/,0,0,invalid,Request failed: ConnectionError
+Delhi,https://govtprocurement.delhi.gov.in/nicgep/app,https://govtprocurement.delhi.gov.in/nicgep/app,200,7,candidate_nic,NIC markers present
+Delhi,https://govtprocurement.delhi.gov.in/,https://govtprocurement.delhi.gov.in/,200,2,unknown,Insufficient NIC markers
+Goa,https://goatenders.gov.in/nicgep/app,https://goatenders.gov.in/nicgep/app,0,0,candidate_invalid,Request failed: ConnectionError
+Goa,https://goatenders.gov.in/,https://goatenders.gov.in/,0,0,invalid,Request failed: ConnectionError
+Gujarat,https://nprocure.com/nicgep/app,https://nprocure.com/nicgep/app,0,0,candidate_invalid,Request failed: SSLError
+Gujarat,https://nprocure.com/,https://nprocure.com/,0,0,invalid,Request failed: SSLError
+Haryana,https://etenders.hry.nic.in/nicgep/app,https://etenders.hry.nic.in/nicgep/app,200,7,candidate_nic,NIC markers present
+Haryana,https://etenders.hry.nic.in/,https://etenders.hry.nic.in/,200,2,unknown,Insufficient NIC markers
+HP Tenders,https://hptenders.gov.in/nicgep/app,https://hptenders.gov.in/nicgep/app,200,7,candidate_nic,NIC markers present
+HP Tenders,https://hptenders.gov.in/,https://hptenders.gov.in/,200,2,unknown,Insufficient NIC markers
+Jammu Kashmir,https://jktenders.gov.in/nicgep/app,https://jktenders.gov.in/nicgep/app,200,7,candidate_nic,NIC markers present
+Jammu Kashmir,https://jktenders.gov.in/,https://jktenders.gov.in/,200,2,unknown,Insufficient NIC markers
+Jharkhand,https://jharkhandtenders.gov.in/nicgep/app,https://jharkhandtenders.gov.in/nicgep/app,200,7,candidate_nic,NIC markers present
+Jharkhand,https://jharkhandtenders.gov.in/,https://jharkhandtenders.gov.in/,200,2,unknown,Insufficient NIC markers
+Karnataka,https://eproc.karnataka.gov.in/nicgep/app,https://eproc.karnataka.gov.in/nicgep/app,404,0,candidate_invalid,HTTP 404
+Karnataka,https://eproc.karnataka.gov.in/,https://eproc.karnataka.gov.in/,200,0,non_nic,Not NIC-type portal content
+Kerala,https://etenders.kerala.gov.in/nicgep/app,https://etenders.kerala.gov.in/nicgep/app,200,7,candidate_nic,NIC markers present
+Kerala,https://etenders.kerala.gov.in/,https://etenders.kerala.gov.in/,200,2,unknown,Insufficient NIC markers
+Ladakh,https://jktenders.gov.in/nicgep/app,https://jktenders.gov.in/nicgep/app,200,7,candidate_nic,NIC markers present
+Ladakh,https://jktenders.gov.in/,https://jktenders.gov.in/,200,2,unknown,Insufficient NIC markers
+Lakshadweep,https://lakshadweep.eproc.in/nicgep/app,https://lakshadweep.eproc.in/nicgep/app,0,0,candidate_invalid,Request failed: ConnectionError
+Lakshadweep,https://lakshadweep.eproc.in/,https://lakshadweep.eproc.in/,0,0,invalid,Request failed: ConnectionError
+Madhya Pradesh,https://mptenders.gov.in/nicgep/app,https://mptenders.gov.in/nicgep/app,200,7,candidate_nic,NIC markers present
+Madhya Pradesh,https://mptenders.gov.in/,https://mptenders.gov.in/,200,1,non_nic,Not NIC-type portal content
+Maharashtra,https://mahatenders.gov.in/nicgep/app,https://mahatenders.gov.in/nicgep/app,200,7,candidate_nic,NIC markers present
+Maharashtra,https://mahatenders.gov.in/,https://mahatenders.gov.in/,200,1,non_nic,Not NIC-type portal content
+Manipur,https://manipurtenders.gov.in/nicgep/app,https://manipurtenders.gov.in/nicgep/app,200,7,candidate_nic,NIC markers present
+Manipur,https://manipurtenders.gov.in/,https://manipurtenders.gov.in/,200,2,unknown,Insufficient NIC markers
+Meghalaya,https://meghalaya.eproc.in/nicgep/app,https://meghalaya.eproc.in/nicgep/app,0,0,candidate_invalid,Request failed: ConnectionError
+Meghalaya,https://meghalaya.eproc.in/,https://meghalaya.eproc.in/,0,0,invalid,Request failed: ConnectionError
+Mizoram,https://mizoram.eproc.in/nicgep/app,https://mizoram.eproc.in/nicgep/app,0,0,candidate_invalid,Request failed: ConnectionError
+Mizoram,https://mizoram.eproc.in/,https://mizoram.eproc.in/,0,0,invalid,Request failed: ConnectionError
+Nagaland,https://nagaland.eproc.in/nicgep/app,https://nagaland.eproc.in/nicgep/app,0,0,candidate_invalid,Request failed: ConnectionError
+Nagaland,https://nagaland.eproc.in/,https://nagaland.eproc.in/,0,0,invalid,Request failed: ConnectionError
+Odisha,https://tendersodisha.gov.in/nicgep/app,https://tendersodisha.gov.in/nicgep/app,200,7,candidate_nic,NIC markers present
+Odisha,https://tendersodisha.gov.in/,https://tendersodisha.gov.in/,200,2,unknown,Insufficient NIC markers
+Puducherry,https://etenders.puducherry.gov.in/nicgep/app,https://etenders.puducherry.gov.in/nicgep/app,0,0,candidate_invalid,Request failed: ConnectionError
+Puducherry,https://etenders.puducherry.gov.in/,https://etenders.puducherry.gov.in/,0,0,invalid,Request failed: ConnectionError
+Punjab,https://eproc.punjab.gov.in/nicgep/app,https://eproc.punjab.gov.in/nicgep/app,0,0,candidate_invalid,Request failed: ReadTimeout
+Punjab,https://eproc.punjab.gov.in/,https://eproc.punjab.gov.in/,200,2,unknown,Insufficient NIC markers
+Rajasthan,https://eproc.rajasthan.gov.in/nicgep/app,https://eproc.rajasthan.gov.in/nicgep/app,200,7,candidate_nic,NIC markers present
+Rajasthan,https://eproc.rajasthan.gov.in/,https://eproc.rajasthan.gov.in/,200,2,unknown,Insufficient NIC markers
+Sikkim,https://sikkimtender.gov.in/nicgep/app,https://sikkimtender.gov.in/nicgep/app,200,7,candidate_nic,NIC markers present
+Sikkim,https://sikkimtender.gov.in/,https://sikkimtender.gov.in/,200,2,unknown,Insufficient NIC markers
+TamilNadu,https://tntenders.gov.in/nicgep/app,https://tntenders.gov.in/nicgep/app,200,7,candidate_nic,NIC markers present
+TamilNadu,https://tntenders.gov.in/,https://tntenders.gov.in/,200,1,non_nic,Not NIC-type portal content
+Telangana,https://tender.telangana.gov.in/nicgep/app,https://tender.telangana.gov.in/nicgep/app,404,1,candidate_invalid,HTTP 404
+Telangana,https://tender.telangana.gov.in/,https://tender.telangana.gov.in/,200,0,non_nic,Not NIC-type portal content
+Tripura,https://tripuratenders.gov.in/nicgep/app,https://tripuratenders.gov.in/nicgep/app,200,7,candidate_nic,NIC markers present
+Tripura,https://tripuratenders.gov.in/,https://tripuratenders.gov.in/,200,1,non_nic,Not NIC-type portal content
+Uttar Pradesh,https://etender.up.nic.in/nicgep/app,https://etender.up.nic.in/nicgep/app,200,7,candidate_nic,NIC markers present
+Uttar Pradesh,https://etender.up.nic.in/,https://etender.up.nic.in/,200,1,non_nic,Not NIC-type portal content
+Uttarakhand,https://uktenders.gov.in/nicgep/app,https://uktenders.gov.in/nicgep/app,200,7,candidate_nic,NIC markers present
+Uttarakhand,https://uktenders.gov.in/,https://uktenders.gov.in/,200,2,unknown,Insufficient NIC markers
+West Bengal,https://wbtenders.gov.in/nicgep/app,https://wbtenders.gov.in/nicgep/app,200,7,candidate_nic,NIC markers present
+West Bengal,https://wbtenders.gov.in/,https://wbtenders.gov.in/,200,1,non_nic,Not NIC-type portal content
+BEL,https://beltenders.nic.in/nicgep/app,https://beltenders.nic.in/nicgep/app,0,0,candidate_invalid,Request failed: ConnectionError
+BEL,https://beltenders.nic.in/,https://beltenders.nic.in/,0,0,invalid,Request failed: ConnectionError
+BHEL,https://bheltenders.nic.in/nicgep/app,https://bheltenders.nic.in/nicgep/app,0,0,candidate_invalid,Request failed: ConnectionError
+BHEL,https://bheltenders.nic.in/,https://bheltenders.nic.in/,0,0,invalid,Request failed: ConnectionError
+CIL,https://coalindiatenders.nic.in/nicgep/app,https://coalindiatenders.nic.in/nicgep/app,200,7,candidate_nic,NIC markers present
+CIL,https://coalindiatenders.nic.in/,https://coalindiatenders.nic.in/,200,2,unknown,Insufficient NIC markers
+CPCL,https://cpcltenders.nic.in/nicgep/app,https://cpcltenders.nic.in/nicgep/app,0,0,candidate_invalid,Request failed: ConnectionError
+CPCL,https://cpcltenders.nic.in/,https://cpcltenders.nic.in/,0,0,invalid,Request failed: ConnectionError
+GRSE,https://grsetenders.nic.in/nicgep/app,https://grsetenders.nic.in/nicgep/app,0,0,candidate_invalid,Request failed: ConnectionError
+GRSE,https://grsetenders.nic.in/,https://grsetenders.nic.in/,0,0,invalid,Request failed: ConnectionError
+GSL,https://gsltenders.nic.in/nicgep/app,https://gsltenders.nic.in/nicgep/app,0,0,candidate_invalid,Request failed: ConnectionError
+GSL,https://gsltenders.nic.in/,https://gsltenders.nic.in/,0,0,invalid,Request failed: ConnectionError
+HSL,https://eprocurehsl.nic.in/nicgep/app,https://eprocurehsl.nic.in/nicgep/app,200,6,candidate_nic,NIC markers present
+HSL,https://eprocurehsl.nic.in,https://eprocurehsl.nic.in/,200,1,non_nic,Not NIC-type portal content
+IOCL,https://iocletenders.nic.in/nicgep/app,https://iocletenders.nic.in/nicgep/app,200,6,candidate_nic,NIC markers present
+IOCL,https://iocletenders.nic.in/,https://iocletenders.nic.in/,200,2,unknown,Insufficient NIC markers
+MDL,https://mdltenders.nic.in/nicgep/app,https://mdltenders.nic.in/nicgep/app,0,0,candidate_invalid,Request failed: ConnectionError
+MDL,https://mdltenders.nic.in/,https://mdltenders.nic.in/,0,0,invalid,Request failed: ConnectionError
+MIDHANI,https://midhanitenders.nic.in/nicgep/app,https://midhanitenders.nic.in/nicgep/app,0,0,candidate_invalid,Request failed: ConnectionError
+MIDHANI,https://midhanitenders.nic.in/,https://midhanitenders.nic.in/,0,0,invalid,Request failed: ConnectionError
+NTPC,https://ntpctenders.nic.in/nicgep/app,https://ntpctenders.nic.in/nicgep/app,0,0,candidate_invalid,Request failed: ConnectionError
+NTPC,https://ntpctenders.nic.in/,https://ntpctenders.nic.in/,0,0,invalid,Request failed: ConnectionError
+ONGC,https://etenders.ongc.co.in/nicgep/app,https://etenders.ongc.co.in/nicgep/app,0,0,candidate_invalid,Request failed: ConnectionError
+ONGC,https://etenders.ongc.co.in/,https://etenders.ongc.co.in/,0,0,invalid,Request failed: ConnectionError
+GAIL,https://gailonline.com/nicgep/app,https://gailonline.com/nicgep/app,404,0,candidate_invalid,HTTP 404
+GAIL,https://gailonline.com/,https://gailonline.com/,200,0,non_nic,Not NIC-type portal content
+SAIL,https://sail.co.in/nicgep/app,https://sail.co.in/nicgep/app,404,1,candidate_invalid,HTTP 404
+SAIL,https://sail.co.in/,https://sail.co.in/,200,0,non_nic,Not NIC-type portal content

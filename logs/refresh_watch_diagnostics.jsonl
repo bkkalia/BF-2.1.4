@@ -12,3 +12,8 @@
 {"timestamp": "2026-02-13T18:03:54", "portal": "-", "event": "DAILY", "detail": "Daily batch completed", "watch_enabled": false, "pending_queue": 0}
 {"timestamp": "2026-02-13T18:04:02", "portal": "-", "event": "EXPORT", "detail": "Tender84 snapshot updated (tender84_feed_20260213.xlsx)", "watch_enabled": false, "pending_queue": 0}
 {"timestamp": "2026-02-13T18:23:06", "portal": "-", "event": "DAILY", "detail": "Auto daily scrape started for 28 portal(s)", "watch_enabled": false, "pending_queue": 0}
+{"timestamp": "2026-02-13T18:42:37", "portal": "-", "event": "DAILY", "detail": "Auto daily scrape started for 28 portal(s)", "watch_enabled": false, "pending_queue": 0}
+{"timestamp": "2026-02-13T18:51:19", "portal": "Delhi", "event": "MANUAL", "detail": "Started all scrape from Dashboard", "watch_enabled": false, "pending_queue": 0}
+{"timestamp": "2026-02-13T19:00:27", "portal": "-", "event": "DAILY", "detail": "Daily batch completed", "watch_enabled": false, "pending_queue": 0}
+{"timestamp": "2026-02-13T19:00:53", "portal": "-", "event": "EXPORT", "detail": "Tender84 snapshot updated (tender84_feed_20260213.xlsx)", "watch_enabled": false, "pending_queue": 0}
+{"timestamp": "2026-02-13T19:14:03", "portal": "-", "event": "DAILY", "detail": "Auto daily scrape started for 22 portal(s)", "watch_enabled": false, "pending_queue": 0}

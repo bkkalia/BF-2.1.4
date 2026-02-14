@@ -1,0 +1,57 @@
+Name,BaseURL,Keyword
+CPPP1 eProcure,https://eprocure.gov.in/eprocure/app,Central Public Procurement Portal
+CPPP2 eTenders,https://etenders.gov.in/eprocure/app,Central Public Procurement Portal 2
+DefProc,https://defproc.gov.in/,Defence eProcurement
+GePNIC,https://gepnic.gov.in/,NIC GePNIC Portal
+GeM,https://gem.gov.in/,Government e-Marketplace
+NRRDA,https://pmgsytenders.gov.in/,PMGSY eProcurement
+Andaman Nicobar,https://and.eproc.in/,Andaman and Nicobar Islands
+Arunachal Pradesh,https://arunachaltenders.gov.in/nicgep/app,Arunachal Pradesh
+Assam,https://assam.eproc.in/,Assam
+Bihar,https://etender.bih.nic.in/,Bihar
+Chandigarh,https://etenders.chd.nic.in/nicgep/app,Chandigarh
+Chhattisgarh,https://eproc.cgstate.gov.in/,Chhattisgarh
+Dadra Nagar Haveli,https://dnhdd.eproc.in/,Dadra and Nagar Haveli
+Daman Diu,https://dnhdd.eproc.in/,Daman and Diu
+Delhi,https://govtprocurement.delhi.gov.in/,NCT of Delhi
+Goa,https://goatenders.gov.in/,Goa
+Gujarat,https://nprocure.com/,Gujarat
+Haryana,https://etenders.hry.nic.in/,Haryana
+HP Tenders,https://hptenders.gov.in/,Himachal Pradesh
+Jammu Kashmir,https://jktenders.gov.in/,Jammu and Kashmir
+Jharkhand,https://jharkhandtenders.gov.in/,Jharkhand
+Karnataka,https://eproc.karnataka.gov.in/,Karnataka
+Kerala,https://etenders.kerala.gov.in/,Kerala
+Ladakh,https://jktenders.gov.in/,Ladakh
+Lakshadweep,https://lakshadweep.eproc.in/,Lakshadweep
+Madhya Pradesh,https://mptenders.gov.in/,Madhya Pradesh
+Maharashtra,https://mahatenders.gov.in/,Maharashtra
+Manipur,https://manipurtenders.gov.in/,Manipur
+Meghalaya,https://meghalaya.eproc.in/,Meghalaya
+Mizoram,https://mizoram.eproc.in/,Mizoram
+Nagaland,https://nagaland.eproc.in/,Nagaland
+Odisha,https://tendersodisha.gov.in/,Odisha
+Puducherry,https://etenders.puducherry.gov.in/,Puducherry
+Punjab,https://eproc.punjab.gov.in/,Punjab
+Rajasthan,https://eproc.rajasthan.gov.in/,Rajasthan
+Sikkim,https://sikkimtender.gov.in/,Sikkim
+TamilNadu,https://tntenders.gov.in/,Tamil Nadu
+Telangana,https://tender.telangana.gov.in/,Telangana
+Tripura,https://tripuratenders.gov.in/,Tripura
+Uttar Pradesh,https://etender.up.nic.in/,Uttar Pradesh
+Uttarakhand,https://uktenders.gov.in/,Uttarakhand
+West Bengal,https://wbtenders.gov.in/,West Bengal
+BEL,https://beltenders.nic.in/,Bharat Electronics Limited
+BHEL,https://bheltenders.nic.in/,Bharat Heavy Electricals Limited
+CIL,https://coalindiatenders.nic.in/,Coal India Limited
+CPCL,https://cpcltenders.nic.in/,Chennai Petroleum Corporation
+GRSE,https://grsetenders.nic.in/,Garden Reach Shipbuilders
+GSL,https://gsltenders.nic.in/,Goa Shipyard Limited
+HSL,https://eprocurehsl.nic.in,Hindustan Shipyard Limited
+IOCL,https://iocletenders.nic.in/,Indian Oil Corporation
+MDL,https://mdltenders.nic.in/,Mazagon Dock Shipbuilders
+MIDHANI,https://midhanitenders.nic.in/,Mishra Dhatu Nigam Limited
+NTPC,https://ntpctenders.nic.in/,NTPC Limited
+ONGC,https://etenders.ongc.co.in/,Oil and Natural Gas Corporation
+GAIL,https://gailonline.com/,GAIL India Limited
+SAIL,https://sail.co.in/,Steel Authority of India
