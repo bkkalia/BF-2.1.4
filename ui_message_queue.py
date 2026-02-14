@@ -60,7 +60,7 @@ def send_log(worker_id: str, message: str, level: str = "INFO"):
     _update_heartbeat(worker_id, f"Logging: {message[:30]}...")
 
 
-def send_progress(worker_id: str, current: int, total: int, status: str = ""):
+def send_progress(worker_id: str, current: int, total: int, status: str = "", extra_data: dict = None):
     """
     Send progress update from worker to UI (non-blocking).
     
@@ -69,8 +69,9 @@ def send_progress(worker_id: str, current: int, total: int, status: str = ""):
         current: Current progress value
         total: Total/max progress value
         status: Status text (e.g., "Processing department X")
+        extra_data: Optional additional data (e.g., dept_name, scraped_tenders)
     """
-    _message_queue.put({
+    msg = {
         'type': 'progress',
         'worker_id': worker_id,
         'current': current,
@@ -78,7 +79,13 @@ def send_progress(worker_id: str, current: int, total: int, status: str = ""):
         'status': status,
         'percent': (current / total * 100) if total > 0 else 0,
         'timestamp': datetime.now()
-    })
+    }
+    
+    # Include extra_data if provided
+    if extra_data:
+        msg['extra_data'] = extra_data
+    
+    _message_queue.put(msg)
     
     # Update worker heartbeat
     _update_heartbeat(worker_id, status or f"Progress: {current}/{total}")

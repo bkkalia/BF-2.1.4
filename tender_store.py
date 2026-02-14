@@ -204,6 +204,34 @@ class TenderDataStore:
 
         return backup_path
 
+    def get_existing_tender_ids_for_portal(self, portal_name):
+        """
+        Fetch all active tender IDs for a given portal from the database.
+        
+        Args:
+            portal_name: Portal name to query (case-insensitive)
+            
+        Returns:
+            Set of tender IDs (strings)
+        """
+        portal_key = str(portal_name or "").strip().lower()
+        if not portal_key:
+            return set()
+        
+        with self._connect() as conn:
+            cursor = conn.execute(
+                """
+                SELECT DISTINCT TRIM(tender_id_extracted)
+                FROM tenders
+                WHERE LOWER(TRIM(COALESCE(portal_name, ''))) = ?
+                  AND TRIM(COALESCE(tender_id_extracted, '')) != ''
+                  AND lifecycle_status = 'active'
+                """,
+                (portal_key,)
+            )
+            # Return set of tender IDs
+            return {row[0] for row in cursor.fetchall() if row[0]}
+
     def start_run(self, portal_name, base_url, scope_mode="all"):
         started_at = datetime.now().isoformat(timespec="seconds")
         with self._connect() as conn:

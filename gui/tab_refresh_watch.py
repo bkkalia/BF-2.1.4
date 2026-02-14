@@ -841,7 +841,7 @@ class RefreshWatchTab(ttk.Frame):
         return sorted(set(portals))
 
     def _auto_daily_start_if_due(self):
-        enabled = bool(self.main_app.settings.get("dashboard_auto_daily_enabled", True))
+        enabled = bool(self.main_app.settings.get("dashboard_auto_daily_enabled", False))
         if not enabled:
             return
         today = datetime.now().strftime("%Y-%m-%d")

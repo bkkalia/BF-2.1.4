@@ -36,7 +36,7 @@ class TabManager:
         self.num_tabs = num_tabs
         self.tab_handles: List[str] = []
         self.tab_locks: List[threading.Lock] = []
-        self.switch_lock = threading.Lock()  # Global lock for tab switching
+        self.switch_lock = threading.RLock()  # Reentrant lock for nested acquisition
         
         logger.info(f"Initializing TabManager with {num_tabs} tabs")
         self._setup_tabs()

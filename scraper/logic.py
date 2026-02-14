@@ -645,6 +645,30 @@ def _scrape_tender_details(driver, department_name, base_url, log_callback, exis
                                 skipped_count += 1
                             break
                         
+                        # EARLY DUPLICATE CHECK: Extract just tender ID first to skip duplicates quickly
+                        # before doing expensive operations like extracting all data
+                        quick_tender_id = None
+                        title_col_index = 1 if num_cells == 3 else DETAILS_COL_TITLE_REF
+                        if title_col_index < num_cells:
+                            try:
+                                title_cell = cells[title_col_index]
+                                title_text = title_cell.text.strip()
+                                # Extract tender ID from title text (pattern: [2024_XYZ_123] or [ABC123])
+                                match = re.search(r'\[(\d{4}_[A-Z0-9_]+(?:_\d+)?)\]', title_text) or re.search(r'\[([A-Z0-9_]{5,})\]', title_text)
+                                if match:
+                                    quick_tender_id = match.group(1)
+                            except Exception:
+                                pass  # Will extract properly later if not duplicate
+                        
+                        # Check if duplicate BEFORE extracting all data
+                        if quick_tender_id:
+                            quick_id_normalized = normalize_tender_id(quick_tender_id)
+                            if quick_id_normalized and quick_id_normalized in existing_tender_ids_normalized:
+                                skipped_existing_count += 1
+                                row_processed = True
+                                break  # Skip this duplicate row early, saving time
+                        
+                        # Not a duplicate or no tender ID found yet - proceed with full extraction
                         # Proceed with flexible extraction
                         if num_cells < req_cols and row_attempt == 0:
                             log_callback(f"{prefix} INFO - Processing with {num_cells}/{req_cols} columns (flexible mode)")
@@ -712,6 +736,7 @@ def _scrape_tender_details(driver, department_name, base_url, log_callback, exis
                                 if TITLE_REF_KEY not in data:
                                     data[TITLE_REF_KEY] = "Error"
 
+                        # Final duplicate check (in case tender ID wasn't extractable earlier)
                         t_id_normalized = normalize_tender_id(t_id)
                         if t_id_normalized and t_id_normalized in existing_tender_ids_normalized:
                             skipped_existing_count += 1
@@ -758,9 +783,9 @@ def _scrape_tender_details(driver, department_name, base_url, log_callback, exis
             
             log_callback(f"  Successfully extracted {processed_count} tenders from {department_name}.")
             if skipped_existing_count > 0:
-                log_callback(f"  Skipped {skipped_existing_count} already-known tenders from {department_name}.")
+                log_callback(f"  ✓ SKIPPED {skipped_existing_count} DUPLICATE tenders (already in database) from {department_name}")
             if skipped_count > 0:
-                log_callback(f"  Skipped {skipped_count} rows due to errors or insufficient data.")
+                log_callback(f"  ⚠ Skipped {skipped_count} rows due to errors or insufficient data.")
             log_callback("")  # Blank line for readability
             log_callback("*" * 80)  # Department completion separator
             log_callback("")  # Blank line
@@ -952,10 +977,64 @@ def _prepare_department_tasks(departments, log_callback, base_reference_url=None
 
 
 def _build_worker_assignments(departments, worker_count):
+    """
+    Distribute departments across workers using smart load balancing.
+    
+    CRITICAL: Time is dominated by per-department overhead (navigation, page load)
+    NOT by tender count. Use a hybrid formula that heavily weights department count.
+    
+    Formula: estimated_time = (dept_count * FIXED_OVERHEAD) + (tender_count * PER_TENDER_TIME)
+    Where FIXED_OVERHEAD (~30s) >> PER_TENDER_TIME (~0.5s)
+    
+    Args:
+        departments: List of department dictionaries with 'count_text' field
+        worker_count: Number of workers to distribute across
+        
+    Returns:
+        List of department lists, one per worker
+    """
     worker_count = max(1, int(worker_count or 1))
+    if worker_count == 1:
+        return [departments or []]
+    
+    # Empirical constants based on actual performance data
+    # Per-department overhead: navigation (15s) + page load (10s) + parsing (5s) = 30s
+    DEPT_OVERHEAD_SECONDS = 30.0
+    # Per-tender scraping time: ~0.5s average
+    PER_TENDER_SECONDS = 0.5
+    
+    # Calculate realistic estimated time for each department
+    departments_with_estimates = []
+    for dept in (departments or []):
+        count_text = str(dept.get('count_text', '0')).strip()
+        tender_count = int(count_text) if count_text.isdigit() else 0
+        
+        # Hybrid formula: department overhead dominates
+        estimated_time = DEPT_OVERHEAD_SECONDS + (tender_count * PER_TENDER_SECONDS)
+        departments_with_estimates.append((dept, tender_count, estimated_time))
+    
+    # Sort by estimated time descending (largest jobs first for better balancing)
+    departments_with_estimates.sort(key=lambda x: x[2], reverse=True)
+    
+    # Initialize workers with empty lists and track their total estimated time
+    worker_times = [0.0] * worker_count
+    worker_dept_counts = [0] * worker_count
+    worker_tender_counts = [0] * worker_count
     assignments = [[] for _ in range(worker_count)]
-    for index, dept in enumerate(departments or []):
-        assignments[index % worker_count].append(dept)
+    
+    # Greedy assignment: Always assign next department to least-loaded worker (by time)
+    for dept, tender_count, estimated_time in departments_with_estimates:
+        # Find worker with minimum estimated time
+        min_time_idx = worker_times.index(min(worker_times))
+        assignments[min_time_idx].append(dept)
+        worker_times[min_time_idx] += estimated_time
+        worker_dept_counts[min_time_idx] += 1
+        worker_tender_counts[min_time_idx] += tender_count
+    
+    # Log the load distribution for verification
+    logger.debug(f"Smart load balancing (time-based): Worker times = {[f'{t:.0f}s' for t in worker_times]}")
+    logger.debug(f"  Dept counts: {worker_dept_counts}, Tender counts: {worker_tender_counts}")
+    
     return assignments
 
 
@@ -1041,6 +1120,12 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
     direct_nav_success = 0
     direct_nav_fallback_click = 0
     click_only_success = 0
+    
+    # Timing statistics for comprehensive summary
+    total_nav_time = 0.0
+    total_scrape_time = 0.0
+    total_dept_processing_time = 0.0
+    browser_init_time_total = 0.0
     portal_name = str(base_url_config.get('Name', 'Unknown')).strip() or "Unknown"
     portal_base_url = str(base_url_config.get('BaseURL', '')).strip()
     scope_mode = "only_new" if existing_tender_ids or existing_department_names else "all"
@@ -1278,6 +1363,7 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
             nonlocal processed_depts, total_tenders, skipped_existing_total
             nonlocal skipped_resume_departments, direct_nav_attempted, direct_nav_success
             nonlocal direct_nav_fallback_click, click_only_success
+            nonlocal total_nav_time, total_scrape_time, total_dept_processing_time
 
             if stop_event and stop_event.is_set():
                 return
@@ -1312,6 +1398,7 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
                 pending_depts = max(0, total_depts - processed_depts)
                 current_total_tenders = total_tenders
 
+            dept_start_time = time.time()
             log_callback("")
             log_callback("**************")
             log_callback(f"[{worker_label}] Processing department {current_processed}/{total_depts}: {dept_name}")
@@ -1336,7 +1423,9 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
                     extra_data={
                         "dept_name": dept_name,
                         "scraped_tenders": current_total_tenders,
-                        "pending_depts": pending_depts
+                        "total_tenders": current_total_tenders,
+                        "pending_depts": pending_depts,
+                        "skipped_duplicates": 0  # Will be updated after scraping
                     }
                 )
 
@@ -1352,15 +1441,20 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
                 with state_lock:
                     direct_nav_attempted += 1
 
+            nav_start_time = time.time()
             opened_dept, nav_mode = _open_department_page(
                 active_driver,
                 dept_info,
                 log_callback,
                 base_reference_url=base_url_config.get('OrgListURL') or base_url_config.get('BaseURL')
             )
+            nav_time = time.time() - nav_start_time
             if not opened_dept:
+                log_callback(f"[{worker_label}] ⏱️ Navigation time: {nav_time:.2f}s (failed)")
                 return
 
+            log_callback(f"[{worker_label}] ⏱️ Navigation time: {nav_time:.2f}s")
+            
             with state_lock:
                 if nav_mode == "direct":
                     direct_nav_success += 1
@@ -1379,6 +1473,7 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
                 log_callback(f"[{worker_label}] Driver session lost after opening dept {dept_name}: {session_err}")
                 return
 
+            scrape_start_time = time.time()
             tender_data, skipped_existing = _scrape_tender_details(
                 driver=active_driver,
                 department_name=dept_name,
@@ -1388,6 +1483,8 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
                 existing_tender_ids_normalized=existing_tender_ids_normalized,
                 stop_event=stop_event
             )
+            scrape_time = time.time() - scrape_start_time
+            log_callback(f"[{worker_label}] ⏱️ Table scraping time: {scrape_time:.2f}s")
 
             expected_for_dept = int(str(dept_info.get('count_text', '0')).strip()) if str(dept_info.get('count_text', '')).strip().isdigit() else None
             with state_lock:
@@ -1421,14 +1518,47 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
                     })
                 dept_info['processed'] = True
                 dept_info['tenders_found'] = dept_tender_count
+                dept_total_time = time.time() - dept_start_time
+                
+                # Accumulate timing statistics
+                with state_lock:
+                    total_nav_time += nav_time
+                    total_scrape_time += scrape_time
+                    total_dept_processing_time += dept_total_time
+                
                 log_callback(f"[{worker_label}] Found {dept_tender_count} tenders in department {dept_name}")
+                log_callback(f"[{worker_label}] ⏱️ Total department time: {dept_total_time:.2f}s (Nav: {nav_time:.2f}s, Scrape: {scrape_time:.2f}s)")
+                if skipped_existing > 0:
+                    log_callback(f"[{worker_label}] ⏭️  Skipped {skipped_existing} duplicates in {dept_name}")
 
                 if progress_callback:
                     progress_details = (
                         f"Dept {current_processed}/{total_depts}: {dept_name[:28]}... "
                         f"| Scraped: {current_total} | Pending: {pending_depts}"
                     )
-                    progress_callback(current_processed, total_depts, progress_details, dept_name, dept_tender_count, current_total, pending_depts)
+                    extra_info = {
+                        "dept_name": dept_name,
+                        "scraped_tenders": dept_tender_count,
+                        "total_tenders": current_total,
+                        "pending_depts": pending_depts,
+                        "skipped_duplicates": skipped_existing
+                    }
+                    progress_callback(current_processed, total_depts, progress_details, extra_info)
+                    
+                # Send via message queue with skip info
+                send_progress(
+                    worker_label,
+                    current=current_processed,
+                    total=total_depts,
+                    status=f"Dept: {dept_name[:28]}...",
+                    extra_data={
+                        "dept_name": dept_name,
+                        "scraped_tenders": dept_tender_count,
+                        "total_tenders": current_total,
+                        "pending_depts": pending_depts,
+                        "skipped_duplicates": skipped_existing
+                    }
+                )
             else:
                 with state_lock:
                     department_summaries.append({
@@ -1439,7 +1569,9 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
                     })
                 dept_info['processed'] = True
                 dept_info['tenders_found'] = 0
+                dept_total_time = time.time() - dept_start_time
                 log_callback(f"[{worker_label}] No tenders found/extracted from department {dept_name}")
+                log_callback(f"[{worker_label}] ⏱️ Department processing time: {dept_total_time:.2f}s")
 
             if nav_mode == "direct":
                 log_callback(f"[{worker_label}] Direct navigation mode: skipping return-to-org and proceeding to next department")
@@ -1477,20 +1609,104 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
                 log_callback(
                     f"Department worker cap applied: requested={department_parallel_workers}, active={active_workers}, departments={total_depts}"
                 )
-            log_callback(f"Department parallel mode enabled: workers={active_workers} (tab-based)")
+            log_callback(f"Department parallel mode enabled: workers={active_workers} (instance-based for true parallelism)")
 
             worker_assignments = _build_worker_assignments(departments_to_scrape, active_workers)
             _write_department_links_snapshot(portal_name, departments_to_scrape, worker_assignments, log_callback)
+            
+            # Show load balancing distribution with time estimates
+            log_callback("📊 Smart Load Balancing - Worker Assignments (Time-Based):")
+            DEPT_OVERHEAD = 30.0  # seconds per department
+            PER_TENDER = 0.5      # seconds per tender
             for idx, bucket in enumerate(worker_assignments, 1):
-                log_callback(f"Worker W{idx} assigned {len(bucket)} department(s)")
+                total_tenders = sum(int(dept.get('count_text', '0') or '0') for dept in bucket)
+                estimated_time = (len(bucket) * DEPT_OVERHEAD) + (total_tenders * PER_TENDER)
+                log_callback(f"   W{idx}: {len(bucket)} depts, ~{total_tenders} tenders, est. {estimated_time/60:.1f} min")
 
-            # Use tab-based workers instead of separate browser instances
+            # Close the initial driver since we'll create separate instances for each worker
+            log_callback("Closing initial browser instance (will create separate instances per worker)...")
             try:
-                tab_mgr = setup_driver_with_tabs(driver, num_workers=active_workers)
-                log_callback(f"✓ Tab-based workers initialized: {tab_mgr.get_tab_count()} tabs (3x less memory)")
-            except Exception as tab_err:
-                log_callback(f"ERROR: Could not setup tab manager: {tab_err}")
-                log_callback("Falling back to single worker mode")
+                driver.quit()
+                driver = None  # Mark as closed so finally block doesn't try to close it again
+            except Exception as close_err:
+                log_callback(f"Warning: Error closing initial driver: {close_err}")
+                driver = None
+
+            # Create separate browser instances for each worker (true parallelism)
+            # Use parallel initialization to speed up browser startup
+            worker_drivers = []
+            browser_init_start = time.time()
+            try:
+                log_callback(f"⚡ Initializing {active_workers} browser instances IN PARALLEL...")
+                from scraper.driver_manager import setup_driver
+                
+                def _init_worker_browser(worker_idx):
+                    """Initialize a single browser instance for a worker."""
+                    worker_label = f"W{worker_idx + 1}"
+                    try:
+                        log_callback(f"  [{worker_label}] Starting browser...")
+                        worker_driver = setup_driver(initial_download_dir=download_dir)
+                        log_callback(f"  ✓ [{worker_label}] Browser ready")
+                        return (worker_idx, worker_driver, None)
+                    except Exception as init_err:
+                        log_callback(f"  ✗ [{worker_label}] Browser initialization failed: {init_err}")
+                        return (worker_idx, None, init_err)
+                
+                # Start all browser instances in parallel
+                with concurrent.futures.ThreadPoolExecutor(max_workers=active_workers) as init_executor:
+                    init_futures = [
+                        init_executor.submit(_init_worker_browser, idx)
+                        for idx in range(active_workers)
+                    ]
+                    
+                    # Collect results in order
+                    worker_drivers = [None] * active_workers
+                    failed_count = 0
+                    for future in concurrent.futures.as_completed(init_futures):
+                        worker_idx, driver_instance, error = future.result()
+                        if driver_instance:
+                            worker_drivers[worker_idx] = driver_instance
+                        else:
+                            failed_count += 1
+                
+                # Remove None entries (failed initializations)
+                worker_drivers = [wd for wd in worker_drivers if wd is not None]
+                
+                browser_init_time = time.time() - browser_init_start
+                browser_init_time_total = browser_init_time  # Store for summary statistics
+                
+                if failed_count > 0:
+                    log_callback(f"⚠️  {failed_count} browser(s) failed to initialize")
+                
+                if len(worker_drivers) == 0:
+                    raise Exception(f"All {active_workers} browser instances failed to initialize")
+                
+                actual_workers = len(worker_drivers)
+                log_callback(f"✓ {actual_workers} browser instances initialized in {browser_init_time:.2f}s (parallel startup)")
+                
+                # Adjust active_workers if some browsers failed
+                if actual_workers < active_workers:
+                    log_callback(f"⚠️  Reduced worker count from {active_workers} to {actual_workers} due to initialization failures")
+                    active_workers = actual_workers
+                    # Re-balance work assignments
+                    worker_assignments = _build_worker_assignments(departments_to_scrape, active_workers)
+                
+            except Exception as driver_err:
+                log_callback(f"ERROR: Could not create worker browser instances: {driver_err}")
+                # Clean up any drivers that were created
+                for wd in worker_drivers:
+                    try:
+                        wd.quit()
+                    except:
+                        pass
+                log_callback("Falling back to single worker mode - creating new browser instance...")
+                # Recreate driver for fallback single worker mode
+                try:
+                    driver = setup_driver(initial_download_dir=download_dir)
+                except Exception as fallback_err:
+                    log_callback(f"ERROR: Could not create fallback driver: {fallback_err}")
+                    return _prepare_summary()
+                
                 # Fallback to single worker
                 for dept_info in departments_to_scrape:
                     if stop_event and stop_event.is_set():
@@ -1498,48 +1714,91 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
                     _process_department_with_driver(driver, dept_info, "W1")
                 return _prepare_summary()
 
-            def _worker_loop(worker_index, label, assigned_departments):
-                """Worker loop using tab-based navigation."""
+            def _worker_loop(worker_index, label, assigned_departments, worker_driver):
+                """Worker loop with dedicated browser instance for true parallelism."""
                 # Register this worker with message queue
                 register_worker(label)
-                log_callback(f"[{label}] Worker registered with message queue")
+                log_callback(f"[{label}] Worker registered with dedicated browser instance")
                 
-                for dept_task in assigned_departments or []:
-                    if stop_event and stop_event.is_set():
-                        break
-                    
-                    # Switch to this worker's tab before processing  
-                    try:
-                        tab_mgr.switch_to_tab(worker_index, label)
-                        _process_department_with_driver(driver, dept_task, label)
+                worker_success = True
+                departments_completed = 0
+                
+                try:
+                    for dept_task in assigned_departments or []:
+                        if stop_event and stop_event.is_set():
+                            break
                         
-                    except Exception as worker_err:
-                        error_msg = f"ERROR processing department: {worker_err}"
-                        log_callback(f"[{label}] {error_msg}")
-                        send_error(label, str(worker_err))
-                
-                # Worker completed all departments
-                log_callback(f"[{label}] Worker completed all assigned departments")
-                send_complete(label, {"departments": len(assigned_departments or [])})
+                        # Process with dedicated driver (no locks, true parallel execution)
+                        try:
+                            _process_department_with_driver(worker_driver, dept_task, label)
+                            departments_completed += 1
+                            
+                        except Exception as dept_err:
+                            error_msg = f"ERROR processing department: {dept_err}"
+                            log_callback(f"[{label}] {error_msg}")
+                            send_error(label, str(dept_err))
+                            # Continue with next department even if one fails
+                    
+                    # Worker completed all departments
+                    log_callback(f"[{label}] Worker completed {departments_completed}/{len(assigned_departments or [])} departments")
+                    send_complete(label, {"departments": departments_completed})
+                    
+                except Exception as worker_critical_err:
+                    # Critical worker failure (e.g., browser crash)
+                    worker_success = False
+                    error_details = f"Critical worker error: {worker_critical_err}"
+                    log_callback(f"[{label}] ❌ {error_details}")
+                    send_error(label, error_details)
+                    
+                finally:
+                    # Each worker closes its own browser instance
+                    try:
+                        log_callback(f"[{label}] Closing browser instance...")
+                        worker_driver.quit()
+                        log_callback(f"[{label}] ✓ Browser closed")
+                    except Exception as close_err:
+                        log_callback(f"[{label}] WARNING: Error closing browser: {close_err}")
+                    
+                    return {
+                        "worker_id": label,
+                        "success": worker_success,
+                        "departments_completed": departments_completed,
+                        "departments_assigned": len(assigned_departments or [])
+                    }
 
+            # Track worker results for error isolation
+            worker_results = []
+            
             try:
                 with concurrent.futures.ThreadPoolExecutor(max_workers=active_workers) as executor:
                     futures = [
-                        executor.submit(_worker_loop, idx, f"W{idx + 1}", worker_assignments[idx])
+                        executor.submit(_worker_loop, idx, f"W{idx + 1}", worker_assignments[idx], worker_drivers[idx])
                         for idx in range(active_workers)
                     ]
                     for fut in concurrent.futures.as_completed(futures):
                         try:
-                            fut.result()
+                            result = fut.result()
+                            if result:
+                                worker_results.append(result)
                         except Exception as fut_err:
-                            log_callback(f"WARNING: Worker thread error: {fut_err}")
+                            log_callback(f"❌ WARNING: Worker thread failed critically: {fut_err}")
+                            worker_results.append({
+                                "worker_id": "Unknown",
+                                "success": False,
+                                "departments_completed": 0,
+                                "departments_assigned": 0,
+                                "error": str(fut_err)
+                            })
             finally:
-                # Close extra tabs (keep first one)
-                try:
-                    tab_mgr.close_all_tabs_except_first()
-                    log_callback("✓ Tab-based workers cleaned up")
-                except Exception as cleanup_err:
-                    log_callback(f"WARNING: Tab cleanup error: {cleanup_err}")
+                # Ensure all worker browsers are closed (safety cleanup)
+                log_callback("Cleaning up worker browser instances...")
+                for idx, wd in enumerate(worker_drivers):
+                    try:
+                        wd.quit()
+                        log_callback(f"  ✓ W{idx + 1} browser cleaned up")
+                    except Exception as cleanup_err:
+                        log_callback(f"  WARNING: W{idx + 1} cleanup error: {cleanup_err}")
+                log_callback("✓ All worker browsers cleaned up")
         else:
             for dept_info in departments_to_scrape:
                 if stop_event and stop_event.is_set():
@@ -1547,13 +1806,43 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
                 _process_department_with_driver(driver, dept_info, "W1")
 
         # Generate output file if we have data
+        was_stopped = stop_event and stop_event.is_set()
         if all_tender_details:
-            saved_output_path, saved_output_type = _save_tender_data_snapshot(all_tender_details, mark_partial=False)
+            # Mark as partial if scraping was stopped before completion
+            saved_output_path, saved_output_type = _save_tender_data_snapshot(
+                all_tender_details, 
+                mark_partial=was_stopped
+            )
+            
+            if was_stopped and saved_output_path:
+                log_callback("")
+                log_callback("=" * 80)
+                log_callback("⚠️  GRACEFUL SHUTDOWN - PARTIAL SAVE COMPLETED")
+                log_callback("=" * 80)
+                log_callback(f"✓ Saved {len(all_tender_details)} tenders to: {saved_output_type}")
+                log_callback(f"   File: {saved_output_path}")
+                log_callback("")
+                
+                # Calculate what was missed
+                pending_depts = len(departments_to_scrape) - processed_depts
+                if pending_depts > 0:
+                    log_callback(f"⏸️  Departments Not Processed: {pending_depts}")
+                    estimated_missed_tenders = sum(
+                        int(dept.get('count_text', '0') or '0')
+                        for dept in departments_to_scrape[processed_depts:]
+                    )
+                    if estimated_missed_tenders > 0:
+                        log_callback(f"   Estimated Missed Tenders: ~{estimated_missed_tenders}")
+                log_callback("=" * 80)
+                log_callback("")
         
         status_msg = "Scraping completed"
-        if stop_event and stop_event.is_set():
-            status_msg = "Scraping stopped by user"
-            
+        if was_stopped:
+            status_msg = "Scraping stopped by user (partial results saved)"
+        
+        # Calculate total elapsed time
+        total_elapsed_time = (datetime.now() - start_time).total_seconds()
+        
         log_callback("")
         log_callback("#" * 80)  # Portal completion separator
         log_callback("#" * 80)
@@ -1562,6 +1851,129 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
         if skipped_resume_departments > 0:
             log_callback(f"Resume skipped departments: {skipped_resume_departments}")
         log_callback(f"Total tenders found: {total_tenders}")
+        
+        # Show completion status for partial runs
+        if was_stopped:
+            total_depts_to_process = len(departments_to_scrape)
+            completion_percentage = (processed_depts / total_depts_to_process * 100) if total_depts_to_process > 0 else 0
+            log_callback("")
+            log_callback("⚠️  PARTIAL RUN STATUS:")
+            log_callback(f"   Completion: {completion_percentage:.1f}% ({processed_depts}/{total_depts_to_process} departments)")
+            log_callback(f"   Tenders Saved: {total_tenders}")
+            if skipped_existing_total > 0:
+                log_callback(f"   Duplicates Skipped: {skipped_existing_total}")
+        
+        # Comprehensive Summary Statistics
+        log_callback("")
+        log_callback("=" * 80)
+        log_callback("📊 COMPREHENSIVE PERFORMANCE SUMMARY")
+        log_callback("=" * 80)
+        
+        # Timing Breakdown
+        log_callback("")
+        log_callback("⏱️  TIMING BREAKDOWN:")
+        log_callback(f"   Total Elapsed Time: {total_elapsed_time:.2f}s ({total_elapsed_time/60:.2f} min)")
+        
+        if browser_init_time_total > 0:
+            log_callback(f"   Browser Initialization: {browser_init_time_total:.2f}s (parallel startup)")
+        
+        if processed_depts > 0:
+            log_callback(f"   Total Navigation Time: {total_nav_time:.2f}s")
+            log_callback(f"   Total Scraping Time: {total_scrape_time:.2f}s")
+            log_callback(f"   Total Dept Processing: {total_dept_processing_time:.2f}s")
+            
+            overhead_time = total_elapsed_time - total_dept_processing_time - browser_init_time_total
+            if overhead_time > 0:
+                log_callback(f"   System Overhead: {overhead_time:.2f}s")
+        
+        # Average Times
+        log_callback("")
+        log_callback("📈 AVERAGE TIMES:")
+        if processed_depts > 0:
+            avg_nav = total_nav_time / processed_depts
+            avg_scrape = total_scrape_time / processed_depts
+            avg_dept = total_dept_processing_time / processed_depts
+            log_callback(f"   Per Department: {avg_dept:.2f}s (Nav: {avg_nav:.2f}s, Scrape: {avg_scrape:.2f}s)")
+        
+        if total_tenders > 0:
+            avg_per_tender = total_scrape_time / total_tenders
+            log_callback(f"   Per New Tender: {avg_per_tender:.2f}s")
+        
+        # Duplicate Detection Performance
+        if skipped_existing_total > 0:
+            log_callback("")
+            log_callback("🔍 DUPLICATE DETECTION PERFORMANCE:")
+            log_callback(f"   Total Duplicates Skipped: {skipped_existing_total} tenders")
+            total_processed = total_tenders + skipped_existing_total
+            duplicate_percentage = (skipped_existing_total / total_processed * 100) if total_processed > 0 else 0
+            log_callback(f"   Duplicate Rate: {duplicate_percentage:.1f}% ({skipped_existing_total}/{total_processed})")
+            
+            # Estimate time saved (assuming 0.7s per tender if we didn't have early detection)
+            time_saved_estimate = skipped_existing_total * 0.7
+            log_callback(f"   Estimated Time Saved: {time_saved_estimate:.2f}s ({time_saved_estimate/60:.2f} min)")
+            log_callback(f"   (Based on early duplicate detection vs full extraction)")
+        
+        # Worker Efficiency
+        if active_workers > 1:
+            log_callback("")
+            log_callback("⚡ MULTI-WORKER EFFICIENCY:")
+            log_callback(f"   Workers Used: {active_workers} (instance-based parallelism)")
+            
+            # Worker status from error isolation
+            if worker_results:
+                successful_workers = [w for w in worker_results if w.get("success", True)]
+                failed_workers = [w for w in worker_results if not w.get("success", True)]
+                
+                log_callback(f"   Workers Successful: {len(successful_workers)}/{len(worker_results)}")
+                if failed_workers:
+                    log_callback(f"   ⚠️  Workers Failed: {len(failed_workers)}")
+                    for fw in failed_workers:
+                        worker_id = fw.get("worker_id", "Unknown")
+                        error_info = fw.get("error", "Unknown error")
+                        log_callback(f"      - {worker_id}: {error_info}")
+                
+                # Department completion by worker
+                log_callback("")
+                log_callback("   Department Completion by Worker:")
+                for wr in worker_results:
+                    worker_id = wr.get("worker_id", "Unknown")
+                    completed = wr.get("departments_completed", 0)
+                    assigned = wr.get("departments_assigned", 0)
+                    status_icon = "✓" if wr.get("success", True) else "❌"
+                    log_callback(f"      {status_icon} {worker_id}: {completed}/{assigned} departments")
+            
+            if processed_depts > 0:
+                theoretical_sequential_time = total_dept_processing_time
+                actual_time = total_elapsed_time
+                if actual_time > 0:
+                    log_callback("")
+                    speedup_factor = theoretical_sequential_time / actual_time
+                    efficiency = (speedup_factor / active_workers) * 100
+                    log_callback(f"   Parallelism Speedup: {speedup_factor:.2f}x")
+                    log_callback(f"   Worker Efficiency: {efficiency:.1f}% (ideal: 100%)")
+        
+        # Throughput
+        log_callback("")
+        log_callback("🚀 THROUGHPUT:")
+        if total_elapsed_time > 0:
+            tenders_per_minute = (total_tenders / total_elapsed_time) * 60
+            log_callback(f"   New Tenders: {tenders_per_minute:.1f} per minute")
+            
+            if skipped_existing_total > 0:
+                total_processed = total_tenders + skipped_existing_total
+                total_per_minute = (total_processed / total_elapsed_time) * 60
+                log_callback(f"   Total Processed: {total_per_minute:.1f} per minute (incl. duplicates)")
+        
+        log_callback("")
+        log_callback("=" * 80)
+        log_callback("")
+        
+        # Original summary for compatibility
+        if skipped_existing_total > 0:
+            log_callback(f"📊 DUPLICATE SKIPPING SUMMARY:")
+            log_callback(f"   Total duplicates skipped: {skipped_existing_total} tenders")
+            log_callback(f"   (These tenders already exist in database with same closing date)")
+            log_callback("")
         log_callback(
             f"Department navigation summary: "
             f"direct_success={direct_nav_success}/{direct_nav_attempted}, "

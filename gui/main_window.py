@@ -632,11 +632,44 @@ class MainWindow:
                     status = msg.get("status", "")
                     extra = msg.get("extra_data", {})
                     
-                    # Update progress display
+                    # Update progress display with detailed info
                     dept_name = extra.get("dept_name", "")
+                    scraped_tenders = extra.get("scraped_tenders", 0)
+                    total_tenders = extra.get("total_tenders", 0)
+                    skipped_duplicates = extra.get("skipped_duplicates", 0)
+                    
+                    # Track cumulative duplicates skipped
+                    if not hasattr(self, 'cumulative_skipped_duplicates'):
+                        self.cumulative_skipped_duplicates = 0
+                    if skipped_duplicates > 0:
+                        self.cumulative_skipped_duplicates += skipped_duplicates
+                    
                     if dept_name:
                         progress_text = f"{worker_id}: {status} ({current}/{total})"
+                        if skipped_duplicates > 0:
+                            progress_text += f" | ✓ Skipped {skipped_duplicates} duplicates"
+                        if self.cumulative_skipped_duplicates > 0:
+                            progress_text += f" (Total: {self.cumulative_skipped_duplicates})"
                         self.update_log(progress_text)
+                        
+                        # Update GUI widgets (progress bars and labels)
+                        try:
+                            # Update department progress bar
+                            if hasattr(self, 'dept_progress_bar') and hasattr(self, 'dept_progress_label'):
+                                gui_utils.update_dept_progress(
+                                    self.dept_progress_bar, 
+                                    self.dept_progress_label, 
+                                    current, 
+                                    total
+                                )
+                            
+                            # Update tender progress if we have tender counts
+                            if total_tenders > 0 and hasattr(self, 'progress_bar') and hasattr(self, 'progress_details_label'):
+                                tender_pct = (total_tenders / max(1, self.total_estimated_tenders_for_run)) * 100
+                                self.progress_bar["value"] = max(0, min(100, tender_pct))
+                                self.progress_details_label.config(text=f"{total_tenders} / ~{self.total_estimated_tenders_for_run}")
+                        except Exception as ui_err:
+                            logger.debug(f"Error updating progress widgets: {ui_err}")
                     
                 elif msg_type == "complete":
                     # Worker completed
@@ -2028,6 +2061,10 @@ class MainWindow:
             if hasattr(tab_instance, "reset_progress"):
                 tab_instance.reset_progress()
         self.timer_label.config(text="Elapsed: 00:00:00")
+        
+        # Reset cumulative skipped duplicates counter
+        self.cumulative_skipped_duplicates = 0
+        
         if hasattr(self, 'progress_bar'):
             self.progress_bar['value'] = 0
         if hasattr(self, 'dept_progress_bar'):

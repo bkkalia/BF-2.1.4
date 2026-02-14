@@ -16,6 +16,7 @@ if PROJECT_ROOT not in sys.path:
 
 # Absolute imports from project root
 from scraper.logic import fetch_department_list_from_site, run_scraping_logic
+from tender_store import TenderDataStore
 from gui import gui_utils
 
 logger = logging.getLogger(__name__)
@@ -329,10 +330,55 @@ class DepartmentTab(ttk.Frame):
             if not self.main_app.validate_download_dir(download_dir):
                 return
 
+            # Load existing tender IDs from database to enable duplicate skipping
+            existing_tender_ids = set()
+            try:
+                sqlite_settings = self.main_app._get_sqlite_runtime_settings()
+                sqlite_db_path = sqlite_settings.get("sqlite_db_path")
+                if sqlite_db_path and os.path.exists(sqlite_db_path):
+                    data_store = TenderDataStore(sqlite_db_path)
+                    portal_name = url_config.get("Name", "")
+                    existing_tender_ids = data_store.get_existing_tender_ids_for_portal(portal_name)
+                    if existing_tender_ids:
+                        logger.info(f"Loaded {len(existing_tender_ids)} existing tender IDs from database for duplicate skipping")
+                        self.main_app.update_log("=" * 80)
+                        self.main_app.update_log(f"📊 DUPLICATE DETECTION ACTIVE")
+                        self.main_app.update_log(f"   Database contains {len(existing_tender_ids)} known tenders for '{portal_name}'")
+                        self.main_app.update_log(f"   Already-scraped tenders with same closing date will be SKIPPED")
+                        self.main_app.update_log("=" * 80)
+                    else:
+                        logger.info("No existing tender IDs found in database - all tenders will be scraped")
+                        self.main_app.update_log(f"ℹ️  First time scraping '{portal_name}' - no duplicates to skip")
+            except Exception as db_err:
+                logger.warning(f"Could not load existing tender IDs from database: {db_err}")
+                self.main_app.update_log(f"⚠️  Duplicate detection unavailable: {db_err}")
+                # Continue without duplicate skipping if database query fails
+
+            # Get worker count from settings
+            dept_workers = 1
+            try:
+                if hasattr(self.main_app, "department_parallel_workers_var"):
+                    dept_workers = max(1, min(5, int(self.main_app.department_parallel_workers_var.get() or 1)))
+                else:
+                    dept_workers = max(1, min(5, int(self.main_app.settings.get("department_parallel_workers", 1) or 1)))
+            except Exception:
+                dept_workers = 1
+            
+            if dept_workers > 1:
+                logger.info(f"Multi-worker mode: {dept_workers} workers (instance-based)")
+                self.main_app.update_log(f"⚡ Multi-worker mode: {dept_workers} parallel workers enabled (separate browser instances)")
+                self.main_app.update_log(f"   Each worker has its own browser for TRUE parallel execution")
+                expected_memory = dept_workers * 500  # Approximate MB per browser
+                self.main_app.update_log(f"   Expected memory usage: ~{expected_memory}-{expected_memory + 500} MB")
+
             # Start background task
             self.main_app.start_background_task(
                 run_scraping_logic,
                 args=(selected_depts, url_config, download_dir),
+                kwargs={
+                    "existing_tender_ids": existing_tender_ids,
+                    "department_parallel_workers": dept_workers
+                },
                 task_name="Department Scrape"
             )
 

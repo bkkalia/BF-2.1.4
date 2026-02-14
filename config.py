@@ -1,4 +1,4 @@
-# config.py v2.2.1
+# config.py v2.2.2
 # Stores configuration constants, defaults, and locators
 
 import logging
@@ -29,7 +29,7 @@ except ImportError:
 ByType = By
 
 # --- Application ---
-APP_VERSION = "2.2.1"
+APP_VERSION = "2.2.2"
 APP_AUTHOR = "Cloud84, Una, HP, India (Refactored)"
 DEFAULT_APP_NAME = "Cloud84 Black Forest Project - Tender Search Utility"
 
