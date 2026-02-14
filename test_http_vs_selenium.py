@@ -88,7 +88,7 @@ class PortalSpeedTester:
                 verdict = "HTTP_FALLBACK"
             else:
                 print(f"   ❌ NEEDS SELENIUM")
-                print(f "   → No tender tables in static HTML")
+                print(f"   → No tender tables in static HTML")
                 print(f"   → Page likely requires JavaScript rendering")
                 verdict = "SELENIUM_REQUIRED"
             

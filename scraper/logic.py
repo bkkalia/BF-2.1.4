@@ -39,6 +39,7 @@ except ImportError as e:
 
 # Local imports - using absolute paths
 try:
+    from scraper.tab_manager import TabManager, setup_driver_with_tabs
     from config import (
         APP_VERSION, PAGE_LOAD_TIMEOUT, ELEMENT_WAIT_TIMEOUT, STABILIZE_WAIT, POST_ACTION_WAIT,
         POST_CAPTCHA_WAIT, CAPTCHA_CHECK_TIMEOUT, DOWNLOAD_WAIT_TIMEOUT, POPUP_WAIT_TIMEOUT,
@@ -1455,42 +1456,58 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
                 log_callback(
                     f"Department worker cap applied: requested={department_parallel_workers}, active={active_workers}, departments={total_depts}"
                 )
-            log_callback(f"Department parallel mode enabled: workers={active_workers}")
+            log_callback(f"Department parallel mode enabled: workers={active_workers} (tab-based)")
 
             worker_assignments = _build_worker_assignments(departments_to_scrape, active_workers)
             _write_department_links_snapshot(portal_name, departments_to_scrape, worker_assignments, log_callback)
             for idx, bucket in enumerate(worker_assignments, 1):
                 log_callback(f"Worker W{idx} assigned {len(bucket)} department(s)")
 
-            worker_drivers = [("W1", driver, False)]
-            for worker_index in range(2, active_workers + 1):
-                try:
-                    extra_driver = setup_driver(initial_download_dir=download_dir)
-                    worker_drivers.append((f"W{worker_index}", extra_driver, True))
-                except Exception as driver_err:
-                    log_callback(f"WARNING: Could not start browser worker W{worker_index}: {driver_err}")
+            # Use tab-based workers instead of separate browser instances
+            try:
+                tab_mgr = setup_driver_with_tabs(driver, num_workers=active_workers)
+                log_callback(f"✓ Tab-based workers initialized: {tab_mgr.get_tab_count()} tabs (3x less memory)")
+            except Exception as tab_err:
+                log_callback(f"ERROR: Could not setup tab manager: {tab_err}")
+                log_callback("Falling back to single worker mode")
+                # Fallback to single worker
+                for dept_info in departments_to_scrape:
+                    if stop_event and stop_event.is_set():
+                        break
+                    _process_department_with_driver(driver, dept_info, "W1")
+                return _prepare_summary()
 
-            def _worker_loop(label, local_driver, assigned_departments):
+            def _worker_loop(worker_index, label, assigned_departments):
+                """Worker loop using tab-based navigation."""
                 for dept_task in assigned_departments or []:
                     if stop_event and stop_event.is_set():
                         break
-                    _process_department_with_driver(local_driver, dept_task, label)
+                    
+                    # Switch to this worker's tab before processing
+                    try:
+                        tab_mgr.switch_to_tab(worker_index, label)
+                        _process_department_with_driver(driver, dept_task, label)
+                    except Exception as worker_err:
+                        log_callback(f"[{label}] ERROR processing department: {worker_err}")
 
             try:
-                with concurrent.futures.ThreadPoolExecutor(max_workers=len(worker_drivers)) as executor:
+                with concurrent.futures.ThreadPoolExecutor(max_workers=active_workers) as executor:
                     futures = [
-                        executor.submit(_worker_loop, label, drv, worker_assignments[idx])
-                        for idx, (label, drv, _owned) in enumerate(worker_drivers)
+                        executor.submit(_worker_loop, idx, f"W{idx + 1}", worker_assignments[idx])
+                        for idx in range(active_workers)
                     ]
                     for fut in concurrent.futures.as_completed(futures):
-                        fut.result()
-            finally:
-                for label, drv, owned in worker_drivers:
-                    if owned and drv is not None:
                         try:
-                            safe_quit_driver(drv, log_callback)
-                        except Exception:
-                            log_callback(f"WARNING: Failed to close worker browser {label}")
+                            fut.result()
+                        except Exception as fut_err:
+                            log_callback(f"WARNING: Worker thread error: {fut_err}")
+            finally:
+                # Close extra tabs (keep first one)
+                try:
+                    tab_mgr.close_all_tabs_except_first()
+                    log_callback("✓ Tab-based workers cleaned up")
+                except Exception as cleanup_err:
+                    log_callback(f"WARNING: Tab cleanup error: {cleanup_err}")
         else:
             for dept_info in departments_to_scrape:
                 if stop_event and stop_event.is_set():
