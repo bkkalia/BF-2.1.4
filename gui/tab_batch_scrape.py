@@ -6,10 +6,12 @@ import os
 import random
 import re
 import sqlite3
+import sys
 import threading
 import time
 import tkinter as tk
-from datetime import datetime
+from datetime import datetime, timedelta
+import tempfile
 from tkinter import ttk, scrolledtext, Listbox, Scrollbar, END, EXTENDED, StringVar, IntVar, BooleanVar, filedialog
 from urllib.parse import urlparse
 
@@ -17,6 +19,7 @@ from batch_config_memory import get_batch_memory
 from gui import gui_utils
 from scraper.driver_manager import setup_driver, safe_quit_driver
 from scraper.logic import fetch_department_list_from_site_v2, run_scraping_logic
+from tender_store import TenderDataStore
 from utils import get_website_keyword_from_url, sanitise_filename
 
 try:
@@ -84,6 +87,25 @@ class BatchScrapeTab(ttk.Frame):
         self.portal_watchdog_inactivity_sec = 120
         self.portal_watchdog_sleep_jump_sec = 180
         self.current_batch_report_dir = None
+        self._batch_job_ids = set()
+        self._batch_use_subprocess = False
+        self._batch_pending_portals = []
+        self._batch_active_jobs = {}
+        self._batch_completed_count = 0
+        self._batch_total_count = 0
+        self._batch_max_parallel = 1
+        self._batch_lock = threading.Lock()
+        self._batch_only_new = False
+        self._batch_delta_mode = "quick"
+        self._portal_launch_locks = {}
+        self._portal_lock_dir = os.path.join(tempfile.gettempdir(), "blackforest_portal_locks")
+        os.makedirs(self._portal_lock_dir, exist_ok=True)
+
+        self.data_status_portal_var = StringVar(value="-")
+        self.data_last_full_var = StringVar(value="-")
+        self.data_last_export_var = StringVar(value="-")
+        self.data_next_due_var = StringVar(value="-")
+        self.data_policy_var = StringVar(value="on_demand")
 
         self._create_widgets()
         self._load_initial_data()
@@ -111,9 +133,18 @@ class BatchScrapeTab(ttk.Frame):
             self._active_drivers.discard(driver)
 
     def request_emergency_stop(self, stop_event=None):
+        handled = False
         if stop_event is not None:
             try:
                 stop_event.set()
+                handled = True
+            except Exception:
+                pass
+
+        if hasattr(self.main_app, "stop_supervised_group"):
+            try:
+                stopped_group = self.main_app.stop_supervised_group("batch", force=True)
+                handled = bool(stopped_group) or handled
             except Exception:
                 pass
 
@@ -124,8 +155,56 @@ class BatchScrapeTab(ttk.Frame):
         for driver in active_drivers:
             try:
                 safe_quit_driver(driver, self.log_callback)
+                handled = True
             except Exception:
                 pass
+
+        return handled
+
+    def _build_portal_cli_command(self, portal_name, download_dir, dept_workers=1, only_new=False, delta_mode="quick", manifest_path=None):
+        command = [
+            sys.executable,
+            os.path.join(os.getcwd(), "cli_main.py"),
+            "--json-events",
+            "--url", str(portal_name),
+            "--output", str(download_dir),
+            "department",
+            "--all",
+            "--dept-workers", str(max(1, int(dept_workers or 1))),
+        ]
+        if only_new:
+            command.append("--only-new")
+            mode = str(delta_mode or "quick").strip().lower()
+            if mode not in ("quick", "full"):
+                mode = "quick"
+            command.extend(["--delta-mode", mode])
+            if manifest_path:
+                command.extend(["--manifest-path", str(manifest_path)])
+        return command
+
+    def _build_portal_cli_log_path(self, portal_name):
+        logs_dir = os.path.join(os.getcwd(), "logs")
+        os.makedirs(logs_dir, exist_ok=True)
+        safe_portal = sanitise_filename(str(portal_name or "portal")) or "portal"
+        stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        return os.path.join(logs_dir, f"batch_cli_{safe_portal}_{stamp}.log")
+
+    def _build_portal_job_command(self, portal_name, download_dir, dept_workers, job_id, log_path=None, only_new=False, delta_mode="quick"):
+        command = self._build_portal_cli_command(
+            portal_name,
+            download_dir,
+            dept_workers=max(1, min(3, int(dept_workers or 1))),
+            only_new=only_new,
+            delta_mode=delta_mode,
+            manifest_path=self.manifest_path,
+        )
+        if "--job-id" not in command:
+            command.insert(3, "--job-id")
+            command.insert(4, str(job_id))
+        if log_path:
+            command.insert(5, "--log")
+            command.insert(6, str(log_path))
+        return command
 
     def _create_widgets(self):
         section = ttk.Labelframe(self, text="Batch Scrape", style="Section.TLabelframe")
@@ -142,7 +221,7 @@ class BatchScrapeTab(ttk.Frame):
         self.max_parallel_spin.pack(side=tk.LEFT)
 
         ttk.Label(top_controls, text="Dept Workers:", font=self.main_app.label_font).pack(side=tk.LEFT, padx=(12, 4))
-        self.dept_workers_spin = ttk.Spinbox(top_controls, from_=1, to=5, width=5, textvariable=self.department_workers_var)
+        self.dept_workers_spin = ttk.Spinbox(top_controls, from_=1, to=3, width=5, textvariable=self.department_workers_var)
         self.dept_workers_spin.pack(side=tk.LEFT)
 
         ttk.Label(top_controls, text="Scrape:", font=self.main_app.label_font).pack(side=tk.LEFT, padx=(12, 4))
@@ -190,6 +269,7 @@ class BatchScrapeTab(ttk.Frame):
 
         self.portal_listbox = Listbox(listbox_frame, selectmode=EXTENDED, font=("Consolas", 10), borderwidth=1, relief="solid", height=10)
         self.portal_listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        self.portal_listbox.bind("<<ListboxSelect>>", lambda _e: self._refresh_data_status())
         scrollbar = Scrollbar(listbox_frame, orient=tk.VERTICAL, command=self.portal_listbox.yview)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         self.portal_listbox.config(yscrollcommand=scrollbar.set)
@@ -217,6 +297,28 @@ class BatchScrapeTab(ttk.Frame):
         self.export_bat_button.pack(side=tk.LEFT, padx=(0, 8))
         self.export_ps1_button = ttk.Button(control_bar, text="Export CLI .ps1", width=16, command=self.export_ps1_script)
         self.export_ps1_button.pack(side=tk.LEFT)
+
+        data_status_lab = ttk.Labelframe(section, text="Data Status", style="Section.TLabelframe")
+        data_status_lab.pack(fill=tk.X, padx=0, pady=(0, 8))
+
+        status_row_1 = ttk.Frame(data_status_lab)
+        status_row_1.pack(fill=tk.X, padx=8, pady=(6, 2))
+        ttk.Label(status_row_1, text="Portal:", font=self.main_app.label_font).pack(side=tk.LEFT)
+        ttk.Label(status_row_1, textvariable=self.data_status_portal_var).pack(side=tk.LEFT, padx=(4, 16))
+        ttk.Label(status_row_1, text="Policy:", font=self.main_app.label_font).pack(side=tk.LEFT)
+        ttk.Label(status_row_1, textvariable=self.data_policy_var).pack(side=tk.LEFT, padx=(4, 16))
+        ttk.Label(status_row_1, text="Next Due:", font=self.main_app.label_font).pack(side=tk.LEFT)
+        ttk.Label(status_row_1, textvariable=self.data_next_due_var).pack(side=tk.LEFT, padx=(4, 8))
+
+        status_row_2 = ttk.Frame(data_status_lab)
+        status_row_2.pack(fill=tk.X, padx=8, pady=(2, 6))
+        ttk.Label(status_row_2, text="Last Full Scrape:", font=self.main_app.label_font).pack(side=tk.LEFT)
+        ttk.Label(status_row_2, textvariable=self.data_last_full_var).pack(side=tk.LEFT, padx=(4, 16))
+        ttk.Label(status_row_2, text="Last Excel Export:", font=self.main_app.label_font).pack(side=tk.LEFT)
+        ttk.Label(status_row_2, textvariable=self.data_last_export_var).pack(side=tk.LEFT, padx=(4, 12))
+
+        ttk.Button(status_row_2, text="Refresh Status", width=14, command=self._refresh_data_status).pack(side=tk.RIGHT, padx=(8, 0))
+        ttk.Button(status_row_2, text="Export Now", width=12, command=self._manual_export_now).pack(side=tk.RIGHT)
 
         dash_lab = ttk.Labelframe(section, text="Batch Dashboard", style="Section.TLabelframe")
         dash_lab.pack(fill=tk.BOTH, expand=True, padx=0, pady=(0, 0))
@@ -295,9 +397,9 @@ class BatchScrapeTab(ttk.Frame):
         dept_workers = 1
         try:
             if hasattr(self.main_app, "department_parallel_workers_var"):
-                dept_workers = max(1, min(5, int(self.main_app.department_parallel_workers_var.get() or 1)))
+                dept_workers = max(1, min(3, int(self.main_app.department_parallel_workers_var.get() or 1)))
             else:
-                dept_workers = max(1, min(5, int(self.main_app.settings.get("department_parallel_workers", 1) or 1)))
+                dept_workers = max(1, min(3, int(self.main_app.settings.get("department_parallel_workers", 1) or 1)))
         except Exception:
             dept_workers = 1
         self.department_workers_var.set(dept_workers)
@@ -314,13 +416,119 @@ class BatchScrapeTab(ttk.Frame):
         self._refresh_group_combo()
         self._refresh_portal_filter_values()
         self._init_dashboard_rows(self._get_selected_portals())
+        self._refresh_data_status()
+
+    def _resolve_status_portal_name(self):
+        selected = self._get_selected_portals()
+        if selected:
+            return str(selected[0]).strip()
+        configured = str(self.main_app.settings.get("selected_url_name") or "").strip()
+        if configured:
+            return configured
+        names = self._get_all_portal_names()
+        return names[0] if names else "HP Tenders"
+
+    def _resolve_sqlite_db_path(self):
+        path = str(self.main_app.settings.get("central_sqlite_db_path") or "").strip()
+        if path and not os.path.isabs(path):
+            path = os.path.join(os.getcwd(), path)
+        if not path:
+            path = os.path.join(os.getcwd(), "data", "blackforest_tenders.sqlite3")
+        return path
+
+    def _get_export_policy(self):
+        policy = str(self.main_app.settings.get("excel_export_policy", "on_demand") or "on_demand").strip().lower()
+        if policy not in ("on_demand", "always", "alternate_days"):
+            policy = "on_demand"
+        try:
+            interval_days = max(1, int(self.main_app.settings.get("excel_export_interval_days", 2) or 2))
+        except Exception:
+            interval_days = 2
+        return policy, interval_days
+
+    def _refresh_data_status(self):
+        portal_name = self._resolve_status_portal_name()
+        self.data_status_portal_var.set(portal_name)
+        policy, interval_days = self._get_export_policy()
+        policy_text = policy if policy != "alternate_days" else f"alternate_days ({interval_days}d)"
+        self.data_policy_var.set(policy_text)
+
+        try:
+            db_path = self._resolve_sqlite_db_path()
+            data_store = TenderDataStore(db_path)
+            snapshot = data_store.get_portal_status_snapshot(portal_name=portal_name)
+
+            last_full = str(snapshot.get("last_full_scrape_at") or "").strip()
+            last_export_at = str(snapshot.get("last_excel_export_at") or "").strip()
+            last_export_path = str(snapshot.get("last_excel_export_path") or "").strip()
+
+            self.data_last_full_var.set(last_full or "-")
+
+            if last_export_at:
+                export_text = last_export_at
+                if last_export_path:
+                    export_text = f"{last_export_at} ({os.path.basename(last_export_path)})"
+                self.data_last_export_var.set(export_text)
+            else:
+                self.data_last_export_var.set("-")
+
+            if policy == "alternate_days":
+                if last_export_at:
+                    try:
+                        next_due = datetime.fromisoformat(last_export_at) + timedelta(days=interval_days)
+                        self.data_next_due_var.set(next_due.isoformat(timespec="seconds"))
+                    except Exception:
+                        self.data_next_due_var.set("-")
+                else:
+                    self.data_next_due_var.set("Now (first export)")
+            else:
+                self.data_next_due_var.set("On demand" if policy == "on_demand" else "Every run")
+        except Exception as err:
+            self.data_last_full_var.set("-")
+            self.data_last_export_var.set("-")
+            self.data_next_due_var.set("-")
+            self.log_callback(f"Data status refresh failed: {err}")
+
+    def _manual_export_now(self):
+        portal_name = self._resolve_status_portal_name()
+        portal_config = self._portal_config_by_name(portal_name)
+        if not portal_config:
+            gui_utils.show_message("Export Error", f"Portal config not found for '{portal_name}'.", type="error", parent=self.main_app.root)
+            return
+
+        try:
+            db_path = self._resolve_sqlite_db_path()
+            data_store = TenderDataStore(db_path)
+            run_id = data_store.get_latest_completed_run_id(portal_name=portal_name, full_only=True)
+            if not run_id:
+                gui_utils.show_message("No Data", f"No completed full scrape found for '{portal_name}'.", type="warning", parent=self.main_app.root)
+                return
+
+            keyword = get_website_keyword_from_url(str(portal_config.get("BaseURL") or ""))
+            output_dir = self.main_app.download_dir_var.get()
+            export_path, export_type = data_store.export_run(
+                run_id=run_id,
+                output_dir=output_dir,
+                website_keyword=keyword,
+                mark_partial=False,
+            )
+
+            if not export_path:
+                gui_utils.show_message("No Rows", f"No rows found to export for run {run_id}.", type="warning", parent=self.main_app.root)
+                return
+
+            self.log_callback(f"Manual export completed for '{portal_name}' | Run ID={run_id} | {str(export_type or '').upper()} | {export_path}")
+            self._refresh_data_status()
+            gui_utils.show_message("Export Complete", f"Exported {str(export_type or '').upper()}\n{export_path}", type="info", parent=self.main_app.root)
+        except Exception as err:
+            gui_utils.show_message("Export Failed", str(err), type="error", parent=self.main_app.root)
 
     def _sync_department_workers_setting(self):
         if getattr(self, "_syncing_dept_workers", False):
             return
         self._syncing_dept_workers = True
         try:
-            value = max(1, min(5, int(self.department_workers_var.get() or 1)))
+            value = max(1, min(3, int(self.department_workers_var.get() or 1)))
         except Exception:
             value = 1
         try:
@@ -353,6 +561,60 @@ class BatchScrapeTab(ttk.Frame):
         except Exception:
             pass
         return mode
+
+    def _portal_lock_path(self, portal_name):
+        safe = sanitise_filename(str(portal_name or "").strip()) or "portal"
+        return os.path.join(self._portal_lock_dir, f"{safe}.lock")
+
+    def _is_pid_running(self, pid):
+        try:
+            os.kill(int(pid), 0)
+            return True
+        except Exception:
+            return False
+
+    def _acquire_portal_launch_lock(self, portal_name, job_id):
+        lock_path = self._portal_lock_path(portal_name)
+        current_pid = os.getpid()
+        payload = f"pid={current_pid}\njob_id={job_id}\nportal={portal_name}\nstarted_at={datetime.now().isoformat(timespec='seconds')}\n"
+
+        for _ in range(2):
+            try:
+                fd = os.open(lock_path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+                try:
+                    os.write(fd, payload.encode("utf-8", errors="replace"))
+                finally:
+                    os.close(fd)
+                self._portal_launch_locks[portal_name] = lock_path
+                return True
+            except FileExistsError:
+                try:
+                    with open(lock_path, "r", encoding="utf-8", errors="replace") as handle:
+                        raw = handle.read()
+                    lock_pid = None
+                    for line in raw.splitlines():
+                        if line.startswith("pid="):
+                            lock_pid = int(str(line.split("=", 1)[1]).strip())
+                            break
+                    if lock_pid and self._is_pid_running(lock_pid):
+                        return False
+                except Exception:
+                    pass
+                try:
+                    os.remove(lock_path)
+                except Exception:
+                    return False
+            except Exception:
+                return False
+        return False
+
+    def _release_portal_launch_lock(self, portal_name):
+        lock_path = self._portal_launch_locks.pop(portal_name, None) or self._portal_lock_path(portal_name)
+        try:
+            if os.path.exists(lock_path):
+                os.remove(lock_path)
+        except Exception:
+            pass
 
     def _load_manifest(self):
         if not os.path.exists(self.manifest_path):
@@ -1277,12 +1539,324 @@ class BatchScrapeTab(ttk.Frame):
             f"(scope={'Only New' if only_new else 'All'}, delta={delta_mode.title()}, reason={reason})."
         )
 
-        self.main_app.start_background_task(
-            self._run_batch_worker,
-            args=(selected_portals, download_dir, mode, max_parallel, ip_safety, only_new),
-            task_name="Batch Scrape"
-        )
+        use_subprocess = bool(hasattr(self.main_app, "start_supervised_cli_job"))
+        if use_subprocess:
+            self._start_batch_subprocess_execution(
+                selected_portals=selected_portals,
+                download_dir=download_dir,
+                mode=mode,
+                max_parallel=max_parallel,
+                only_new=only_new,
+                delta_mode=delta_mode,
+            )
+        else:
+            self.main_app.start_background_task(
+                self._run_batch_worker,
+                args=(selected_portals, download_dir, mode, max_parallel, ip_safety, only_new),
+                task_name="Batch Scrape"
+            )
         return True
+
+    def _start_batch_subprocess_execution(self, selected_portals, download_dir, mode, max_parallel, only_new=False, delta_mode="quick"):
+        self._prepare_batch_report_dir()
+        self._batch_use_subprocess = True
+        ordered_unique = list(dict.fromkeys([str(portal).strip() for portal in (selected_portals or []) if str(portal).strip()]))
+        self._batch_pending_portals = ordered_unique
+        self._batch_active_jobs = {}
+        self._batch_completed_count = 0
+        self._batch_total_count = len(ordered_unique)
+        self._batch_max_parallel = 1 if str(mode).lower() != "parallel" else max(1, int(max_parallel or 1))
+        self._batch_only_new = bool(only_new)
+        self._batch_delta_mode = str(delta_mode or "quick").strip().lower()
+
+        self.main_app.stop_event.clear()
+        self.main_app.scraping_in_progress = True
+        self.main_app.set_controls_state(tk.DISABLED)
+        self.main_app.start_timer_updates()
+
+        self.main_app.update_status(f"Starting batch subprocesses ({mode})...")
+        self.main_app.update_log(
+            f"Batch subprocess supervisor active: portals={self._batch_total_count}, max_parallel={self._batch_max_parallel}"
+        )
+
+        self._launch_next_batch_jobs(download_dir, only_new=self._batch_only_new, delta_mode=self._batch_delta_mode)
+
+    def _launch_next_batch_jobs(self, download_dir, only_new=False, delta_mode="quick"):
+        with self._batch_lock:
+            while (
+                len(self._batch_active_jobs) < self._batch_max_parallel
+                and self._batch_pending_portals
+                and not self.main_app.stop_event.is_set()
+            ):
+                portal_name = self._batch_pending_portals.pop(0)
+                try:
+                    dept_workers = max(1, min(3, int(self.department_workers_var.get() or 1)))
+                except Exception:
+                    dept_workers = 1
+
+                job_id = self.main_app.process_supervisor.create_job_id(prefix="batch")
+                if not self._acquire_portal_launch_lock(portal_name, job_id):
+                    self._append_batch_log_threadsafe(portal_name, "[GUARD] Skipped duplicate launch: portal already active in another app/job")
+                    self._update_dashboard_threadsafe(portal_name, state="Skipped", message="Duplicate launch blocked")
+                    self._batch_completed_count += 1
+                    continue
+
+                cli_log_path = self._build_portal_cli_log_path(portal_name)
+                command = self._build_portal_job_command(
+                    portal_name=portal_name,
+                    download_dir=download_dir,
+                    dept_workers=dept_workers,
+                    job_id=job_id,
+                    log_path=cli_log_path,
+                    only_new=only_new,
+                    delta_mode=delta_mode,
+                )
+
+                self._batch_active_jobs[portal_name] = {
+                    "job_id": job_id,
+                    "download_dir": download_dir,
+                    "log_path": cli_log_path,
+                    "started_at": datetime.now().isoformat(timespec="seconds"),
+                }
+                self._batch_job_ids.add(job_id)
+                self._update_dashboard_threadsafe(portal_name, state="Starting", message="Launching CLI subprocess...")
+
+                try:
+                    self.main_app.start_supervised_cli_job(
+                        job_id=job_id,
+                        command=command,
+                        cwd=os.getcwd(),
+                        group="batch",
+                        tail_log_file=cli_log_path,
+                        on_log=lambda message, portal=portal_name: self._on_batch_job_log(portal, message),
+                        on_event=lambda event, portal=portal_name: self._on_batch_job_event(portal, event),
+                        on_state_change=lambda jid, state, reason=None, portal=portal_name: self._on_batch_job_state_change(portal, jid, state, reason),
+                        on_exit=lambda exit_code, portal=portal_name, jid=job_id: self._on_batch_job_exit(portal, jid, exit_code),
+                        on_error=lambda message, portal=portal_name: self._on_batch_job_stderr(portal, message),
+                    )
+                except Exception as launch_err:
+                    self._release_portal_launch_lock(portal_name)
+                    self._batch_active_jobs.pop(portal_name, None)
+                    self._append_batch_log_threadsafe(portal_name, f"[GUARD] Launch failed: {launch_err}")
+                    self._update_dashboard_threadsafe(portal_name, state="Error", message="Launch failed")
+                    self._batch_completed_count += 1
+
+    def _on_batch_job_log(self, portal_name, message):
+        self._append_batch_log_threadsafe(portal_name, str(message))
+
+    def _on_batch_job_stderr(self, portal_name, message):
+        self._append_batch_log_threadsafe(portal_name, f"[STDERR] {message}")
+
+    def _on_batch_job_state_change(self, portal_name, job_id, state, reason=None):
+        def _apply():
+            state_text = str(state or "").lower()
+            if state_text == "running":
+                self._update_dashboard_threadsafe(portal_name, state="Running")
+            elif state_text == "stopping":
+                self._update_dashboard_threadsafe(portal_name, state="Stopping", message="Stop requested")
+            elif state_text == "cancelled":
+                self._update_dashboard_threadsafe(portal_name, state="Stopped", message="Cancelled")
+            elif state_text == "failed":
+                self._update_dashboard_threadsafe(portal_name, state="Error", message=f"Failed ({reason or 'unknown'})")
+        self.main_app.root.after(0, _apply)
+
+    def _on_batch_job_event(self, portal_name, event):
+        def _apply():
+            event_type = str((event or {}).get("type", "")).strip().lower()
+            if not event_type:
+                return
+
+            if event_type == "status":
+                message = str(event.get("message", "")).strip()
+                if message:
+                    derived = self._derive_state_from_message(message) or "Running"
+                    self._append_batch_log_threadsafe(portal_name, f"[STATUS] {message}")
+                    self._update_dashboard_threadsafe(portal_name, state=derived, message=message)
+                return
+
+            if event_type == "departments_loaded":
+                expected_total = int(event.get("estimated_total_tenders", 0) or 0)
+                total_depts = int(event.get("total_departments", 0) or 0)
+                portal_stats = self.portal_live_stats.setdefault(portal_name, {
+                    "dept_total": 0,
+                    "dept_done": 0,
+                    "extracted": 0,
+                    "completed_departments": set(),
+                })
+                portal_stats["dept_total"] = max(0, total_depts)
+                self._update_dashboard_threadsafe(
+                    portal_name,
+                    state="Fetching",
+                    expected=max(0, expected_total),
+                    message=f"Departments loaded: {total_depts}",
+                )
+                self._push_global_progress(state="Running", active_portal=portal_name)
+                return
+
+            if event_type == "progress":
+                current = int(event.get("current", 0) or 0)
+                total = int(event.get("total", 0) or 0)
+                scraped_tenders = int(event.get("scraped_tenders", 0) or 0)
+                details = str(event.get("details", "") or "").strip()
+
+                portal_stats = self.portal_live_stats.setdefault(portal_name, {
+                    "dept_total": 0,
+                    "dept_done": 0,
+                    "extracted": 0,
+                    "completed_departments": set(),
+                })
+                portal_stats["dept_total"] = max(portal_stats.get("dept_total", 0), total)
+                portal_stats["dept_done"] = max(portal_stats.get("dept_done", 0), current)
+                portal_stats["extracted"] = max(portal_stats.get("extracted", 0), scraped_tenders)
+
+                self._update_dashboard_threadsafe(
+                    portal_name,
+                    state="Scraping",
+                    extracted=scraped_tenders,
+                    message=details or f"Dept {current}/{total}",
+                )
+                self._push_global_progress(state="Running", active_portal=portal_name)
+                return
+
+            if event_type == "completed":
+                elapsed = event.get("elapsed_seconds", 0)
+                expected = int(event.get("expected_total_tenders", 0) or 0)
+                extracted = int(event.get("extracted_total_tenders", 0) or 0)
+                skipped = int(event.get("skipped_existing_total", 0) or 0)
+                known_total = int(event.get("known_total", 0) or 0)
+                output_file = str(event.get("output_file_path", "") or "").strip()
+                output_type = str(event.get("output_file_type", "") or "").strip()
+                sqlite_path = str(event.get("sqlite_db_path", "") or "").strip()
+                sqlite_run_id = event.get("sqlite_run_id")
+                status_msg = f"Completed in {elapsed}s"
+                if output_file:
+                    status_msg = f"{status_msg} | Output: {os.path.basename(output_file)}"
+                self._update_dashboard_threadsafe(
+                    portal_name,
+                    state="Done",
+                    expected=expected,
+                    extracted=extracted,
+                    skipped=skipped,
+                    known=known_total if known_total > 0 else None,
+                    message=status_msg,
+                )
+                report = {
+                    "portal": portal_name,
+                    "started_at": datetime.now().isoformat(timespec="seconds"),
+                    "completed_at": datetime.now().isoformat(timespec="seconds"),
+                    "duration_sec": float(elapsed or 0),
+                    "status": "Scraping completed",
+                    "attempted_departments": int(event.get("total_departments", 0) or 0),
+                    "processed_departments": int(event.get("processed_departments", 0) or 0),
+                    "resume_skipped_departments": 0,
+                    "expected_tenders": expected,
+                    "extracted_tenders": extracted,
+                    "skipped_known_tenders": skipped,
+                    "output_file_path": output_file,
+                    "output_file_type": output_type,
+                    "sqlite_db_path": sqlite_path,
+                    "sqlite_run_id": sqlite_run_id,
+                    "partial_saved": bool(event.get("partial_saved", False)),
+                    "delta_sweep_enabled": bool(event.get("only_new", False)),
+                    "delta_mode": str(event.get("delta_mode", "") or ""),
+                    "delta_sweep_extracted": 0,
+                    "delta_quick_stats": {},
+                    "department_url_tracker": self._get_department_url_stats(portal_name),
+                    "error_count": 0,
+                    "errors": [],
+                }
+                try:
+                    json_report_path, csv_report_path = self._write_portal_report(portal_name, report)
+                    self._append_batch_log_threadsafe(portal_name, f"Run report saved (JSON): {json_report_path}")
+                    self._append_batch_log_threadsafe(portal_name, f"Run report saved (CSV): {csv_report_path}")
+                except Exception as report_err:
+                    self._append_batch_log_threadsafe(portal_name, f"Report write failed: {report_err}")
+                self._push_global_progress(state="Running", active_portal=portal_name)
+                return
+
+            if event_type == "error":
+                message = str(event.get("message", "Unknown error"))
+                self._update_dashboard_threadsafe(portal_name, state="Error", message=message)
+                self._append_batch_log_threadsafe(portal_name, f"[ERROR] {message}")
+
+        self.main_app.root.after(0, _apply)
+
+    def _on_batch_job_exit(self, portal_name, job_id, exit_code):
+        def _finish_one():
+            self._release_portal_launch_lock(portal_name)
+            with self._batch_lock:
+                self._batch_active_jobs.pop(portal_name, None)
+                self._batch_completed_count += 1
+
+            if int(exit_code) == 0:
+                self._update_dashboard_threadsafe(portal_name, state="Done")
+            else:
+                if self.main_app.stop_event.is_set():
+                    self._update_dashboard_threadsafe(portal_name, state="Stopped")
+                else:
+                    self._update_dashboard_threadsafe(portal_name, state="Error", message=f"CLI exit {exit_code}")
+
+            try:
+                self.main_app.set_status_context(
+                    completed_portals=self._batch_completed_count,
+                    total_portals=self._batch_total_count,
+                    active_portal=portal_name,
+                    state="Running" if self._batch_completed_count < self._batch_total_count else "Completed"
+                )
+            except Exception:
+                pass
+
+            if not self.main_app.stop_event.is_set():
+                download_dir = self.main_app.download_dir_var.get()
+                self._launch_next_batch_jobs(
+                    download_dir,
+                    only_new=getattr(self, "_batch_only_new", False),
+                    delta_mode=getattr(self, "_batch_delta_mode", "quick"),
+                )
+
+            with self._batch_lock:
+                has_pending = bool(self._batch_pending_portals)
+                has_active = bool(self._batch_active_jobs)
+
+            if not has_pending and not has_active:
+                self._finish_batch_subprocess_execution()
+
+        self.main_app.root.after(0, _finish_one)
+
+    def _finish_batch_subprocess_execution(self):
+        stopped = bool(self.main_app.stop_event.is_set())
+        self._push_global_progress(state="Stopped" if stopped else "Completed", active_portal="-")
+
+        self.main_app.scraping_in_progress = False
+        self.main_app.stop_timer_updates()
+        self.main_app.set_controls_state(tk.NORMAL)
+        self.main_app.update_status("Batch scraping stopped by user" if stopped else "Batch scraping completed")
+
+        try:
+            self.main_app.set_status_context(
+                state="Stopped" if stopped else "Completed",
+                completed_portals=self._batch_completed_count,
+                total_portals=self._batch_total_count,
+                active_portal="-",
+            )
+        except Exception:
+            pass
+
+        self._batch_use_subprocess = False
+        self._batch_pending_portals = []
+        self._batch_active_jobs = {}
+        self._batch_job_ids.clear()
+        for portal_name in list(self._portal_launch_locks.keys()):
+            self._release_portal_launch_lock(portal_name)
+
+        try:
+            self._export_department_url_coverage_report(log_callback=self.log_callback)
+        except Exception:
+            pass
+        if self.current_batch_report_dir:
+            self.log_callback(f"Batch run reports saved in: {self.current_batch_report_dir}")
+
+        self._refresh_data_status()
 
     def _build_portal_logger(self, portal_name, log_callback):
         def _portal_log(message):
@@ -1515,7 +2089,7 @@ class BatchScrapeTab(ttk.Frame):
 
         dept_workers = 1
         try:
-            dept_workers = max(1, min(5, int(self.department_workers_var.get() or 1)))
+            dept_workers = max(1, min(3, int(self.department_workers_var.get() or 1)))
         except Exception:
             dept_workers = 1
         self._sync_department_workers_setting()

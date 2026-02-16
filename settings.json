@@ -72,6 +72,8 @@
     "central_sqlite_db_path": "D:\\Dev84\\BF 2.1.4\\data\\blackforest_tenders.sqlite3",
     "sqlite_backup_directory": "D:\\Dev84\\BF 2.1.4\\db_backups",
     "sqlite_backup_retention_days": 30,
+    "excel_export_policy": "alternate_days",
+    "excel_export_interval_days": 2,
     "PAGE_LOAD_TIMEOUT": 10.0,
     "ELEMENT_WAIT_TIMEOUT": 8.0,
     "STABILIZE_WAIT": 2.0,
@@ -80,9 +82,5 @@
     "CAPTCHA_CHECK_TIMEOUT": 4.0,
     "DOWNLOAD_WAIT_TIMEOUT": 5.0,
     "POPUP_WAIT_TIMEOUT": 8.0,
-    "POST_DOWNLOAD_CLICK_WAIT": 3.0,
-    "enable_sounds": true,
-    "sound_ding_file": "",
-    "sound_success_file": "",
-    "sound_error_file": ""
+    "POST_DOWNLOAD_CLICK_WAIT": 3.0
 }

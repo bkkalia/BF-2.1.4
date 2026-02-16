@@ -1149,6 +1149,13 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
     sqlite_db_path = kwargs.get("sqlite_db_path") or os.path.join(download_dir, "blackforest_tenders.sqlite3")
     sqlite_backup_dir = kwargs.get("sqlite_backup_dir")
     sqlite_backup_retention_days = kwargs.get("sqlite_backup_retention_days", 30)
+    raw_export_policy = str(kwargs.get("export_policy", "on_demand") or "on_demand").strip().lower()
+    export_policy = raw_export_policy if raw_export_policy in {"on_demand", "always", "alternate_days"} else "on_demand"
+    try:
+        export_interval_days = max(1, int(kwargs.get("export_interval_days", 2) or 2))
+    except Exception:
+        export_interval_days = 2
+    force_excel_export = bool(kwargs.get("force_excel_export", False))
     data_store = None
     sqlite_run_id = None
 
@@ -1177,11 +1184,38 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
         data_store = None
         sqlite_run_id = None
 
+    def _should_export_snapshot(mark_partial=False):
+        if force_excel_export:
+            return True, "forced"
+        if data_store is None:
+            return True, "sqlite_unavailable"
+        if mark_partial:
+            return False, "partial_skip_by_policy"
+        if export_policy == "always":
+            return True, "policy_always"
+        if export_policy == "on_demand":
+            return False, "policy_on_demand"
+
+        snapshot = data_store.get_portal_status_snapshot(portal_name=portal_name)
+        last_export_at_text = str(snapshot.get("last_excel_export_at") or "").strip()
+        if not last_export_at_text:
+            return True, "alternate_days_first_export"
+
+        try:
+            last_export_at = datetime.fromisoformat(last_export_at_text)
+            days_since = (datetime.now() - last_export_at).total_seconds() / 86400.0
+            if days_since >= float(export_interval_days):
+                return True, f"alternate_days_due_{export_interval_days}"
+            return False, f"alternate_days_not_due_{days_since:.1f}"
+        except Exception:
+            return True, "alternate_days_invalid_last_export"
+
     def _save_tender_data_snapshot(data_to_save, mark_partial=False):
         """Save extracted tenders to Excel (or CSV fallback) and return save metadata."""
         if not data_to_save:
             return None, None
         try:
+            should_export, export_reason = _should_export_snapshot(mark_partial=mark_partial)
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             website_keyword = get_website_keyword_from_url(base_url_config['BaseURL'])
             suffix = "_partial" if mark_partial else ""
@@ -1220,6 +1254,18 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
             for tender in data_to_save:
                 row = dict(tender)
                 row.setdefault("Portal", portal_name)
+                published_value = row.get("Published Date")
+                if not published_value:
+                    published_value = row.get("e-Published Date")
+                if published_value is None:
+                    published_value = ""
+                published_text = str(published_value).strip()
+                row["Published Date"] = published_text
+                row["e-Published Date"] = published_text
+
+                row["Direct URL"] = str(row.get("Direct URL") or "").strip()
+                row["Status URL"] = str(row.get("Status URL") or "").strip()
+                row["S.No"] = str(row.get("S.No") or "").strip()
                 try:
                     if EMD_AMOUNT_KEY in row:
                         row['EMD Amount (Numeric)'] = float(
@@ -1234,6 +1280,9 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
                     saved_rows = data_store.replace_run_tenders(sqlite_run_id, prepared_rows)
                     log_callback(f"[PERSIST] SQLite save: SUCCESS | run_id={sqlite_run_id} | rows={saved_rows}")
                     log_callback(f"[PERSIST] SQLite DB path: {sqlite_db_path}")
+                    if not should_export:
+                        log_callback(f"[PERSIST] File export skipped ({export_reason})")
+                        return None, None
                     exported_path, exported_type = data_store.export_run(
                         run_id=sqlite_run_id,
                         output_dir=target_dir,
@@ -1248,6 +1297,10 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
                 except Exception as sqlite_export_err:
                     log_callback(f"WARNING: SQLite export failed, using direct file export: {sqlite_export_err}")
                     log_callback(f"[PERSIST] SQLite save may exist, but file export from SQLite failed. DB path: {sqlite_db_path}")
+
+            if not should_export:
+                log_callback(f"[PERSIST] File export skipped ({export_reason})")
+                return None, None
 
             df = pd.DataFrame(prepared_rows)
             if DEPARTMENT_NAME_KEY in df.columns:
@@ -1598,6 +1651,7 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
                     log_callback(f"[{worker_label}] ERROR: Failed to navigate back (session may be lost): {nav_err}")
 
         department_parallel_workers = 1
+        active_workers = 1
         try:
             department_parallel_workers = max(1, min(5, int(kwargs.get("department_parallel_workers") or 1)))
         except (TypeError, ValueError):

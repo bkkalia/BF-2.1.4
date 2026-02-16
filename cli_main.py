@@ -17,7 +17,7 @@ except AttributeError as e:
         # Create dummy readline module to prevent interactive hook errors
         import types
         dummy_readline = types.ModuleType('readline')
-        setattr(dummy_readline, 'backend', type('DummyBackend', (), {}()))
+        setattr(dummy_readline, 'backend', type('DummyBackend', (), {})())
         sys.modules['readline'] = dummy_readline
     else:
         raise
@@ -31,6 +31,21 @@ import logging
 import datetime
 import platform
 import traceback
+
+
+def _configure_utf8_stdio():
+    for stream_name in ("stdout", "stderr"):
+        stream = getattr(sys, stream_name, None)
+        if not stream:
+            continue
+        try:
+            if hasattr(stream, "reconfigure"):
+                stream.reconfigure(encoding="utf-8", errors="replace")
+        except Exception:
+            pass
+
+
+_configure_utf8_stdio()
 
 # --- Calculate Absolute Paths Early ---
 try:
@@ -161,19 +176,19 @@ def check_package_versions():
         try:
             imported_module = __import__(package)
             version = getattr(imported_module, '__version__', 'unknown')
-            logging.info(f"✓ {package} {version} is available")
+            logging.info(f"[OK] {package} {version} is available")
         except ImportError:
             missing_packages.append((package, requirement))
-            logging.error(f"✗ {package} is not installed")
+            logging.error(f"[MISSING] {package} is not installed")
 
     # Check optional packages
     for package, requirement in OPTIONAL_PACKAGES.items():
         try:
             imported_module = __import__(package)
             version = getattr(imported_module, '__version__', 'unknown')
-            logging.info(f"✓ {package} {version} (optional) is available")
+            logging.info(f"[OK] {package} {version} (optional) is available")
         except ImportError:
-            logging.warning(f"⚠ {package} (optional) is not installed")
+            logging.warning(f"[WARN] {package} (optional) is not installed")
 
     return missing_packages, outdated_packages
 
@@ -270,7 +285,7 @@ def show_interactive_banner():
 def run_cli_mode():
     """Run application in CLI mode."""
     try:
-        logging.info("🔧 Starting CLI mode...")
+        logging.info("Starting CLI mode...")
 
         # Check if any arguments were provided
         args = sys.argv[1:]  # Skip script name
@@ -300,6 +315,8 @@ def run_cli_mode():
                         print("  department --all              - Scrape all departments")
                         print("  department --filter 'term'    - Scrape departments matching filter")
                         print("  urls                          - List available portals")
+                        print("  status [--portal 'name']      - Show last scrape/export status")
+                        print("  export [--portal 'name']      - Manual Excel export from latest run")
                         print("  help                          - Show this help")
                         print("  exit                          - Exit CLI mode")
                         continue
@@ -315,6 +332,10 @@ def run_cli_mode():
 
                         if parsed_args.command == 'urls':
                             runner.list_available_portals()
+                        elif parsed_args.command == 'status':
+                            runner.show_status()
+                        elif parsed_args.command == 'export':
+                            runner.export_latest()
                         elif parsed_args.command == 'department':
                             runner.run_department_scraping()
                         else:

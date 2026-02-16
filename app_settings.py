@@ -46,6 +46,8 @@ DEFAULT_SETTINGS_STRUCTURE = {
     "central_sqlite_db_path": None,
     "sqlite_backup_directory": None,
     "sqlite_backup_retention_days": 30,
+    "excel_export_policy": "on_demand",
+    "excel_export_interval_days": 2,
     **_initial_timeout_settings  # Unpack all timeout settings
 }
 

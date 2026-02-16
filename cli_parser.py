@@ -80,6 +80,18 @@ For Windows Task Scheduler, use the batch file: run_hp_tenders.bat
             help='Show what would be done without executing'
         )
 
+        self.parser.add_argument(
+            '--json-events',
+            action='store_true',
+            help='Emit structured JSON events to stdout for GUI subprocess monitoring'
+        )
+
+        self.parser.add_argument(
+            '--job-id',
+            type=str,
+            help='Optional job identifier propagated in JSON events for supervisor correlation'
+        )
+
         # Subcommands
         subparsers = self.parser.add_subparsers(dest='command', help='Available commands')
 
@@ -115,6 +127,39 @@ For Windows Task Scheduler, use the batch file: run_hp_tenders.bat
         )
 
         dept_parser.add_argument(
+            '--only-new',
+            action='store_true',
+            help='Skip already known tenders using manifest + SQLite seeds'
+        )
+
+        dept_parser.add_argument(
+            '--delta-mode',
+            type=str,
+            choices=['quick', 'full'],
+            default='quick',
+            help='Delta strategy for --only-new: quick (changed departments) or full (all departments)'
+        )
+
+        dept_parser.add_argument(
+            '--manifest-path',
+            type=str,
+            help='Path to batch manifest JSON (default: batch_tender_manifest.json in project root)'
+        )
+
+        dept_parser.add_argument(
+            '--export-policy',
+            type=str,
+            choices=['on_demand', 'always', 'alternate_days'],
+            help='Excel export policy for this run (default from settings, recommended: on_demand)'
+        )
+
+        dept_parser.add_argument(
+            '--export-now',
+            action='store_true',
+            help='Force Excel export for this run even if policy is on_demand'
+        )
+
+        dept_parser.add_argument(
             'departments',
             nargs='*',
             help='Specific department names to scrape (if not using --all)'
@@ -124,6 +169,34 @@ For Windows Task Scheduler, use the batch file: run_hp_tenders.bat
         urls_parser = subparsers.add_parser(
             'urls',
             help='List available tender portals'
+        )
+
+        status_parser = subparsers.add_parser(
+            'status',
+            help='Show last scrape/export status from SQLite datastore'
+        )
+
+        status_parser.add_argument(
+            '--portal',
+            type=str,
+            help='Portal name to filter status (default: all portals)'
+        )
+
+        export_parser = subparsers.add_parser(
+            'export',
+            help='Manually export latest completed portal scrape to Excel'
+        )
+
+        export_parser.add_argument(
+            '--portal',
+            type=str,
+            help='Portal name to export (default: selected --url or HP Tenders)'
+        )
+
+        export_parser.add_argument(
+            '--full-only',
+            action='store_true',
+            help='Export only from latest full-scope scrape (scope=all)'
         )
 
         # Help command

@@ -33,6 +33,7 @@ from gui.tab_url_process import UrlProcessTab
 from gui.tab_batch_scrape import BatchScrapeTab
 from gui.tab_refresh_watch import RefreshWatchTab
 from gui.tab_settings import SettingsTab
+from gui.process_supervisor import ProcessSupervisor
 from scraper.webdriver_manager import get_driver, quit_driver  # Add this import
 from scraper.driver_manager import setup_driver, safe_quit_driver  # Add setup_driver import
 from gui.tab_help import HelpTab
@@ -69,6 +70,7 @@ class MainWindow:
             self.scraping_in_progress = False
             self.stop_event = threading.Event()
             self.background_thread = None
+            self.process_supervisor = ProcessSupervisor(heartbeat_timeout_sec=240, heartbeat_check_sec=5)
             self.start_time = None
             self.timer_id = None
             self.total_estimated_tenders_for_run = 0
@@ -1677,6 +1679,44 @@ class MainWindow:
         task_thread.start()
         self.background_thread = task_thread
 
+    def start_supervised_cli_job(
+        self,
+        job_id,
+        command,
+        cwd,
+        group,
+        tail_log_file=None,
+        on_log=None,
+        on_event=None,
+        on_state_change=None,
+        on_exit=None,
+        on_error=None,
+    ):
+        return self.process_supervisor.start_job(
+            job_id=job_id,
+            command=command,
+            cwd=cwd,
+            group=group,
+            tail_log_file=tail_log_file,
+            on_log=on_log,
+            on_event=on_event,
+            on_state_change=on_state_change,
+            on_exit=on_exit,
+            on_error=on_error,
+        )
+
+    def stop_supervised_group(self, group, force=False):
+        try:
+            return bool(self.process_supervisor.stop_group(group, force=force))
+        except Exception:
+            return False
+
+    def stop_supervised_job(self, job_id, force=False):
+        try:
+            return bool(self.process_supervisor.stop_job(job_id, force=force))
+        except Exception:
+            return False
+
     def stop_timer_updates(self):
         """Stop the timer updates."""
         if self.timer_id:
@@ -1799,12 +1839,13 @@ class MainWindow:
 
     def _kill_current_process(self):
         """Force kill the current running process."""
-        if self.background_thread and self.background_thread.is_alive():
+        tab_stop_handled = self._notify_tabs_emergency_stop()
+
+        if (self.background_thread and self.background_thread.is_alive()) or tab_stop_handled:
             try:
                 # Note: In Python, we can't forcefully terminate threads easily
                 # This will set the stop event and log the kill request
                 self.stop_event.set()
-                self._notify_tabs_emergency_stop()
                 if self.driver:
                     try:
                         safe_quit_driver(self.driver, self.update_log)
@@ -1813,7 +1854,7 @@ class MainWindow:
                     finally:
                         self.driver = None
                 self.update_status("Kill requested...")
-                self.update_log("Kill request sent to background task - attempting forceful termination.")
+                self.update_log("Kill request sent to active task/subprocess - attempting forceful termination.")
                 # For more forceful termination, we could use process-based approach
                 # but for now, we'll rely on the stop event
                 self.stop_button.config(state=tk.DISABLED)
@@ -1825,24 +1866,28 @@ class MainWindow:
             self.update_log("Kill requested but no task is running.")
 
     def _notify_tabs_emergency_stop(self):
+        handled = False
         for frame in self.section_frames.values():
             if not frame.winfo_children():
                 continue
             tab_instance = frame.winfo_children()[0]
             if hasattr(tab_instance, "request_emergency_stop"):
                 try:
-                    tab_instance.request_emergency_stop(self.stop_event)
+                    tab_result = tab_instance.request_emergency_stop(self.stop_event)
+                    handled = handled or bool(tab_result)
                 except Exception as tab_err:
                     logger.warning(f"Emergency-stop notify failed for tab {type(tab_instance).__name__}: {tab_err}")
+        return handled
 
     def _pause_current_process(self):
         """Pause the current running process."""
         # For now, implement pause as a graceful stop
         # TODO: Implement actual pause functionality if needed
-        if self.background_thread and self.background_thread.is_alive():
+        tab_stop_handled = self._notify_tabs_emergency_stop()
+        if (self.background_thread and self.background_thread.is_alive()) or tab_stop_handled:
             self.stop_event.set()
             self.update_status("Pause requested...")
-            self.update_log("Pause request sent to background task - stopping gracefully.")
+            self.update_log("Pause request sent to active task/subprocess - stopping gracefully.")
             self.stop_button.config(state=tk.DISABLED)
             self.root.after(2000, self._sync_stop_button_state)
         else:
@@ -2001,6 +2046,10 @@ class MainWindow:
                 return
 
         self.stop_event.set()
+        try:
+            self.process_supervisor.shutdown()
+        except Exception as supervisor_err:
+            logger.warning(f"Failed to shutdown process supervisor cleanly: {supervisor_err}")
         if self._status_message_job:
             try:
                 self.root.after_cancel(self._status_message_job)

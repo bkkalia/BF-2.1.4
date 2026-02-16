@@ -1,4 +1,4 @@
-# gui/tab_department.py v2.2.1
+# gui/tab_department.py v2.3.0
 # Widgets and logic for the "Scrape by Department" tab
 
 import tkinter as tk
@@ -7,6 +7,8 @@ import threading
 import logging
 import os
 import sys
+from datetime import datetime
+from pathlib import Path
 
 # Add the project root to sys.path
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -15,8 +17,7 @@ if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
 # Absolute imports from project root
-from scraper.logic import fetch_department_list_from_site, run_scraping_logic
-from tender_store import TenderDataStore
+from scraper.logic import fetch_department_list_from_site
 from gui import gui_utils
 
 logger = logging.getLogger(__name__)
@@ -32,6 +33,7 @@ class DepartmentTab(ttk.Frame):
         self.filtered_departments = []
         self.total_estimated_tenders = 0
         self.scrape_mode_var = IntVar(value=1)  
+        self._cli_job_id = None
 
         # Use global search_var and selected_url_name_var from MainWindow
         self.search_var = self.main_app.get_or_create_global_search_var()
@@ -330,30 +332,6 @@ class DepartmentTab(ttk.Frame):
             if not self.main_app.validate_download_dir(download_dir):
                 return
 
-            # Load existing tender IDs from database to enable duplicate skipping
-            existing_tender_ids = set()
-            try:
-                sqlite_settings = self.main_app._get_sqlite_runtime_settings()
-                sqlite_db_path = sqlite_settings.get("sqlite_db_path")
-                if sqlite_db_path and os.path.exists(sqlite_db_path):
-                    data_store = TenderDataStore(sqlite_db_path)
-                    portal_name = url_config.get("Name", "")
-                    existing_tender_ids = data_store.get_existing_tender_ids_for_portal(portal_name)
-                    if existing_tender_ids:
-                        logger.info(f"Loaded {len(existing_tender_ids)} existing tender IDs from database for duplicate skipping")
-                        self.main_app.update_log("=" * 80)
-                        self.main_app.update_log(f"📊 DUPLICATE DETECTION ACTIVE")
-                        self.main_app.update_log(f"   Database contains {len(existing_tender_ids)} known tenders for '{portal_name}'")
-                        self.main_app.update_log(f"   Already-scraped tenders with same closing date will be SKIPPED")
-                        self.main_app.update_log("=" * 80)
-                    else:
-                        logger.info("No existing tender IDs found in database - all tenders will be scraped")
-                        self.main_app.update_log(f"ℹ️  First time scraping '{portal_name}' - no duplicates to skip")
-            except Exception as db_err:
-                logger.warning(f"Could not load existing tender IDs from database: {db_err}")
-                self.main_app.update_log(f"⚠️  Duplicate detection unavailable: {db_err}")
-                # Continue without duplicate skipping if database query fails
-
             # Get worker count from settings
             dept_workers = 1
             try:
@@ -371,17 +349,174 @@ class DepartmentTab(ttk.Frame):
                 expected_memory = dept_workers * 500  # Approximate MB per browser
                 self.main_app.update_log(f"   Expected memory usage: ~{expected_memory}-{expected_memory + 500} MB")
 
-            # Start background task
-            self.main_app.start_background_task(
-                run_scraping_logic,
-                args=(selected_depts, url_config, download_dir),
-                kwargs={
-                    "existing_tender_ids": existing_tender_ids,
-                    "department_parallel_workers": dept_workers
-                },
-                task_name="Department Scrape"
+            if self._cli_job_id:
+                gui_utils.show_message("Busy", "A CLI subprocess is already running.", type="warning", parent=self.main_app.root)
+                return
+
+            self.main_app.stop_event.clear()
+            self.main_app.scraping_in_progress = True
+            self.main_app.set_controls_state(tk.DISABLED)
+            self.main_app.start_timer_updates()
+
+            portal_name = str(url_config.get("Name", "HP Tenders") or "HP Tenders")
+            cli_main_path = str(Path(PROJECT_ROOT) / "cli_main.py")
+            logs_dir = Path(PROJECT_ROOT) / "logs"
+            logs_dir.mkdir(parents=True, exist_ok=True)
+            safe_portal = "".join(ch if ch.isalnum() else "_" for ch in portal_name).strip("_") or "portal"
+            cli_log_path = logs_dir / f"cli_gui_{safe_portal}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
+
+            if hasattr(self.main_app, "process_supervisor"):
+                self._cli_job_id = self.main_app.process_supervisor.create_job_id(prefix="dept")
+            else:
+                self._cli_job_id = f"dept_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+
+            command = [
+                sys.executable,
+                cli_main_path,
+                "--json-events",
+                "--job-id", self._cli_job_id,
+                "--url", portal_name,
+                "--output", str(download_dir),
+                "--log", str(cli_log_path),
+                "department",
+                "--dept-workers", str(dept_workers),
+            ]
+
+            search_term = str(self.search_var.get() or "").strip()
+            if scrape_mode == 1:
+                command.append("--all")
+                if search_term:
+                    command.extend(["--filter", search_term])
+            else:
+                selected_names = [str(dept.get("name", "")).strip() for dept in (selected_depts or []) if str(dept.get("name", "")).strip()]
+                command.extend(selected_names)
+
+            self.main_app.update_log(f"Launching CLI subprocess for '{portal_name}'...")
+
+            self.main_app.start_supervised_cli_job(
+                job_id=self._cli_job_id,
+                command=command,
+                cwd=PROJECT_ROOT,
+                group="department",
+                on_log=self._handle_cli_log,
+                on_event=self._handle_cli_event,
+                on_state_change=self._handle_cli_state_change,
+                on_exit=self._handle_cli_exit,
+                on_error=self._handle_cli_error,
+                tail_log_file=str(cli_log_path),
             )
 
         except Exception as e:
             logger.error(f"Error starting scraping: {e}", exc_info=True)
             gui_utils.show_message("Error", f"Failed to start scraping:\n\n{e}", type="error", parent=self.main_app.root)
+
+    def _handle_cli_log(self, message):
+        self.main_app.root.after(0, lambda m=str(message): self.main_app.update_log(m))
+
+    def _handle_cli_error(self, message):
+        self.main_app.root.after(0, lambda m=str(message): self.main_app.update_log(f"[CLI STDERR] {m}"))
+
+    def _handle_cli_state_change(self, job_id, state, reason=None):
+        if self._cli_job_id != job_id:
+            return
+        def _apply():
+            state_text = str(state or "").strip().lower()
+            if state_text == "running":
+                return
+            if state_text == "stopping":
+                self.main_app.update_status("Stopping department subprocess...")
+            elif state_text == "failed":
+                self.main_app.update_status("Error - Department subprocess failed")
+            elif state_text == "cancelled":
+                self.main_app.update_status("Department subprocess cancelled")
+
+        self.main_app.root.after(0, _apply)
+
+    def _handle_cli_event(self, event):
+        event_payload = dict(event or {})
+
+        def _apply():
+            event_type = str(event_payload.get("type", "")).strip().lower()
+
+            if event_type == "status":
+                msg = str(event_payload.get("message", "")).strip()
+                if msg:
+                    self.main_app.update_status(msg)
+                    self.main_app.update_log(f"[CLI] {msg}")
+                return
+
+            if event_type == "progress":
+                current = int(event_payload.get("current", 0) or 0)
+                total = int(event_payload.get("total", 0) or 0)
+                details = event_payload.get("details", "")
+                scraped_tenders = int(event_payload.get("scraped_tenders", 0) or 0)
+
+                self.main_app.update_progress(current, total, details, scraped_tenders)
+                self.main_app.update_global_progress(
+                    active_portals=1,
+                    completed_portals=0,
+                    total_portals=1,
+                    total_tenders=max(self.main_app.total_estimated_tenders_for_run, scraped_tenders),
+                    scraped_tenders=scraped_tenders,
+                    total_departments=total,
+                    scraped_departments=current,
+                    active_portal=self.main_app.get_current_url_config().get("Name", "-"),
+                    state="Running",
+                )
+                return
+
+            if event_type == "departments_loaded":
+                total_departments = int(event_payload.get("total_departments", 0) or 0)
+                estimated = int(event_payload.get("estimated_total_tenders", 0) or 0)
+                if total_departments > 0:
+                    self.main_app.update_log(f"[CLI] Departments loaded: {total_departments} (est. tenders: {estimated})")
+                    if estimated > 0:
+                        self.main_app.total_estimated_tenders_for_run = estimated
+                return
+
+            if event_type == "error":
+                self.main_app.update_log(f"[CLI ERROR] {event_payload.get('message', 'Unknown error')}")
+                return
+
+            if event_type == "completed":
+                self.main_app.update_status("Department scrape completed")
+                self.main_app.update_log("CLI reported successful completion.")
+
+        self.main_app.root.after(0, _apply)
+
+    def _handle_cli_exit(self, exit_code):
+        def _finish():
+            self.main_app.scraping_in_progress = False
+            self.main_app.stop_timer_updates()
+            self.main_app.set_controls_state(tk.NORMAL)
+            self.main_app.update_global_progress(
+                active_portals=0,
+                completed_portals=1 if int(exit_code) == 0 else 0,
+                total_portals=1,
+                active_portal="-",
+                state="Completed" if int(exit_code) == 0 else "Failed",
+            )
+            if int(exit_code) == 0:
+                self.main_app.update_status("Idle - Department scrape completed")
+            else:
+                self.main_app.update_status(f"Error - CLI exited ({exit_code})")
+            self._cli_job_id = None
+
+        self.main_app.root.after(0, _finish)
+
+    def request_emergency_stop(self, stop_event=None):
+        if not self._cli_job_id:
+            return False
+
+        try:
+            if stop_event is not None:
+                stop_event.set()
+        except Exception:
+            pass
+
+        self.main_app.update_log("Emergency stop: terminating CLI subprocess...")
+        try:
+            self.main_app.stop_supervised_job(self._cli_job_id, force=True)
+        except Exception as stop_err:
+            self.main_app.update_log(f"Emergency stop error: {stop_err}")
+        return True

@@ -9,10 +9,27 @@ Run the helper tool (from project root) to infer and update version dates:
 The tool makes a backup of CHANGELOG.md (CHANGELOG.md.bak.TIMESTAMP) before editing.
 -->
 
-## Version 2.2.1 (February 13, 2026)
+## Version 2.3.0 (February 14, 2026)
+
+### 🧩 CLI Subprocess Architecture
+- Added structured CLI JSON event stream via `--json-events` for GUI-driven process monitoring.
+- Added optional `--job-id` correlation in CLI events and embedded event schema metadata (`schema_version`).
+- Added `gui/subprocess_runner.py` to launch CLI runs, parse event lines, stream logs, and tail CLI log files in real time.
+- Added `gui/process_supervisor.py` shared orchestration layer with job registry, state transitions, heartbeat timeout guard, and grouped stop/kill control.
+- Migrated Department tab execution path from in-process scraping to CLI subprocess control for responsive UI.
+
+### ⛔ Emergency Stop Reliability
+- Updated emergency stop flow to terminate active CLI subprocesses instantly from GUI stop/kill actions.
+- Extended MainWindow tab stop notification handling to support subprocess-backed tabs.
+
+### 🛠️ CLI Progress/Status Improvements
+- Fixed broken CLI progress/elapsed log formatting in `cli_runner.py`.
+- Emitted structured events for `start`, `portal`, `departments_loaded`, `progress`, `status`, `completed`, `cancelled`, and `error`.
 
 ### 🔖 Release
-- Version bump to **2.2.1** across runtime config, installer metadata, and Windows file/product version info.
+- Version bump to **2.3.0** across runtime config and CLI/GUI subprocess architecture handoff.
+
+## Version 2.2.1 (February 13, 2026)
 
 ### 🧵 Parallel Department Safety
 - Added department task de-duplication before worker queueing.

@@ -1,0 +1,15 @@
+{
+  "portals": {
+    "HP Tenders": {
+      "tender_ids": [
+        "None"
+      ],
+      "processed_departments": [
+        "hp general industries corporation ltd"
+      ],
+      "last_run": "2026-02-14T20:32:26",
+      "last_expected": 1,
+      "last_extracted": 10
+    }
+  }
+}

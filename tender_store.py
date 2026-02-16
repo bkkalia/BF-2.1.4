@@ -46,6 +46,7 @@ class TenderDataStore:
                     run_id INTEGER NOT NULL,
                     portal_name TEXT,
                     department_name TEXT,
+                    serial_no TEXT,
                     tender_id_extracted TEXT,
                     lifecycle_status TEXT DEFAULT 'active',
                     cancelled_detected_at TEXT,
@@ -55,6 +56,8 @@ class TenderDataStore:
                     opening_date TEXT,
                     title_ref TEXT,
                     organisation_chain TEXT,
+                    direct_url TEXT,
+                    status_url TEXT,
                     emd_amount TEXT,
                     emd_amount_numeric REAL,
                     tender_json TEXT,
@@ -73,6 +76,7 @@ class TenderDataStore:
                     t.run_id AS run_id,
                     t.portal_name AS portal_name,
                     t.department_name AS department_name,
+                    t.serial_no AS serial_no,
                     t.tender_id_extracted AS tender_id_extracted,
                     t.lifecycle_status AS lifecycle_status,
                     t.cancelled_detected_at AS cancelled_detected_at,
@@ -82,6 +86,8 @@ class TenderDataStore:
                     t.opening_date AS opening_date,
                     t.title_ref AS title_ref,
                     t.organisation_chain AS organisation_chain,
+                    t.direct_url AS direct_url,
+                    t.status_url AS status_url,
                     t.emd_amount AS emd_amount,
                     t.emd_amount_numeric AS emd_amount_numeric,
                     r.scope_mode AS scope_mode,
@@ -96,6 +102,9 @@ class TenderDataStore:
             self._ensure_column(conn, "tenders", "lifecycle_status", "TEXT DEFAULT 'active'")
             self._ensure_column(conn, "tenders", "cancelled_detected_at", "TEXT")
             self._ensure_column(conn, "tenders", "cancelled_source", "TEXT")
+            self._ensure_column(conn, "tenders", "serial_no", "TEXT")
+            self._ensure_column(conn, "tenders", "direct_url", "TEXT")
+            self._ensure_column(conn, "tenders", "status_url", "TEXT")
             conn.execute(
                 """
                 UPDATE tenders
@@ -296,12 +305,15 @@ class TenderDataStore:
                         run_id,
                         portal_name,
                         _normalize_text(item.get("Department Name")),
+                        _normalize_text(item.get("S.No")),
                         tender_id,
-                        _normalize_text(item.get("Published Date")),
+                        _normalize_text(item.get("Published Date") or item.get("e-Published Date")),
                         _normalize_text(item.get("Closing Date")),
                         _normalize_text(item.get("Opening Date")),
                         _normalize_text(item.get("Title and Ref.No./Tender ID")),
                         _normalize_text(item.get("Organisation Chain")),
+                        _normalize_text(item.get("Direct URL")),
+                        _normalize_text(item.get("Status URL")),
                         _normalize_text(emd_raw),
                         emd_numeric,
                         str(item)
@@ -339,10 +351,11 @@ class TenderDataStore:
                 """
                 INSERT INTO tenders (
                     run_id, portal_name, department_name, tender_id_extracted,
-                    published_date, closing_date, opening_date,
-                    title_ref, organisation_chain, emd_amount, emd_amount_numeric, tender_json
+                    serial_no, published_date, closing_date, opening_date,
+                    title_ref, organisation_chain, direct_url, status_url,
+                    emd_amount, emd_amount_numeric, tender_json
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 rows
             )
@@ -352,9 +365,13 @@ class TenderDataStore:
         query = """
             SELECT
                 department_name AS [Department Name],
+                serial_no AS [S.No],
+                published_date AS [e-Published Date],
                 published_date AS [Published Date],
                 closing_date AS [Closing Date],
                 opening_date AS [Opening Date],
+                direct_url AS [Direct URL],
+                status_url AS [Status URL],
                 title_ref AS [Title and Ref.No./Tender ID],
                 organisation_chain AS [Organisation Chain],
                 tender_id_extracted AS [Tender ID (Extracted)],
@@ -392,6 +409,84 @@ class TenderDataStore:
             csv_path = os.path.join(output_dir, f"{file_stem}.csv")
             df.to_csv(csv_path, index=False, encoding="utf-8-sig")
             return csv_path, "csv"
+
+    def get_latest_completed_run_id(self, portal_name=None, full_only=False):
+        where = ["completed_at IS NOT NULL", "LOWER(TRIM(COALESCE(status, ''))) LIKE 'scraping completed%'"]
+        params = []
+
+        portal_key = str(portal_name or "").strip().lower()
+        if portal_key:
+            where.append("LOWER(TRIM(COALESCE(portal_name, ''))) = ?")
+            params.append(portal_key)
+
+        if full_only:
+            where.append("LOWER(TRIM(COALESCE(scope_mode, 'all'))) = 'all'")
+
+        query = f"""
+            SELECT id
+            FROM runs
+            WHERE {' AND '.join(where)}
+            ORDER BY id DESC
+            LIMIT 1
+        """
+
+        with self._connect() as conn:
+            row = conn.execute(query, tuple(params)).fetchone()
+            return int(row[0]) if row and row[0] is not None else None
+
+    def get_portal_status_snapshot(self, portal_name=None):
+        params = []
+        portal_filter = ""
+        portal_key = str(portal_name or "").strip().lower()
+        if portal_key:
+            portal_filter = " AND LOWER(TRIM(COALESCE(portal_name, ''))) = ?"
+            params.append(portal_key)
+
+        with self._connect() as conn:
+            last_run = conn.execute(
+                f"""
+                SELECT portal_name, scope_mode, status, started_at, completed_at,
+                       output_file_path, output_file_type
+                FROM runs
+                WHERE 1=1 {portal_filter}
+                ORDER BY id DESC
+                LIMIT 1
+                """,
+                tuple(params),
+            ).fetchone()
+
+            last_full = conn.execute(
+                f"""
+                SELECT completed_at
+                FROM runs
+                WHERE LOWER(TRIM(COALESCE(status, ''))) LIKE 'scraping completed%'
+                  AND LOWER(TRIM(COALESCE(scope_mode, 'all'))) = 'all'
+                  {portal_filter}
+                ORDER BY id DESC
+                LIMIT 1
+                """,
+                tuple(params),
+            ).fetchone()
+
+            last_excel = conn.execute(
+                f"""
+                SELECT completed_at, output_file_path
+                FROM runs
+                WHERE TRIM(COALESCE(output_file_path, '')) <> ''
+                  AND LOWER(TRIM(COALESCE(output_file_type, ''))) = 'excel'
+                  {portal_filter}
+                ORDER BY id DESC
+                LIMIT 1
+                """,
+                tuple(params),
+            ).fetchone()
+
+        return {
+            "last_run": dict(last_run) if last_run else None,
+            "last_full_scrape_at": str(last_full[0]) if last_full and last_full[0] else None,
+            "last_excel_export_at": str(last_excel[0]) if last_excel and last_excel[0] else None,
+            "last_excel_export_path": str(last_excel[1]) if last_excel and len(last_excel) > 1 and last_excel[1] else None,
+        }
 
     def finalize_run(self, run_id, status, expected_total, extracted_total, skipped_total, partial_saved=False, output_file_path=None, output_file_type=None):
         completed_at = datetime.now().isoformat(timespec="seconds")

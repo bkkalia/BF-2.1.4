@@ -1,0 +1,15 @@
+{
+  "portals": {
+    "HP Tenders": {
+      "tender_ids": [
+        "None"
+      ],
+      "processed_departments": [
+        "ayush vibhag"
+      ],
+      "last_run": "2026-02-14T20:21:55",
+      "last_expected": 1,
+      "last_extracted": 5
+    }
+  }
+}
