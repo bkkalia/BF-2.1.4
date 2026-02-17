@@ -3,7 +3,7 @@
 Desktop utility for multi-portal government tender scraping, tracking, and export with a centralized SQLite datastore.
 
 ## Current Version
-- **v2.2.1**
+- **v2.3.1**
 
 ## What This Tool Does
 - Scrapes tender listings by department/organization across supported portals.
@@ -42,12 +42,12 @@ Retention policy:
 - Yearly: ~7 years
 
 ## Version Highlights
-- **v2.2.1 (Feb 13, 2026):** Release version bump + parallel department de-duplication and ambiguous direct-link safety guard.
-- **v2.1.10 (Feb 13, 2026):** Quick Delta default, optional Full Delta, department name+count delta detection, and department URL coverage tracker/reports.
+- **v2.3.1 (Feb 17, 2026):** Portal management dashboard enhancements with health status indicators, category filters, bulk exports, export history tracking, and comprehensive documentation.
+- **v2.3.0 (Feb 14, 2026):** CLI subprocess architecture, emergency stop reliability, structured event streaming.
+- **v2.2.1 (Feb 13, 2026):** Parallel department de-duplication and ambiguous direct-link safety guard.
+- **v2.1.10 (Feb 13, 2026):** Quick Delta default, optional Full Delta, department name+count delta detection.
 - **v2.1.9 (Feb 13, 2026):** Tiered backups, stronger tender ID integrity, import performance upgrades.
 - **v2.1.8 (Feb 12, 2026):** SQLite-first persistence and DB-backed exports.
-- **v2.1.7 (Feb 12, 2026):** Delta sweep + health watchdog + checkpoint auto-import.
-- **v2.1.6 (Feb 12, 2026):** Batch dashboard, only-new mode, manifest tracking.
 - **v2.1.5 (Feb 12, 2026):** UX progress improvements and portal memory enhancements.
 
 See full history in [CHANGELOG.md](CHANGELOG.md).

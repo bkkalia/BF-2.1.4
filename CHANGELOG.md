@@ -9,6 +9,49 @@ Run the helper tool (from project root) to infer and update version dates:
 The tool makes a backup of CHANGELOG.md (CHANGELOG.md.bak.TIMESTAMP) before editing.
 -->
 
+## Version 2.3.1 (February 17, 2026)
+
+### 📊 Portal Management Dashboard Enhancements
+- Added **Portal Health Status Indicators** with color-coded urgency levels:
+  - 🟢 Green (0 days) - Scraped today
+  - 🟡 Yellow (1-7 days) - Recent data
+  - 🟠 Orange (8-30 days) - Consider refreshing
+  - 🔴 Red (>30 days) - Stale data requiring attention
+- Added **Portal Category Badges** (Central/State/PSU) based on base_urls.csv classification
+- Added **Category Filter Dropdown** for viewing All/Central/State/PSU portals
+- Added **Quick Category Export Buttons** for bulk exporting Central, State, or PSU portals
+- Added **Export History Tracking** with JSON-based logging in Portal_Exports/export_history.json
+- Added **Export History Dialog** showing last 20 export operations with metadata
+- Enhanced portal table rows with category badges and days-since-update display
+
+### 🔧 Database Query Optimization
+- Fixed SQL query compatibility for legacy schema (tenders + runs tables)
+- Implemented subquery-based approach for retrieving last_updated timestamp from runs table
+- Verified portal statistics query returns accurate data for all 12 portals
+
+### 📚 Documentation
+- Created comprehensive **User Guide** (`docs/DASHBOARD_USER_GUIDE.md`) with:
+  - Feature overviews for Dashboard and Portal Management pages
+  - Common workflows and best practices
+  - Export file format specifications
+  - Troubleshooting guide
+- Created detailed **Developer Guide** (`docs/DASHBOARD_DEVELOPER_GUIDE.md`) with:
+  - Architecture overview (Reflex framework, database schema, state management)
+  - Component structure and implementation details
+  - Export implementation patterns
+  - Development workflow and debugging techniques
+  - Performance optimization strategies
+  - Extension guidelines for adding features
+
+### 🐛 Bug Fixes
+- Fixed BaseModel attribute access in Reflex foreach loops (entry.field vs entry["field"])
+- Fixed invalid icon reference (help-circle → circle-help)
+- Fixed type annotations for export_history using ExportHistoryEntry BaseModel
+- Fixed legacy schema query using completed_at instead of non-existent last_scrape_time
+
+### 🔖 Release
+- Version bump to **2.3.1** with enhanced portal management and comprehensive documentation
+
 ## Version 2.3.0 (February 14, 2026)
 
 ### 🧩 CLI Subprocess Architecture
