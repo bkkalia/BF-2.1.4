@@ -65,5 +65,5 @@ Website: https://cloud84.com/blackforest
 
 ---
 
-**Last Updated**: September 20, 2025
-**Version**: 2.2.1
+**Last Updated**: February 18, 2026
+**Version**: 2.3.2

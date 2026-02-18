@@ -1,4 +1,4 @@
-# Cloud84 Black Forest Project v2.2.1
+# Cloud84 Black Forest Project v2.3.2
 
 ## Project Overview
 Black Forest is a Python desktop application for scraping and managing government tender listings across multiple portals.
@@ -17,7 +17,7 @@ It focuses on:
 - Datastore: SQLite (primary source of truth)
 - Packaging: PyInstaller + Inno Setup
 
-## Current Architecture (v2.2.1)
+## Current Architecture (v2.3.2)
 - `main.py`: app startup, dependency checks, lifecycle handling.
 - `gui/main_window.py`: top-level shell, tabs, status/progress orchestration.
 - `gui/tab_department.py`: department-based scraping.
@@ -33,6 +33,12 @@ It focuses on:
 Primary SQLite tables:
 - `runs`: run metadata and output references.
 - `tenders`: persisted tender rows.
+
+### NIC Portal Tender ID Canonical Rule
+- On NIC/eProcure "Tenders By Organisation" pages, Tender ID is the bracket token embedded in title text (example: `2026_DCKUL_128804_1`).
+- Per NIC portal, Tender ID is unique at portal scope.
+- Canonical identity key is `(portal_name, tender_id_extracted)`.
+- Closing date can be extended/changed for the same tender ID; this should trigger reprocessing/update, not new identity creation.
 
 Current integrity behavior:
 - keeps latest row per `(portal, Tender ID (Extracted))`.
@@ -63,7 +69,7 @@ Retention:
 - Department URL coverage tracking and report export (auto + manual).
 
 ## Current Status
-- Version: 2.2.1
+- Version: 2.3.2
 - Branch: `main`
 - Central datastore and backup system are active.
 - Documentation and website are aligned with latest release.

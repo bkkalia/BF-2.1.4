@@ -9,6 +9,38 @@ Run the helper tool (from project root) to infer and update version dates:
 The tool makes a backup of CHANGELOG.md (CHANGELOG.md.bak.TIMESTAMP) before editing.
 -->
 
+## Version 2.3.2 (February 18, 2026)
+
+### ♻️ Checkpoint Resume Reliability
+- Fixed dashboard checkpoint resume crash caused by awaiting an async generator (`object async_generator can't be used in 'await' expression`).
+- Updated resume flow to stream `start_scraping` with `async for`, preserving live state updates.
+
+### 🆔 NIC Tender Identity Correctness
+- Standardized NIC/eProcure tender identity extraction to use bracket token in title text (example: `2026_DCKUL_128804_1`).
+- Fixed persistence mapping bug where `serial_no` and `tender_id_extracted` were incorrectly stored in swapped positions.
+- Updated export preference to prioritize canonical `tender_id_extracted`.
+
+### 🔁 Closing-Date-Aware Duplicate Strategy
+- Added portal snapshot preloading of existing tender IDs + normalized closing date.
+- Implemented duplicate rule:
+  - same `portal + tender_id + closing_date` → skip as existing,
+  - same `portal + tender_id` with changed closing date → reprocess/update.
+
+### 🧮 Scraping Dashboard Metrics
+- Added live counters in Scraping Control Global Progress:
+  - `Skipped Existing`
+  - `Date Reprocessed`
+- Wired metrics end-to-end across scraper summary, worker totals, checkpoint payload, and dashboard state aggregation.
+
+### 🗃️ Data Migration & Safety
+- Executed one-time DB correction pass to backfill canonical NIC tender IDs from `title_ref` for historical records.
+- Created pre-migration SQLite backup before updates.
+
+### 🔖 Release
+- Version bump to **2.3.2** across runtime config, installer scripts, and executable version metadata.
+
+## Version 2.3.1 (February 17, 2026)
+
 ## Version 2.3.1 (February 17, 2026)
 
 ### 📊 Portal Management Dashboard Enhancements

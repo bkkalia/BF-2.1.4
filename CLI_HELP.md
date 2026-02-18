@@ -306,7 +306,7 @@ For interactive usage with visual interface:
 
 ---
 
-**Last Updated**: February 13, 2026
-**Version**: 2.2.1
+**Last Updated**: February 18, 2026
+**Version**: 2.3.2
 **CLI Mode**: Automated tender scraping with command-line interface
 **GUI Mode**: Interactive tender scraping with visual progress monitoring

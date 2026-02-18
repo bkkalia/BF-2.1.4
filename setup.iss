@@ -2,7 +2,7 @@
 ; This script creates a complete installer for the hybrid distribution package
 
 #define MyAppName "Black Forest Tender Scraper"
-#define MyAppVersion "2.2.1"
+#define MyAppVersion "2.3.2"
 #define MyAppPublisher "Cloud84"
 #define MyAppURL "https://github.com/your-repo/blackforest"
 #define MyAppExeName "BlackForest.exe"

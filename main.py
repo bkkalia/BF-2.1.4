@@ -1,12 +1,12 @@
 """
-Cloud84 Tender Scraper v2.2.1
+Cloud84 Tender Scraper v2.3.2
 DESKTOP APPLICATION - Python Tkinter GUI
 Purpose: Web scraping tender/bid data from government portals
 Tech Stack: Python, Tkinter, Selenium, pandas
 NOT a web application - NO JavaScript/HTML/CSS
 """
 
-# main.py v2.2.1
+# main.py v2.3.2
 # Main entry point for the Cloud84 Tender Scraper application.
 
 # Handle readline compatibility issues that can occur in CLI mode
@@ -36,6 +36,8 @@ import os
 import datetime
 import platform
 import traceback
+import socket
+import zlib
 
 
 # Add a fallback URL in case base_urls.csv is not readable or empty
@@ -85,6 +87,41 @@ except Exception:
     # Fallback to script-local folder if creating in Downloads fails
     ABS_DEFAULT_DOWNLOAD_DIR = os.path.join(SCRIPT_DIR, DEFAULT_DOWNLOAD_DIR_NAME)
     os.makedirs(ABS_DEFAULT_DOWNLOAD_DIR, exist_ok=True)
+
+# --- Single Instance Guard (GUI mode) ---
+_INSTANCE_SOCKET = None
+_INSTANCE_PORT = 45000 + (zlib.crc32(SCRIPT_DIR.encode("utf-8")) % 10000)
+
+
+def acquire_single_instance_lock():
+    """Acquire a process-level lock to ensure only one GUI instance runs."""
+    global _INSTANCE_SOCKET
+    if _INSTANCE_SOCKET is not None:
+        return True
+
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
+        sock.bind(("127.0.0.1", _INSTANCE_PORT))
+        sock.listen(1)
+        _INSTANCE_SOCKET = sock
+        return True
+    except OSError:
+        try:
+            sock.close()
+        except Exception:
+            pass
+        return False
+
+
+def release_single_instance_lock():
+    """Release the GUI single-instance lock."""
+    global _INSTANCE_SOCKET
+    if _INSTANCE_SOCKET is not None:
+        try:
+            _INSTANCE_SOCKET.close()
+        except Exception:
+            pass
+        _INSTANCE_SOCKET = None
 
 # --- Early Logging Setup (Console Only) ---
 def setup_logging():
@@ -362,7 +399,8 @@ def load_and_validate_configurations():
             'dl_notice_pdfs': True,
             'deep_scrape_departments': False,
             'use_undetected_driver': True,
-            'headless_mode': False
+            'headless_mode': False,
+            'automation_engine': 'playwright'
         }
         
         for key, default_value in default_settings.items():
@@ -534,6 +572,20 @@ if __name__ == "__main__":
 
     # Default: Run GUI mode
     # Note: GUI can be run from console, but for production use pythonw.exe or executable
+    if not acquire_single_instance_lock():
+        logging.warning("Another GUI instance is already running. Exiting duplicate launch.")
+        try:
+            root_err = tk.Tk()
+            root_err.withdraw()
+            tkinter.messagebox.showwarning(
+                "Application Already Running",
+                "Another Black Forest window is already running.\n\nPlease use the existing window.",
+                parent=root_err
+            )
+            root_err.destroy()
+        except Exception:
+            pass
+        sys.exit(0)
 
     root = None
     app = None
@@ -720,3 +772,5 @@ if __name__ == "__main__":
         except Exception as cleanup_err:
             logging.warning(f"Cleanup error: {cleanup_err}")
             # Don't force exit on cleanup errors - let normal shutdown proceed
+        finally:
+            release_single_instance_lock()

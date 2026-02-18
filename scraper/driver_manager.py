@@ -1,9 +1,10 @@
-# scraper/driver_manager.py v2.2.1
+# scraper/driver_manager.py v2.3.2
 # Manages Selenium WebDriver setup and configuration
 
 import os
 import logging
 import time
+import threading
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options as ChromeOptions # Alias for clarity
@@ -23,6 +24,9 @@ except ImportError: WDM_AVAILABLE = False; logging.warning("webdriver-manager no
 from config import PAGE_LOAD_TIMEOUT, DEFAULT_DOWNLOAD_DIR_NAME # Import relative name
 
 logger = logging.getLogger(__name__)
+
+_CHROMEDRIVER_PATH = None
+_CHROMEDRIVER_LOCK = threading.Lock()
 
 # --- Configuration ---
 USE_UNDETECTED = UNDETECTED_AVAILABLE # Default: use UC if available
@@ -81,14 +85,22 @@ def setup_driver(initial_download_dir=None):
 
         # Create service with compatible ChromeDriver version
         if WDM_AVAILABLE:
-            logger.info("Installing ChromeDriver using webdriver-manager...")
-            from webdriver_manager.chrome import ChromeDriverManager
-            try:
-                service = Service(ChromeDriverManager().install())
-                logger.info("ChromeDriver installed successfully")
-            except Exception as version_error:
-                logger.warning(f"Could not install ChromeDriver: {version_error}")
-                service = Service()
+            global _CHROMEDRIVER_PATH
+            with _CHROMEDRIVER_LOCK:
+                if _CHROMEDRIVER_PATH:
+                    logger.info("Using cached ChromeDriver path")
+                    service = Service(_CHROMEDRIVER_PATH)
+                else:
+                    logger.info("Installing ChromeDriver using webdriver-manager...")
+                    from webdriver_manager.chrome import ChromeDriverManager
+                    try:
+                        _CHROMEDRIVER_PATH = ChromeDriverManager().install()
+                        service = Service(_CHROMEDRIVER_PATH)
+                        logger.info("ChromeDriver installed successfully")
+                    except Exception as version_error:
+                        logger.warning(f"Could not install ChromeDriver: {version_error}")
+                        _CHROMEDRIVER_PATH = None
+                        service = Service()
         else:
             logger.warning("webdriver-manager not available, using default service")
             service = Service()

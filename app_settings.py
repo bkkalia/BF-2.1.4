@@ -1,4 +1,4 @@
-# app_settings.py v2.2.1
+# app_settings.py v2.3.2
 # Handles loading/saving settings.json and reading base_urls.csv, using absolute paths.
 
 import json
@@ -36,6 +36,8 @@ DEFAULT_SETTINGS_STRUCTURE = {
     "selected_theme": DEFAULT_THEME,
     "use_undetected_driver": USE_UNDETECTED_DRIVER_DEFAULT,
     "headless_mode": HEADLESS_MODE_DEFAULT,
+    "ui_update_interval_seconds": 2.0,
+    "automation_engine": "playwright",
     "department_parallel_workers": 1,
     "batch_delta_mode": "quick",
     "refresh_watch_enabled": False,
