@@ -1,0 +1,149 @@
+[    3561ms] [ERROR] In HTML, %s cannot be a descendant of <%s>.
+This will cause a hydration error.%s <p> p 
+
+  ...
+    <Box_7d84b6a180432e097d526c8fa374dd3a>
+      <EmotionCssPropInternal css={{width:"100%"}} __EMOTION_TYPE_PLEASE_DO_NOT_USE__={{...}}>
+        <Insertion$2>
+        <Box className="css-8atqhb">
+          <div style={undefined} ref={null} className="rt-Box css...">
+            <EmotionCssPropInternal align="start" className="rx-Stack" css={{width:"100%", ...}} direction="column" ...>
+              <Insertion$2>
+              <Flex align="start" className="rx-Stack c..." direction="column" gap="4">
+                <div style={undefined} ref={null} className="rt-Flex rt...">
+                  <EmotionCssPropInternal>
+                  <EmotionCssPropInternal color="green" css={{icon:"zap", ...}} size="1" ...>
+                    <Insertion$2>
+                    <Callout.Root color="green" size="1" className="css-1dixmk6">
+                      <div data-accent-color="green" style={undefined} className="rt-Callout..." ref={null}>
+                        <Callout.Icon>
+                        <Callout.Text>
+                          <Text as="p" size="2" asChild={false} ref={null} className="rt-Callout...">
+                            <Slot.Slot data-accent-color={undefined} style={undefined} ref={null} ...>
+                              <Slot.SlotClone data-accent-color={undefined} style={undefined} className="rt-Text rt..." ...>
+>                               <p
+>                                 data-accent-color={undefined}
+>                                 style={undefined}
+>                                 className="rt-Text rt-r-size-2 rt-CalloutText"
+>                                 ref={null}
+>                               >
+                                  <Text as="p" size="2">
+                                    <Slot.Slot data-accent-color={undefined} style={undefined} ref={null} ...>
+                                      <Slot.SlotClone data-accent-color={undefined} style={undefined} ...>
+>                                       <p
+>                                         data-accent-color={undefined}
+>                                         style={undefined}
+>                                         className="rt-Text rt-r-size-2"
+>                                         ref={null}
+>                                       >
+                  ...
+ @ http://localhost:3700/node_modules/.vite/deps/react-dom_client.js?v=cd777215:1757
+[    3561ms] [ERROR] <%s> cannot contain a nested %s.
+See this log for the ancestor stack trace. p <p> @ http://localhost:3700/node_modules/.vite/deps/react-dom_client.js?v=cd777215:1759
+[ 1239843ms] [ERROR] In HTML, %s cannot be a descendant of <%s>.
+This will cause a hydration error.%s <p> p 
+
+  ...
+    <TabsContent value="grid" style={undefined} ref={null} className="rt-TabsCon...">
+      <Presence present={true}>
+        <Primitive.div data-state="active" data-orientation="horizontal" role="tabpanel" aria-labelledby="radix-_r_4..." ...>
+          <div data-state="active" data-orientation="horizontal" role="tabpanel" aria-labelledby="radix-_r_4..." ...>
+            <EmotionCssPropInternal align="start" className="rx-Stack" css={{width:"100%"}} direction="column" gap="3" ...>
+              <Insertion$2>
+              <Flex align="start" className="rx-Stack c..." direction="column" gap="3">
+                <div style={undefined} ref={null} className="rt-Flex rt...">
+                  <EmotionCssPropInternal color="blue" css={{icon:"info"}} size="1" ...>
+                    <Insertion$2>
+                    <Callout.Root color="blue" size="1" className="css-76v8b0">
+                      <div data-accent-color="blue" style={undefined} className="rt-Callout..." ref={null}>
+                        <Callout.Icon>
+                        <Callout.Text>
+                          <Text as="p" size="2" asChild={false} ref={null} className="rt-Callout...">
+                            <Slot.Slot data-accent-color={undefined} style={undefined} ref={null} ...>
+                              <Slot.SlotClone data-accent-color={undefined} style={undefined} className="rt-Text rt..." ...>
+>                               <p
+>                                 data-accent-color={undefined}
+>                                 style={undefined}
+>                                 className="rt-Text rt-r-size-2 rt-CalloutText"
+>                                 ref={null}
+>                               >
+                                  ...
+                                    <Text as="p" size="3" weight="bold">
+                                      <Slot.Slot data-accent-color={undefined} style={undefined} ref={null} ...>
+                                        <Slot.SlotClone data-accent-color={undefined} style={undefined} ...>
+>                                         <p
+>                                           data-accent-color={undefined}
+>                                           style={undefined}
+>                                           className="rt-Text rt-r-size-3 rt-r-weight-bold"
+>                                           ref={null}
+>                                         >
+                  ...
+ @ http://localhost:3700/node_modules/.vite/deps/react-dom_client.js?v=cd777215:1757
+[ 1239843ms] [ERROR] <%s> cannot contain a nested %s.
+See this log for the ancestor stack trace. p <p> @ http://localhost:3700/node_modules/.vite/deps/react-dom_client.js?v=cd777215:1759
+[ 1239844ms] [ERROR] In HTML, %s cannot be a descendant of <%s>.
+This will cause a hydration error.%s <div> p 
+
+  ...
+    <TabsContent value="grid" style={undefined} ref={null} className="rt-TabsCon...">
+      <Presence present={true}>
+        <Primitive.div data-state="active" data-orientation="horizontal" role="tabpanel" aria-labelledby="radix-_r_4..." ...>
+          <div data-state="active" data-orientation="horizontal" role="tabpanel" aria-labelledby="radix-_r_4..." ...>
+            <EmotionCssPropInternal align="start" className="rx-Stack" css={{width:"100%"}} direction="column" gap="3" ...>
+              <Insertion$2>
+              <Flex align="start" className="rx-Stack c..." direction="column" gap="3">
+                <div style={undefined} ref={null} className="rt-Flex rt...">
+                  <EmotionCssPropInternal color="blue" css={{icon:"info"}} size="1" ...>
+                    <Insertion$2>
+                    <Callout.Root color="blue" size="1" className="css-76v8b0">
+                      <div data-accent-color="blue" style={undefined} className="rt-Callout..." ref={null}>
+                        <Callout.Icon>
+                        <Callout.Text>
+                          <Text as="p" size="2" asChild={false} ref={null} className="rt-Callout...">
+                            <Slot.Slot data-accent-color={undefined} style={undefined} ref={null} ...>
+                              <Slot.SlotClone data-accent-color={undefined} style={undefined} className="rt-Text rt..." ...>
+>                               <p
+>                                 data-accent-color={undefined}
+>                                 style={undefined}
+>                                 className="rt-Text rt-r-size-2 rt-CalloutText"
+>                                 ref={null}
+>                               >
+                                  <Flex align="start" className="rx-Stack" direction="column" gap="2">
+>                                   <div
+>                                     style={undefined}
+>                                     ref={null}
+>                                     className="rt-Flex rt-r-fd-column rt-r-ai-start rt-r-gap-2 rx-Stack"
+>                                   >
+                  ...
+ @ http://localhost:3700/node_modules/.vite/deps/react-dom_client.js?v=cd777215:1757
+[ 1239844ms] [ERROR] <%s> cannot contain a nested %s.
+See this log for the ancestor stack trace. p <div> @ http://localhost:3700/node_modules/.vite/deps/react-dom_client.js?v=cd777215:1759
+[ 1451156ms] [WARNING] WebSocket connection to 'ws://localhost:8700/_event/?token=a15bf1d7-153c-4e24-c259-e24b429bd886&EIO=4&transport=websocket' failed: WebSocket is closed before the connection is established. @ http://localhost:3700/node_modules/.vite/deps/socket__io-client.js?v=6db3d68b:965
+[ 1471181ms] [WARNING] WebSocket connection to 'ws://localhost:8700/_event/?token=a15bf1d7-153c-4e24-c259-e24b429bd886&EIO=4&transport=websocket' failed: WebSocket is closed before the connection is established. @ http://localhost:3700/node_modules/.vite/deps/socket__io-client.js?v=6db3d68b:965
+[ 1499069ms] [WARNING] WebSocket connection to 'ws://localhost:8700/_event/?token=a15bf1d7-153c-4e24-c259-e24b429bd886&EIO=4&transport=websocket' failed: WebSocket is closed before the connection is established. @ http://localhost:3700/node_modules/.vite/deps/socket__io-client.js?v=6db3d68b:965
+[ 1809554ms] [WARNING] WebSocket connection to 'ws://localhost:8700/_event/?token=a15bf1d7-153c-4e24-c259-e24b429bd886&EIO=4&transport=websocket' failed: WebSocket is closed before the connection is established. @ http://localhost:3700/node_modules/.vite/deps/socket__io-client.js?v=6db3d68b:965
+[ 1838202ms] [WARNING] WebSocket connection to 'ws://localhost:8700/_event/?token=a15bf1d7-153c-4e24-c259-e24b429bd886&EIO=4&transport=websocket' failed: WebSocket is closed before the connection is established. @ http://localhost:3700/node_modules/.vite/deps/socket__io-client.js?v=6db3d68b:965
+[ 1852723ms] [WARNING] WebSocket connection to 'ws://localhost:8700/_event/?token=a15bf1d7-153c-4e24-c259-e24b429bd886&EIO=4&transport=websocket' failed: WebSocket is closed before the connection is established. @ http://localhost:3700/node_modules/.vite/deps/socket__io-client.js?v=6db3d68b:965
+[ 1872740ms] [WARNING] WebSocket connection to 'ws://localhost:8700/_event/?token=a15bf1d7-153c-4e24-c259-e24b429bd886&EIO=4&transport=websocket' failed: WebSocket is closed before the connection is established. @ http://localhost:3700/node_modules/.vite/deps/socket__io-client.js?v=6db3d68b:965
+[ 1892955ms] [WARNING] WebSocket connection to 'ws://localhost:8700/_event/?token=a15bf1d7-153c-4e24-c259-e24b429bd886&EIO=4&transport=websocket' failed: WebSocket is closed before the connection is established. @ http://localhost:3700/node_modules/.vite/deps/socket__io-client.js?v=6db3d68b:965
+[ 1913364ms] [WARNING] WebSocket connection to 'ws://localhost:8700/_event/?token=a15bf1d7-153c-4e24-c259-e24b429bd886&EIO=4&transport=websocket' failed: WebSocket is closed before the connection is established. @ http://localhost:3700/node_modules/.vite/deps/socket__io-client.js?v=6db3d68b:965
+[ 1933972ms] [WARNING] WebSocket connection to 'ws://localhost:8700/_event/?token=a15bf1d7-153c-4e24-c259-e24b429bd886&EIO=4&transport=websocket' failed: WebSocket is closed before the connection is established. @ http://localhost:3700/node_modules/.vite/deps/socket__io-client.js?v=6db3d68b:965
+[ 1954779ms] [WARNING] WebSocket connection to 'ws://localhost:8700/_event/?token=a15bf1d7-153c-4e24-c259-e24b429bd886&EIO=4&transport=websocket' failed: WebSocket is closed before the connection is established. @ http://localhost:3700/node_modules/.vite/deps/socket__io-client.js?v=6db3d68b:965
+[ 1975795ms] [WARNING] WebSocket connection to 'ws://localhost:8700/_event/?token=a15bf1d7-153c-4e24-c259-e24b429bd886&EIO=4&transport=websocket' failed: WebSocket is closed before the connection is established. @ http://localhost:3700/node_modules/.vite/deps/socket__io-client.js?v=6db3d68b:965
+[ 1997007ms] [WARNING] WebSocket connection to 'ws://localhost:8700/_event/?token=a15bf1d7-153c-4e24-c259-e24b429bd886&EIO=4&transport=websocket' failed: WebSocket is closed before the connection is established. @ http://localhost:3700/node_modules/.vite/deps/socket__io-client.js?v=6db3d68b:965
+[ 2018420ms] [WARNING] WebSocket connection to 'ws://localhost:8700/_event/?token=a15bf1d7-153c-4e24-c259-e24b429bd886&EIO=4&transport=websocket' failed: WebSocket is closed before the connection is established. @ http://localhost:3700/node_modules/.vite/deps/socket__io-client.js?v=6db3d68b:965
+[ 2040031ms] [WARNING] WebSocket connection to 'ws://localhost:8700/_event/?token=a15bf1d7-153c-4e24-c259-e24b429bd886&EIO=4&transport=websocket' failed: WebSocket is closed before the connection is established. @ http://localhost:3700/node_modules/.vite/deps/socket__io-client.js?v=6db3d68b:965
+[ 2061835ms] [WARNING] WebSocket connection to 'ws://localhost:8700/_event/?token=a15bf1d7-153c-4e24-c259-e24b429bd886&EIO=4&transport=websocket' failed: WebSocket is closed before the connection is established. @ http://localhost:3700/node_modules/.vite/deps/socket__io-client.js?v=6db3d68b:965
+[ 2083842ms] [WARNING] WebSocket connection to 'ws://localhost:8700/_event/?token=a15bf1d7-153c-4e24-c259-e24b429bd886&EIO=4&transport=websocket' failed: WebSocket is closed before the connection is established. @ http://localhost:3700/node_modules/.vite/deps/socket__io-client.js?v=6db3d68b:965
+[ 2105849ms] [WARNING] WebSocket connection to 'ws://localhost:8700/_event/?token=a15bf1d7-153c-4e24-c259-e24b429bd886&EIO=4&transport=websocket' failed: WebSocket is closed before the connection is established. @ http://localhost:3700/node_modules/.vite/deps/socket__io-client.js?v=6db3d68b:965
+[ 2127864ms] [WARNING] WebSocket connection to 'ws://localhost:8700/_event/?token=a15bf1d7-153c-4e24-c259-e24b429bd886&EIO=4&transport=websocket' failed: WebSocket is closed before the connection is established. @ http://localhost:3700/node_modules/.vite/deps/socket__io-client.js?v=6db3d68b:965
+[ 2149872ms] [WARNING] WebSocket connection to 'ws://localhost:8700/_event/?token=a15bf1d7-153c-4e24-c259-e24b429bd886&EIO=4&transport=websocket' failed: WebSocket is closed before the connection is established. @ http://localhost:3700/node_modules/.vite/deps/socket__io-client.js?v=6db3d68b:965
+[ 2171882ms] [WARNING] WebSocket connection to 'ws://localhost:8700/_event/?token=a15bf1d7-153c-4e24-c259-e24b429bd886&EIO=4&transport=websocket' failed: WebSocket is closed before the connection is established. @ http://localhost:3700/node_modules/.vite/deps/socket__io-client.js?v=6db3d68b:965
+[ 2193886ms] [WARNING] WebSocket connection to 'ws://localhost:8700/_event/?token=a15bf1d7-153c-4e24-c259-e24b429bd886&EIO=4&transport=websocket' failed: WebSocket is closed before the connection is established. @ http://localhost:3700/node_modules/.vite/deps/socket__io-client.js?v=6db3d68b:965
+[ 2215903ms] [WARNING] WebSocket connection to 'ws://localhost:8700/_event/?token=a15bf1d7-153c-4e24-c259-e24b429bd886&EIO=4&transport=websocket' failed: WebSocket is closed before the connection is established. @ http://localhost:3700/node_modules/.vite/deps/socket__io-client.js?v=6db3d68b:965
+[ 2237913ms] [WARNING] WebSocket connection to 'ws://localhost:8700/_event/?token=a15bf1d7-153c-4e24-c259-e24b429bd886&EIO=4&transport=websocket' failed: WebSocket is closed before the connection is established. @ http://localhost:3700/node_modules/.vite/deps/socket__io-client.js?v=6db3d68b:965
+[ 2259917ms] [WARNING] WebSocket connection to 'ws://localhost:8700/_event/?token=a15bf1d7-153c-4e24-c259-e24b429bd886&EIO=4&transport=websocket' failed: WebSocket is closed before the connection is established. @ http://localhost:3700/node_modules/.vite/deps/socket__io-client.js?v=6db3d68b:965
+[ 2281927ms] [WARNING] WebSocket connection to 'ws://localhost:8700/_event/?token=a15bf1d7-153c-4e24-c259-e24b429bd886&EIO=4&transport=websocket' failed: WebSocket is closed before the connection is established. @ http://localhost:3700/node_modules/.vite/deps/socket__io-client.js?v=6db3d68b:965
+[ 2303934ms] [WARNING] WebSocket connection to 'ws://localhost:8700/_event/?token=a15bf1d7-153c-4e24-c259-e24b429bd886&EIO=4&transport=websocket' failed: WebSocket is closed before the connection is established. @ http://localhost:3700/node_modules/.vite/deps/socket__io-client.js?v=6db3d68b:965
+[ 2306795ms] [ERROR] WebSocket connection to 'ws://localhost:8700/_event/?token=a15bf1d7-153c-4e24-c259-e24b429bd886&EIO=4&transport=websocket' failed: Error during WebSocket handshake: net::ERR_CONNECTION_RESET @ http://localhost:3700/node_modules/.vite/deps/socket__io-client.js?v=6db3d68b:994
+[ 2311153ms] [ERROR] WebSocket connection to 'ws://localhost:8700/_event/?token=a15bf1d7-153c-4e24-c259-e24b429bd886&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3700/node_modules/.vite/deps/socket__io-client.js?v=6db3d68b:994

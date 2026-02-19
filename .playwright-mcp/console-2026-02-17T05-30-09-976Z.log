@@ -1,0 +1,5 @@
+[     -18ms] [WARNING] Error with Permissions-Policy header: Unrecognized feature: 'speaker'. @ :0
+[     -18ms] [WARNING] Error with Permissions-Policy header: Unrecognized feature: 'vibrate'. @ :0
+[     195ms] [WARNING] Error with Permissions-Policy header: Unrecognized feature: 'speaker'. @ :0
+[     195ms] [WARNING] Error with Permissions-Policy header: Unrecognized feature: 'vibrate'. @ :0
+[     515ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ https://hptenders.gov.in/favicon.ico:0

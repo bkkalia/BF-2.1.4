@@ -2,7 +2,7 @@
     "version": "1.0",
     "download_directory": "C:\\Users\\kalia\\Downloads",
     "selected_url_name": "Jammu Kashmir",
-    "window_geometry": "2560x1369+1675+72",
+    "window_geometry": "2560x1369+1902+18",
     "dl_more_details": true,
     "dl_zip": true,
     "dl_notice_pdfs": true,
@@ -10,6 +10,7 @@
     "selected_theme": "clam",
     "use_undetected_driver": true,
     "headless_mode": false,
+    "automation_engine": "playwright",
     "department_parallel_workers": 3,
     "batch_delta_mode": "quick",
     "refresh_watch_enabled": false,
@@ -82,5 +83,9 @@
     "CAPTCHA_CHECK_TIMEOUT": 4.0,
     "DOWNLOAD_WAIT_TIMEOUT": 5.0,
     "POPUP_WAIT_TIMEOUT": 8.0,
-    "POST_DOWNLOAD_CLICK_WAIT": 3.0
+    "POST_DOWNLOAD_CLICK_WAIT": 3.0,
+    "enable_sounds": true,
+    "sound_ding_file": "",
+    "sound_success_file": "",
+    "sound_error_file": ""
 }

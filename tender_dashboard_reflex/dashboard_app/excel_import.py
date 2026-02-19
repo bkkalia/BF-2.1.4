@@ -1,3 +1,4 @@
+# pyright: reportArgumentType=false, reportCallIssue=false, reportAttributeAccessIssue=false
 """Excel/CSV Import page with smart column matching."""
 
 from __future__ import annotations

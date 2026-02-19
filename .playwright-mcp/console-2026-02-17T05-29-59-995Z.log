@@ -1,0 +1,3 @@
+[   29751ms] [ERROR] WebSocket connection to 'ws://localhost:3100/?token=F3Oi5Vm3owdp' failed:  @ http://localhost:3100/@vite/client:744
+[   29751ms] [ERROR] WebSocket connection to 'ws://localhost:8100/_event/?token=a06d6441-6d61-4f82-d17e-ed4ab88c05a9&EIO=4&transport=websocket' failed:  @ http://localhost:3100/node_modules/.vite/deps/socket__io-client.js?v=7efe1276:994
+[   29764ms] [ERROR] WebSocket connection to 'ws://localhost:8100/_event/?token=a06d6441-6d61-4f82-d17e-ed4ab88c05a9&EIO=4&transport=websocket' failed:  @ http://localhost:3100/node_modules/.vite/deps/socket__io-client.js?v=7efe1276:994

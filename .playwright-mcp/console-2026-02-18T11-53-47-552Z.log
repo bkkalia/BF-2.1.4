@@ -1,0 +1,94 @@
+[     414ms] [ERROR] In HTML, %s cannot be a descendant of <%s>.
+This will cause a hydration error.%s <p> p 
+
+  ...
+    <Box_7d84b6a180432e097d526c8fa374dd3a>
+      <EmotionCssPropInternal css={{width:"100%"}} __EMOTION_TYPE_PLEASE_DO_NOT_USE__={{...}}>
+        <Insertion$2>
+        <Box className="css-8atqhb">
+          <div style={undefined} ref={null} className="rt-Box css...">
+            <EmotionCssPropInternal align="start" className="rx-Stack" css={{width:"100%", ...}} direction="column" ...>
+              <Insertion$2>
+              <Flex align="start" className="rx-Stack c..." direction="column" gap="4">
+                <div style={undefined} ref={null} className="rt-Flex rt...">
+                  <EmotionCssPropInternal>
+                  <EmotionCssPropInternal color="green" css={{icon:"zap", ...}} size="1" ...>
+                    <Insertion$2>
+                    <Callout.Root color="green" size="1" className="css-1dixmk6">
+                      <div data-accent-color="green" style={undefined} className="rt-Callout..." ref={null}>
+                        <Callout.Icon>
+                        <Callout.Text>
+                          <Text as="p" size="2" asChild={false} ref={null} className="rt-Callout...">
+                            <Slot.Slot data-accent-color={undefined} style={undefined} ref={null} ...>
+                              <Slot.SlotClone data-accent-color={undefined} style={undefined} className="rt-Text rt..." ...>
+>                               <p
+>                                 data-accent-color={undefined}
+>                                 style={undefined}
+>                                 className="rt-Text rt-r-size-2 rt-CalloutText"
+>                                 ref={null}
+>                               >
+                                  <Text as="p" size="2">
+                                    <Slot.Slot data-accent-color={undefined} style={undefined} ref={null} ...>
+                                      <Slot.SlotClone data-accent-color={undefined} style={undefined} ...>
+>                                       <p
+>                                         data-accent-color={undefined}
+>                                         style={undefined}
+>                                         className="rt-Text rt-r-size-2"
+>                                         ref={null}
+>                                       >
+                  ...
+ @ http://localhost:3600/node_modules/.vite/deps/react-dom_client.js?v=874d4fd3:1757
+[     415ms] [ERROR] <%s> cannot contain a nested %s.
+See this log for the ancestor stack trace. p <p> @ http://localhost:3600/node_modules/.vite/deps/react-dom_client.js?v=874d4fd3:1759
+[  267673ms] [ERROR] WebSocket connection to 'ws://localhost:8600/_event/?token=3b161e45-d02e-4307-dde2-3ee901e73a77&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3600/node_modules/.vite/deps/socket__io-client.js?v=874d4fd3:994
+[  270215ms] [ERROR] WebSocket connection to 'ws://localhost:8600/_event/?token=3b161e45-d02e-4307-dde2-3ee901e73a77&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3600/node_modules/.vite/deps/socket__io-client.js?v=874d4fd3:994
+[  272945ms] [ERROR] WebSocket connection to 'ws://localhost:8600/_event/?token=3b161e45-d02e-4307-dde2-3ee901e73a77&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3600/node_modules/.vite/deps/socket__io-client.js?v=874d4fd3:994
+[  275886ms] [ERROR] WebSocket connection to 'ws://localhost:8600/_event/?token=3b161e45-d02e-4307-dde2-3ee901e73a77&EIO=4&transport=websocket' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3600/node_modules/.vite/deps/socket__io-client.js?v=874d4fd3:994
+[  278131ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_RESET @ http://localhost:3600/app/root.jsx?t=1771415905660:0
+[  278131ms] [ERROR] [vite] Failed to reload /app/root.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:3600/@vite/client:808
+[  278132ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_RESET @ http://localhost:3600/app/routes/[scraping]._index.jsx?t=1771415905660:0
+[  278132ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_RESET @ http://localhost:3600/utils/components.jsx?t=1771415905660:0
+[  278132ms] [ERROR] [vite] Failed to reload /app/routes/[scraping]._index.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:3600/@vite/client:808
+[  278133ms] [ERROR] [vite] Failed to reload /utils/components.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:3600/@vite/client:808
+[  282964ms] [ERROR] In HTML, %s cannot be a descendant of <%s>.
+This will cause a hydration error.%s <p> p 
+
+  ...
+    <Box_711706ec341e3521756854c20493556e>
+      <EmotionCssPropInternal css={{width:"100%"}} __EMOTION_TYPE_PLEASE_DO_NOT_USE__={{...}}>
+        <Insertion$2>
+        <Box className="css-8atqhb">
+          <div style={undefined} ref={null} className="rt-Box css...">
+            <EmotionCssPropInternal align="start" className="rx-Stack" css={{width:"100%", ...}} direction="column" ...>
+              <Insertion$2>
+              <Flex align="start" className="rx-Stack c..." direction="column" gap="4">
+                <div style={undefined} ref={null} className="rt-Flex rt...">
+                  <EmotionCssPropInternal>
+                  <EmotionCssPropInternal color="green" css={{icon:"zap", ...}} size="1" ...>
+                    <Insertion$2>
+                    <Callout.Root color="green" size="1" className="css-1dixmk6">
+                      <div data-accent-color="green" style={undefined} className="rt-Callout..." ref={null}>
+                        <Callout.Icon>
+                        <Callout.Text>
+                          <Text as="p" size="2" asChild={false} ref={null} className="rt-Callout...">
+                            <Slot.Slot data-accent-color={undefined} style={undefined} ref={null} ...>
+                              <Slot.SlotClone data-accent-color={undefined} style={undefined} className="rt-Text rt..." ...>
+>                               <p
+>                                 data-accent-color={undefined}
+>                                 style={undefined}
+>                                 className="rt-Text rt-r-size-2 rt-CalloutText"
+>                                 ref={null}
+>                               >
+                                  <Text as="p" size="2">
+                                    <Slot.Slot data-accent-color={undefined} style={undefined} ref={null} ...>
+                                      <Slot.SlotClone data-accent-color={undefined} style={undefined} ...>
+>                                       <p
+>                                         data-accent-color={undefined}
+>                                         style={undefined}
+>                                         className="rt-Text rt-r-size-2"
+>                                         ref={null}
+>                                       >
+                  ...
+ @ http://localhost:3600/node_modules/.vite/deps/react-dom_client.js?v=874d4fd3:1757
+[  282964ms] [ERROR] <%s> cannot contain a nested %s.
+See this log for the ancestor stack trace. p <p> @ http://localhost:3600/node_modules/.vite/deps/react-dom_client.js?v=874d4fd3:1759

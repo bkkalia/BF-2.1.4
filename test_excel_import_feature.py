@@ -92,7 +92,7 @@ def normalize(s: str) -> str:
     return re.sub(r'[^a-z0-9]', '', s.lower())
 
 
-def find_matching_column(excel_cols: list, db_col: str, keywords: list) -> str:
+def find_matching_column(excel_cols: list[str], db_col: str, keywords: list[str]) -> str:
     """Find matching Excel column using smart matching."""
     db_normalized = normalize(db_col)
     
@@ -114,7 +114,7 @@ def find_matching_column(excel_cols: list, db_col: str, keywords: list) -> str:
             return excel_col
     
     # Strategy 4: Any keyword match (single keyword)
-    best_match = None
+    best_match = ""
     best_score = 0
     
     for excel_col in excel_cols:

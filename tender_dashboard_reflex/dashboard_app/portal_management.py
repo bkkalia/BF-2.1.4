@@ -1,3 +1,4 @@
+# pyright: reportArgumentType=false, reportCallIssue=false, reportAttributeAccessIssue=false
 """Portal Management page - View and export portal statistics."""
 
 from __future__ import annotations

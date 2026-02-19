@@ -120,6 +120,9 @@ try:
         output_dir=EXPORT_DIR,
         website_keyword="hptenders_gov_in"
     )
+
+    if not excel_path:
+        raise ValueError("Export returned empty file path")
     
     print(f"✅ SUCCESS: Exported to {excel_path}")
     print(f"    File type: {file_type}")

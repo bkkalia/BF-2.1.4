@@ -1,0 +1,489 @@
+2026-02-16 17:39:56,766 - INFO - [MainThread:setup_logging] --- Cloud84 Black Forest Project - Tender Search Utility CLI v2.3.0 Starting ---
+2026-02-16 17:39:56,840 - INFO - [MainThread:setup_logging] Platform: Windows 11 (AMD64)
+2026-02-16 17:39:56,840 - INFO - [MainThread:setup_logging] Python: 3.13.5 (tags/v3.13.5:6cb20a2, Jun 11 2025, 16:15:46) [MSC v.1943 64 bit (AMD64)]
+2026-02-16 17:39:56,840 - INFO - [MainThread:setup_logging] Script Directory: D:\Dev84\BF 2.1.4
+2026-02-16 17:39:56,840 - INFO - [MainThread:setup_logging] Working Directory: D:\Dev84\BF 2.1.4
+2026-02-16 17:39:56,840 - INFO - [MainThread:check_package_versions] [OK] selenium 4.40.0 is available
+2026-02-16 17:39:57,539 - INFO - [MainThread:check_package_versions] [OK] pandas 3.0.0 is available
+2026-02-16 17:39:57,811 - INFO - [MainThread:check_package_versions] [OK] openpyxl 3.1.5 is available
+2026-02-16 17:39:57,859 - INFO - [MainThread:check_package_versions] [OK] requests 2.32.5 is available
+2026-02-16 17:39:57,868 - INFO - [MainThread:check_package_versions] [OK] pytesseract 0.3.13 is available
+2026-02-16 17:39:58,019 - INFO - [MainThread:check_package_versions] [OK] undetected_chromedriver 3.5.5 (optional) is available
+2026-02-16 17:39:58,020 - INFO - [MainThread:check_package_versions] [OK] webdriver_manager 4.0.2 (optional) is available
+2026-02-16 17:39:58,020 - INFO - [MainThread:import_cli_components] Importing CLI components...
+scraper.logic module imported
+2026-02-16 17:39:58,071 - INFO - [MainThread:import_cli_components] CLI components imported successfully
+2026-02-16 17:39:58,071 - INFO - [MainThread:run_cli_mode] Starting CLI mode...
+2026-02-16 17:39:58,076 - INFO - [MainThread:load_settings] Settings loaded and merged with defaults from D:\Dev84\BF 2.1.4\settings.json
+2026-02-16 17:39:58,076 - INFO - Settings loaded and merged with defaults from D:\Dev84\BF 2.1.4\settings.json
+2026-02-16 17:39:58,076 - INFO - [MainThread:load_configuration] Loaded configuration from D:\Dev84\BF 2.1.4\settings.json
+2026-02-16 17:39:58,076 - INFO - Loaded configuration from D:\Dev84\BF 2.1.4\settings.json
+
+╔══════════════════════════════════════════════════════════════╗
+║              Black Forest Tender Scraper v2.3.0              ║
+║                       CLI Mode - Department Scraping                 ║
+╚══════════════════════════════════════════════════════════════╝
+
+2026-02-16 17:39:58,076 - INFO - [MainThread:run_department_scraping] Selected engine: playwright
+2026-02-16 17:39:58,076 - INFO - Selected engine: playwright
+2026-02-16 17:39:58,080 - INFO - [MainThread:get_portal_config] Using Haryana configuration: https://etenders.hry.nic.in/nicgep/app
+2026-02-16 17:39:58,080 - INFO - Using Haryana configuration: https://etenders.hry.nic.in/nicgep/app
+2026-02-16 17:39:58,080 - INFO - [MainThread:run_department_scraping] Setting up WebDriver...
+2026-02-16 17:39:58,080 - INFO - Setting up WebDriver...
+2026-02-16 17:39:58,081 - INFO - [MainThread:setup_driver] Setting up Chrome WebDriver...
+2026-02-16 17:39:58,081 - INFO - Setting up Chrome WebDriver...
+2026-02-16 17:39:58,081 - INFO - [MainThread:setup_driver] Using standard ChromeDriver for better compatibility
+2026-02-16 17:39:58,081 - INFO - Using standard ChromeDriver for better compatibility
+2026-02-16 17:39:58,081 - INFO - [MainThread:setup_driver] Setting download directory to: C:\Users\kalia\Downloads
+2026-02-16 17:39:58,081 - INFO - Setting download directory to: C:\Users\kalia\Downloads
+2026-02-16 17:39:58,081 - INFO - [MainThread:setup_driver] Installing ChromeDriver using webdriver-manager...
+2026-02-16 17:39:58,081 - INFO - Installing ChromeDriver using webdriver-manager...
+2026-02-16 17:39:58,081 - INFO - [MainThread:log] ====== WebDriver manager ======
+2026-02-16 17:39:58,081 - INFO - ====== WebDriver manager ======
+2026-02-16 17:39:59,724 - INFO - [MainThread:log] Get LATEST chromedriver version for google-chrome
+2026-02-16 17:39:59,724 - INFO - Get LATEST chromedriver version for google-chrome
+2026-02-16 17:40:00,383 - INFO - [MainThread:log] Get LATEST chromedriver version for google-chrome
+2026-02-16 17:40:00,383 - INFO - Get LATEST chromedriver version for google-chrome
+2026-02-16 17:40:01,000 - INFO - [MainThread:log] Driver [C:\Users\kalia\.wdm\drivers\chromedriver\win64\145.0.7632.76\chromedriver-win32/chromedriver.exe] found in cache
+2026-02-16 17:40:01,000 - INFO - Driver [C:\Users\kalia\.wdm\drivers\chromedriver\win64\145.0.7632.76\chromedriver-win32/chromedriver.exe] found in cache
+2026-02-16 17:40:01,000 - INFO - [MainThread:setup_driver] ChromeDriver installed successfully
+2026-02-16 17:40:01,000 - INFO - ChromeDriver installed successfully
+2026-02-16 17:40:01,000 - INFO - [MainThread:setup_driver] Creating Chrome WebDriver instance...
+2026-02-16 17:40:01,000 - INFO - Creating Chrome WebDriver instance...
+2026-02-16 17:40:02,615 - INFO - [MainThread:setup_driver] Chrome WebDriver setup completed successfully
+2026-02-16 17:40:02,615 - INFO - Chrome WebDriver setup completed successfully
+2026-02-16 17:40:02,615 - INFO - [MainThread:run_department_scraping] Fetching department list from portal...
+2026-02-16 17:40:02,615 - INFO - Fetching department list from portal...
+2026-02-16 17:40:02,759 - INFO - [MainThread:fetch_department_list_from_site_playwright] Playwright: Fetching departments from base URL: https://etenders.hry.nic.in/nicgep/app?page=FrontEndTendersByOrganisation&service=page
+2026-02-16 17:40:02,759 - INFO - Playwright: Fetching departments from base URL: https://etenders.hry.nic.in/nicgep/app?page=FrontEndTendersByOrganisation&service=page
+2026-02-16 17:40:05,638 - INFO - [MainThread:fetch_department_list_from_site_playwright] Playwright: Navigating to target page...
+2026-02-16 17:40:05,638 - INFO - Playwright: Navigating to target page...
+2026-02-16 17:40:06,882 - INFO - [MainThread:fetch_department_list_from_site_playwright] Playwright: Opening 'Tenders by Organisation' link...
+2026-02-16 17:40:06,882 - INFO - Playwright: Opening 'Tenders by Organisation' link...
+2026-02-16 17:40:07,529 - INFO - [MainThread:fetch_department_list_from_site_playwright] Playwright: Found 4 department table rows
+2026-02-16 17:40:07,529 - INFO - Playwright: Found 4 department table rows
+2026-02-16 17:40:07,831 - INFO - [MainThread:fetch_department_list_from_site_playwright] Playwright: Processed 2 departments. Estimated tenders: 1896
+2026-02-16 17:40:07,831 - INFO - Playwright: Processed 2 departments. Estimated tenders: 1896
+2026-02-16 17:40:07,832 - INFO - [MainThread:run_department_scraping] Found 2 departments to process
+2026-02-16 17:40:07,832 - INFO - Found 2 departments to process
+  • Haryana Board Corporation (692 tenders)
+  • Haryana Government (1204 tenders)
+2026-02-16 17:40:07,832 - INFO - [MainThread:run_department_scraping] Starting scraping of 2 departments...
+2026-02-16 17:40:07,832 - INFO - Starting scraping of 2 departments...
+2026-02-16 17:40:07,832 - INFO - [MainThread:run_department_scraping] Excel export policy: alternate_days | interval_days=2 | force=False
+2026-02-16 17:40:07,832 - INFO - Excel export policy: alternate_days | interval_days=2 | force=False
+2026-02-16 17:40:07,832 - INFO - [MainThread:run_department_scraping] Department browser workers: 3
+2026-02-16 17:40:07,832 - INFO - Department browser workers: 3
+2026-02-16 17:40:07,835 - INFO - [MainThread:_prepare_department_tasks] Direct URL safety: disabled ambiguous direct-link navigation for 2 department row(s); using row-click fallback.
+2026-02-16 17:40:07,835 - INFO - Direct URL safety: disabled ambiguous direct-link navigation for 2 department row(s); using row-click fallback.
+2026-02-16 17:40:07,836 - INFO - [MainThread:run_scraping_logic] [NETWORK] Portal host: etenders.hry.nic.in | IP: 164.100.69.241
+2026-02-16 17:40:07,836 - INFO - [NETWORK] Portal host: etenders.hry.nic.in | IP: 164.100.69.241
+2026-02-16 17:40:07,971 - INFO - [MainThread:run_scraping_logic] [PERSIST] SQLite backup created: D:\Dev84\BF 2.1.4\db_backups\blackforest_tenders_20260216.sqlite3
+2026-02-16 17:40:07,971 - INFO - [PERSIST] SQLite backup created: D:\Dev84\BF 2.1.4\db_backups\blackforest_tenders_20260216.sqlite3
+2026-02-16 17:40:08,014 - INFO - [MainThread:run_scraping_logic] [PERSIST] SQLite datastore active
+2026-02-16 17:40:08,014 - INFO - [PERSIST] SQLite datastore active
+2026-02-16 17:40:08,017 - INFO - [MainThread:run_scraping_logic] [PERSIST] SQLite DB path: D:\Dev84\BF 2.1.4\data\blackforest_tenders.sqlite3
+2026-02-16 17:40:08,017 - INFO - [PERSIST] SQLite DB path: D:\Dev84\BF 2.1.4\data\blackforest_tenders.sqlite3
+2026-02-16 17:40:08,018 - INFO - [MainThread:run_scraping_logic] [PERSIST] SQLite run id: 11
+2026-02-16 17:40:08,018 - INFO - [PERSIST] SQLite run id: 11
+2026-02-16 17:40:08,018 - INFO - [MainThread:run_scraping_logic] Navigating to organization list...
+2026-02-16 17:40:08,018 - INFO - Navigating to organization list...
+2026-02-16 17:40:08,300 - INFO - [MainThread:_load_config] Loaded portal config history from portal_config_history.json
+2026-02-16 17:40:08,300 - INFO - Loaded portal config history from portal_config_history.json
+2026-02-16 17:40:08,723 - INFO - [MainThread:navigate_to_org_list] Worker: Current URL: https://etenders.hry.nic.in/nicgep/app?page=FrontEndTendersByOrganisation&service=page
+2026-02-16 17:40:08,723 - INFO - Worker: Current URL: https://etenders.hry.nic.in/nicgep/app?page=FrontEndTendersByOrganisation&service=page
+2026-02-16 17:40:08,723 - INFO - [MainThread:navigate_to_org_list] ✓ Already on 'Tenders by Organisation' page
+2026-02-16 17:40:08,723 - INFO - ✓ Already on 'Tenders by Organisation' page
+2026-02-16 17:40:08,726 - INFO - [MainThread:_save_config] Saved portal config history to portal_config_history.json
+2026-02-16 17:40:08,726 - INFO - Saved portal config history to portal_config_history.json
+2026-02-16 17:40:08,726 - INFO - [MainThread:record_successful_config] Recorded successful navigation for etenders_hry_nic_in: already_on_page
+2026-02-16 17:40:08,726 - INFO - Recorded successful navigation for etenders_hry_nic_in: already_on_page
+2026-02-16 17:40:10,245 - INFO - [MainThread:run_scraping_logic] Starting to process 2 departments...
+2026-02-16 17:40:10,245 - INFO - Starting to process 2 departments...
+2026-02-16 17:40:10,246 - INFO - [MainThread:run_scraping_logic] Department worker cap applied: requested=3, active=2, departments=2
+2026-02-16 17:40:10,246 - INFO - Department worker cap applied: requested=3, active=2, departments=2
+2026-02-16 17:40:10,246 - INFO - [MainThread:run_scraping_logic] Department parallel mode enabled: workers=2 (instance-based for true parallelism)
+2026-02-16 17:40:10,246 - INFO - Department parallel mode enabled: workers=2 (instance-based for true parallelism)
+2026-02-16 17:40:10,249 - INFO - [MainThread:_write_department_links_snapshot] Department links snapshot saved: C:\Users\kalia\AppData\Local\Temp\blackforest_department_links\Haryana_dept_links_20260216_174010.json
+2026-02-16 17:40:10,249 - INFO - Department links snapshot saved: C:\Users\kalia\AppData\Local\Temp\blackforest_department_links\Haryana_dept_links_20260216_174010.json
+2026-02-16 17:40:10,250 - INFO - [MainThread:run_scraping_logic] 📊 Smart Load Balancing - Worker Assignments (Time-Based):
+2026-02-16 17:40:10,250 - INFO - 📊 Smart Load Balancing - Worker Assignments (Time-Based):
+2026-02-16 17:40:10,250 - INFO - [MainThread:run_scraping_logic]    W1: 1 depts, ~1204 tenders, est. 10.5 min
+2026-02-16 17:40:10,250 - INFO -    W1: 1 depts, ~1204 tenders, est. 10.5 min
+2026-02-16 17:40:10,250 - INFO - [MainThread:run_scraping_logic]    W2: 1 depts, ~692 tenders, est. 6.3 min
+2026-02-16 17:40:10,250 - INFO -    W2: 1 depts, ~692 tenders, est. 6.3 min
+2026-02-16 17:40:10,250 - INFO - [MainThread:run_scraping_logic] Closing initial browser instance (will create separate instances per worker)...
+2026-02-16 17:40:10,250 - INFO - Closing initial browser instance (will create separate instances per worker)...
+2026-02-16 17:40:13,059 - INFO - [MainThread:run_scraping_logic] ⚡ Initializing 2 browser instances IN PARALLEL...
+2026-02-16 17:40:13,059 - INFO - ⚡ Initializing 2 browser instances IN PARALLEL...
+2026-02-16 17:40:13,067 - INFO - [ThreadPoolExecutor-0_0:_init_worker_browser]   [W1] Starting browser...
+2026-02-16 17:40:13,067 - INFO -   [W1] Starting browser...
+2026-02-16 17:40:13,068 - INFO - [ThreadPoolExecutor-0_0:setup_driver] Setting up Chrome WebDriver...
+2026-02-16 17:40:13,068 - INFO - Setting up Chrome WebDriver...
+2026-02-16 17:40:13,068 - INFO - [ThreadPoolExecutor-0_0:setup_driver] Using standard ChromeDriver for better compatibility
+2026-02-16 17:40:13,068 - INFO - Using standard ChromeDriver for better compatibility
+2026-02-16 17:40:13,068 - INFO - [ThreadPoolExecutor-0_0:setup_driver] Setting download directory to: C:\Users\kalia\Downloads
+2026-02-16 17:40:13,068 - INFO - Setting download directory to: C:\Users\kalia\Downloads
+2026-02-16 17:40:13,068 - INFO - [ThreadPoolExecutor-0_0:setup_driver] Installing ChromeDriver using webdriver-manager...
+2026-02-16 17:40:13,068 - INFO - Installing ChromeDriver using webdriver-manager...
+2026-02-16 17:40:13,069 - INFO - [ThreadPoolExecutor-0_0:log] ====== WebDriver manager ======
+2026-02-16 17:40:13,069 - INFO - ====== WebDriver manager ======
+2026-02-16 17:40:13,070 - INFO - [ThreadPoolExecutor-0_1:_init_worker_browser]   [W2] Starting browser...
+2026-02-16 17:40:13,070 - INFO -   [W2] Starting browser...
+2026-02-16 17:40:13,070 - INFO - [ThreadPoolExecutor-0_1:setup_driver] Setting up Chrome WebDriver...
+2026-02-16 17:40:13,070 - INFO - Setting up Chrome WebDriver...
+2026-02-16 17:40:13,070 - INFO - [ThreadPoolExecutor-0_1:setup_driver] Using standard ChromeDriver for better compatibility
+2026-02-16 17:40:13,070 - INFO - Using standard ChromeDriver for better compatibility
+2026-02-16 17:40:13,070 - INFO - [ThreadPoolExecutor-0_1:setup_driver] Setting download directory to: C:\Users\kalia\Downloads
+2026-02-16 17:40:13,070 - INFO - Setting download directory to: C:\Users\kalia\Downloads
+2026-02-16 17:40:13,071 - INFO - [ThreadPoolExecutor-0_1:setup_driver] Installing ChromeDriver using webdriver-manager...
+2026-02-16 17:40:13,071 - INFO - Installing ChromeDriver using webdriver-manager...
+2026-02-16 17:40:13,071 - INFO - [ThreadPoolExecutor-0_1:log] ====== WebDriver manager ======
+2026-02-16 17:40:13,071 - INFO - ====== WebDriver manager ======
+2026-02-16 17:40:15,328 - INFO - [ThreadPoolExecutor-0_0:log] Get LATEST chromedriver version for google-chrome
+2026-02-16 17:40:15,328 - INFO - Get LATEST chromedriver version for google-chrome
+2026-02-16 17:40:15,443 - INFO - [ThreadPoolExecutor-0_1:log] Get LATEST chromedriver version for google-chrome
+2026-02-16 17:40:15,443 - INFO - Get LATEST chromedriver version for google-chrome
+2026-02-16 17:40:16,208 - INFO - [ThreadPoolExecutor-0_0:log] Get LATEST chromedriver version for google-chrome
+2026-02-16 17:40:16,208 - INFO - Get LATEST chromedriver version for google-chrome
+2026-02-16 17:40:16,600 - INFO - [ThreadPoolExecutor-0_1:log] Get LATEST chromedriver version for google-chrome
+2026-02-16 17:40:16,600 - INFO - Get LATEST chromedriver version for google-chrome
+2026-02-16 17:40:16,950 - INFO - [ThreadPoolExecutor-0_0:log] Driver [C:\Users\kalia\.wdm\drivers\chromedriver\win64\145.0.7632.76\chromedriver-win32/chromedriver.exe] found in cache
+2026-02-16 17:40:16,950 - INFO - Driver [C:\Users\kalia\.wdm\drivers\chromedriver\win64\145.0.7632.76\chromedriver-win32/chromedriver.exe] found in cache
+2026-02-16 17:40:16,951 - INFO - [ThreadPoolExecutor-0_0:setup_driver] ChromeDriver installed successfully
+2026-02-16 17:40:16,951 - INFO - ChromeDriver installed successfully
+2026-02-16 17:40:16,951 - INFO - [ThreadPoolExecutor-0_0:setup_driver] Creating Chrome WebDriver instance...
+2026-02-16 17:40:16,951 - INFO - Creating Chrome WebDriver instance...
+2026-02-16 17:40:18,043 - INFO - [ThreadPoolExecutor-0_1:log] Driver [C:\Users\kalia\.wdm\drivers\chromedriver\win64\145.0.7632.76\chromedriver-win32/chromedriver.exe] found in cache
+2026-02-16 17:40:18,043 - INFO - Driver [C:\Users\kalia\.wdm\drivers\chromedriver\win64\145.0.7632.76\chromedriver-win32/chromedriver.exe] found in cache
+2026-02-16 17:40:18,044 - INFO - [ThreadPoolExecutor-0_1:setup_driver] ChromeDriver installed successfully
+2026-02-16 17:40:18,044 - INFO - ChromeDriver installed successfully
+2026-02-16 17:40:18,044 - INFO - [ThreadPoolExecutor-0_1:setup_driver] Creating Chrome WebDriver instance...
+2026-02-16 17:40:18,044 - INFO - Creating Chrome WebDriver instance...
+2026-02-16 17:40:18,401 - INFO - [ThreadPoolExecutor-0_0:setup_driver] Chrome WebDriver setup completed successfully
+2026-02-16 17:40:18,401 - INFO - Chrome WebDriver setup completed successfully
+2026-02-16 17:40:18,402 - INFO - [ThreadPoolExecutor-0_0:_init_worker_browser]   ✓ [W1] Browser ready
+2026-02-16 17:40:18,402 - INFO -   ✓ [W1] Browser ready
+2026-02-16 17:40:19,289 - INFO - [ThreadPoolExecutor-0_1:setup_driver] Chrome WebDriver setup completed successfully
+2026-02-16 17:40:19,289 - INFO - Chrome WebDriver setup completed successfully
+2026-02-16 17:40:19,290 - INFO - [ThreadPoolExecutor-0_1:_init_worker_browser]   ✓ [W2] Browser ready
+2026-02-16 17:40:19,290 - INFO -   ✓ [W2] Browser ready
+2026-02-16 17:40:19,291 - INFO - [MainThread:run_scraping_logic] ✓ 2 browser instances initialized in 6.23s (parallel startup)
+2026-02-16 17:40:19,291 - INFO - ✓ 2 browser instances initialized in 6.23s (parallel startup)
+2026-02-16 17:40:19,292 - INFO - [ThreadPoolExecutor-1_0:_worker_loop] [W1] Worker registered with dedicated browser instance
+2026-02-16 17:40:19,292 - INFO - [W1] Worker registered with dedicated browser instance
+2026-02-16 17:40:19,299 - INFO - [ThreadPoolExecutor-1_0:_process_department_with_driver] 
+2026-02-16 17:40:19,299 - INFO - 
+2026-02-16 17:40:19,299 - INFO - [ThreadPoolExecutor-1_0:_process_department_with_driver] **************
+2026-02-16 17:40:19,299 - INFO - **************
+2026-02-16 17:40:19,299 - INFO - [ThreadPoolExecutor-1_0:_process_department_with_driver] [W1] Processing department 1/2: Haryana Government
+2026-02-16 17:40:19,299 - INFO - [W1] Processing department 1/2: Haryana Government
+2026-02-16 17:40:19,299 - INFO - [ThreadPoolExecutor-1_0:_process_department_with_driver] **************
+2026-02-16 17:40:19,299 - INFO - **************
+Progress: 1/2 (50.0%) - Dept 1/2: Haryana Government... | Scraped: 692 | Pending: 1
+2026-02-16 17:40:19,300 - INFO - [ThreadPoolExecutor-1_1:_worker_loop] [W2] Worker registered with dedicated browser instance
+2026-02-16 17:40:19,300 - INFO - [W2] Worker registered with dedicated browser instance
+2026-02-16 17:40:19,300 - INFO - [ThreadPoolExecutor-1_1:_process_department_with_driver] 
+2026-02-16 17:40:19,300 - INFO - 
+2026-02-16 17:40:19,300 - INFO - [ThreadPoolExecutor-1_1:_process_department_with_driver] **************
+2026-02-16 17:40:19,300 - INFO - **************
+2026-02-16 17:40:19,301 - INFO - [ThreadPoolExecutor-1_1:_process_department_with_driver] [W2] Processing department 2/2: Haryana Board Corporation
+2026-02-16 17:40:19,301 - INFO - [W2] Processing department 2/2: Haryana Board Corporation
+2026-02-16 17:40:19,301 - INFO - [ThreadPoolExecutor-1_1:_process_department_with_driver] **************
+2026-02-16 17:40:19,301 - INFO - **************
+Progress: 2/2 (100.0%) - Dept 2/2: Haryana Board Corporation... | Scraped: 692 | Pending: 0
+2026-02-16 17:40:19,330 - INFO - [ThreadPoolExecutor-1_1:_process_department_with_driver] [W2] Current URL before processing: data:,
+2026-02-16 17:40:19,331 - INFO - [ThreadPoolExecutor-1_0:_process_department_with_driver] [W1] Current URL before processing: data:,
+2026-02-16 17:40:19,330 - INFO - [W2] Current URL before processing: data:,
+2026-02-16 17:40:19,331 - INFO - [W1] Current URL before processing: data:,
+2026-02-16 17:40:19,337 - INFO - [ThreadPoolExecutor-1_0:_open_department_page]     No direct URL: ensuring organization list page before click flow
+2026-02-16 17:40:19,337 - INFO - [ThreadPoolExecutor-1_1:_open_department_page]     No direct URL: ensuring organization list page before click flow
+2026-02-16 17:40:19,337 - INFO -     No direct URL: ensuring organization list page before click flow
+2026-02-16 17:40:19,337 - INFO -     No direct URL: ensuring organization list page before click flow
+2026-02-16 17:40:19,343 - INFO - [ThreadPoolExecutor-1_0:navigate_to_org_list] Worker: Current URL: data:,
+2026-02-16 17:40:19,343 - INFO - Worker: Current URL: data:,
+2026-02-16 17:40:19,344 - INFO - [ThreadPoolExecutor-1_0:navigate_to_org_list] ⚠ Invalid worker page detected (data:,), recovering via OrgListURL
+2026-02-16 17:40:19,344 - INFO - ⚠ Invalid worker page detected (data:,), recovering via OrgListURL
+2026-02-16 17:40:19,365 - INFO - [ThreadPoolExecutor-1_1:navigate_to_org_list] Worker: Current URL: data:,
+2026-02-16 17:40:19,365 - INFO - Worker: Current URL: data:,
+2026-02-16 17:40:19,365 - INFO - [ThreadPoolExecutor-1_1:navigate_to_org_list] ⚠ Invalid worker page detected (data:,), recovering via OrgListURL
+2026-02-16 17:40:19,365 - INFO - ⚠ Invalid worker page detected (data:,), recovering via OrgListURL
+2026-02-16 17:40:24,633 - INFO - [ThreadPoolExecutor-1_0:navigate_to_org_list] Worker: Recovery URL: https://etenders.hry.nic.in/nicgep/app?page=FrontEndTendersByOrganisation&service=page
+2026-02-16 17:40:24,633 - INFO - Worker: Recovery URL: https://etenders.hry.nic.in/nicgep/app?page=FrontEndTendersByOrganisation&service=page
+2026-02-16 17:40:24,633 - INFO - [ThreadPoolExecutor-1_0:navigate_to_org_list] ✓ Recovery landed on 'Tenders by Organisation' page
+2026-02-16 17:40:24,633 - INFO - ✓ Recovery landed on 'Tenders by Organisation' page
+2026-02-16 17:40:26,134 - INFO - [ThreadPoolExecutor-1_0:_find_and_click_dept_link]   Finding link for Dept S.No: 2 - Haryana Government...
+2026-02-16 17:40:26,134 - INFO -   Finding link for Dept S.No: 2 - Haryana Government...
+2026-02-16 17:40:26,203 - INFO - [ThreadPoolExecutor-1_0:_find_target_row]     Attempt 1: Check 4 rows for S.No '2'...
+2026-02-16 17:40:26,203 - INFO -     Attempt 1: Check 4 rows for S.No '2'...
+2026-02-16 17:40:26,260 - INFO - [ThreadPoolExecutor-1_0:_find_target_row]     Skip header-like row 0: 'S.No'
+2026-02-16 17:40:26,260 - INFO -     Skip header-like row 0: 'S.No'
+2026-02-16 17:40:26,437 - INFO - [ThreadPoolExecutor-1_0:_find_target_row]     Found match row index 2.
+2026-02-16 17:40:26,437 - INFO -     Found match row index 2.
+2026-02-16 17:40:26,530 - INFO - [ThreadPoolExecutor-1_0:_click_department_link]     Link found S.No '2'. Clicking...
+2026-02-16 17:40:26,530 - INFO -     Link found S.No '2'. Clicking...
+2026-02-16 17:40:27,001 - INFO - [ThreadPoolExecutor-1_1:navigate_to_org_list] Worker: Recovery URL: https://etenders.hry.nic.in/nicgep/app?page=FrontEndTendersByOrganisation&service=page
+2026-02-16 17:40:27,001 - INFO - Worker: Recovery URL: https://etenders.hry.nic.in/nicgep/app?page=FrontEndTendersByOrganisation&service=page
+2026-02-16 17:40:27,002 - INFO - [ThreadPoolExecutor-1_1:navigate_to_org_list] ✓ Recovery landed on 'Tenders by Organisation' page
+2026-02-16 17:40:27,002 - INFO - ✓ Recovery landed on 'Tenders by Organisation' page
+2026-02-16 17:40:28,502 - INFO - [ThreadPoolExecutor-1_1:_find_and_click_dept_link]   Finding link for Dept S.No: 1 - Haryana Board Corporation...
+2026-02-16 17:40:28,502 - INFO -   Finding link for Dept S.No: 1 - Haryana Board Corporation...
+2026-02-16 17:40:28,547 - INFO - [ThreadPoolExecutor-1_1:_find_target_row]     Attempt 1: Check 4 rows for S.No '1'...
+2026-02-16 17:40:28,547 - INFO -     Attempt 1: Check 4 rows for S.No '1'...
+2026-02-16 17:40:28,592 - INFO - [ThreadPoolExecutor-1_1:_find_target_row]     Skip header-like row 0: 'S.No'
+2026-02-16 17:40:28,592 - INFO -     Skip header-like row 0: 'S.No'
+2026-02-16 17:40:28,614 - INFO - [ThreadPoolExecutor-1_1:_find_target_row]     Found match row index 1.
+2026-02-16 17:40:28,614 - INFO -     Found match row index 1.
+2026-02-16 17:40:28,677 - INFO - [ThreadPoolExecutor-1_1:_click_department_link]     Link found S.No '1'. Clicking...
+2026-02-16 17:40:28,677 - INFO -     Link found S.No '1'. Clicking...
+2026-02-16 17:40:28,989 - INFO - [ThreadPoolExecutor-1_0:click_element] Standard click successful for 'Dept Link 'Haryana Government' (SNo:2)'.
+2026-02-16 17:40:28,989 - INFO - Standard click successful for 'Dept Link 'Haryana Government' (SNo:2)'.
+2026-02-16 17:40:29,590 - INFO - [ThreadPoolExecutor-1_0:_process_department_with_driver] [W1] ⏱️ Navigation time: 10.26s
+2026-02-16 17:40:29,590 - INFO - [W1] ⏱️ Navigation time: 10.26s
+2026-02-16 17:40:30,395 - INFO - [ThreadPoolExecutor-1_1:click_element] Standard click successful for 'Dept Link 'Haryana Board Corpor' (SNo:1)'.
+2026-02-16 17:40:30,395 - INFO - Standard click successful for 'Dept Link 'Haryana Board Corpor' (SNo:1)'.
+2026-02-16 17:40:30,997 - INFO - [ThreadPoolExecutor-1_1:_process_department_with_driver] [W2] ⏱️ Navigation time: 11.67s
+2026-02-16 17:40:30,997 - INFO - [W2] ⏱️ Navigation time: 11.67s
+2026-02-16 17:40:32,771 - INFO - [ThreadPoolExecutor-1_0:_scrape_tender_details]   Scraping details for: Haryana Government...
+2026-02-16 17:40:32,771 - INFO -   Scraping details for: Haryana Government...
+2026-02-16 17:40:32,824 - INFO - [ThreadPoolExecutor-1_0:_scrape_tender_details]     Details table located.
+2026-02-16 17:40:32,824 - INFO -     Details table located.
+2026-02-16 17:40:34,098 - INFO - [ThreadPoolExecutor-1_1:_scrape_tender_details]   Scraping details for: Haryana Board Corporation...
+2026-02-16 17:40:34,098 - INFO -   Scraping details for: Haryana Board Corporation...
+2026-02-16 17:40:34,134 - INFO - [ThreadPoolExecutor-1_1:_scrape_tender_details]     Details table located.
+2026-02-16 17:40:34,134 - INFO -     Details table located.
+2026-02-16 17:40:34,961 - INFO - [ThreadPoolExecutor-1_0:_scrape_tender_details]     Skipping header row (content match: ['s.no', 'published date', 'closing date', 'opening date', 'title']).
+2026-02-16 17:40:34,961 - INFO -     Skipping header row (content match: ['s.no', 'published date', 'closing date', 'opening date', 'title']).
+2026-02-16 17:40:34,961 - INFO - [ThreadPoolExecutor-1_0:_scrape_tender_details]     Found 1205 data rows for Haryana Government.
+2026-02-16 17:40:34,961 - INFO -     Found 1205 data rows for Haryana Government.
+2026-02-16 17:40:36,101 - INFO - [ThreadPoolExecutor-1_1:_scrape_tender_details]     Skipping header row (content match: ['s.no', 'published date', 'closing date', 'opening date', 'title']).
+2026-02-16 17:40:36,101 - INFO -     Skipping header row (content match: ['s.no', 'published date', 'closing date', 'opening date', 'title']).
+2026-02-16 17:40:36,101 - INFO - [ThreadPoolExecutor-1_1:_scrape_tender_details]     Found 693 data rows for Haryana Board Corporation.
+2026-02-16 17:40:36,101 - INFO -     Found 693 data rows for Haryana Board Corporation.
+2026-02-16 17:41:01,830 - INFO - [ThreadPoolExecutor-1_0:_scrape_tender_details]     Processing row 100/1205 (8%)...
+2026-02-16 17:41:01,830 - INFO -     Processing row 100/1205 (8%)...
+2026-02-16 17:41:23,744 - INFO - [ThreadPoolExecutor-1_0:_scrape_tender_details]     Processing row 200/1205 (16%)...
+2026-02-16 17:41:23,744 - INFO -     Processing row 200/1205 (16%)...
+2026-02-16 17:41:52,988 - INFO - [ThreadPoolExecutor-1_0:_scrape_tender_details]     Processing row 300/1205 (24%)...
+2026-02-16 17:41:52,988 - INFO -     Processing row 300/1205 (24%)...
+2026-02-16 17:42:21,515 - INFO - [ThreadPoolExecutor-1_0:_scrape_tender_details]     Processing row 400/1205 (33%)...
+2026-02-16 17:42:21,515 - INFO -     Processing row 400/1205 (33%)...
+2026-02-16 17:42:49,721 - INFO - [ThreadPoolExecutor-1_0:_scrape_tender_details]     Processing row 500/1205 (41%)...
+2026-02-16 17:42:49,721 - INFO -     Processing row 500/1205 (41%)...
+2026-02-16 17:43:14,170 - INFO - [ThreadPoolExecutor-1_0:_scrape_tender_details]     Processing row 600/1205 (49%)...
+2026-02-16 17:43:14,170 - INFO -     Processing row 600/1205 (49%)...
+2026-02-16 17:43:18,802 - INFO - [ThreadPoolExecutor-1_1:_scrape_tender_details]   Successfully extracted 692 tenders from Haryana Board Corporation.
+2026-02-16 17:43:18,802 - INFO -   Successfully extracted 692 tenders from Haryana Board Corporation.
+2026-02-16 17:43:18,802 - INFO - [ThreadPoolExecutor-1_1:_scrape_tender_details] 
+2026-02-16 17:43:18,802 - INFO - 
+2026-02-16 17:43:18,803 - INFO - [ThreadPoolExecutor-1_1:_scrape_tender_details] ********************************************************************************
+2026-02-16 17:43:18,803 - INFO - ********************************************************************************
+2026-02-16 17:43:18,803 - INFO - [ThreadPoolExecutor-1_1:_scrape_tender_details] 
+2026-02-16 17:43:18,803 - INFO - 
+2026-02-16 17:43:18,803 - INFO - [ThreadPoolExecutor-1_1:_process_department_with_driver] [W2] ⏱️ Table scraping time: 164.71s
+2026-02-16 17:43:18,803 - INFO - [W2] ⏱️ Table scraping time: 164.71s
+2026-02-16 17:43:18,811 - INFO - [ThreadPoolExecutor-1_1:_process_department_with_driver] [W2] Found 692 tenders in department Haryana Board Corporation
+2026-02-16 17:43:18,811 - INFO - [W2] Found 692 tenders in department Haryana Board Corporation
+2026-02-16 17:43:18,811 - INFO - [ThreadPoolExecutor-1_1:_process_department_with_driver] [W2] ⏱️ Total department time: 179.51s (Nav: 11.67s, Scrape: 164.71s)
+2026-02-16 17:43:18,811 - INFO - [W2] ⏱️ Total department time: 179.51s (Nav: 11.67s, Scrape: 164.71s)
+Progress: 2/2 (100.0%) - Dept 2/2: Haryana Board Corporation... | Scraped: 1384 | Pending: 0
+2026-02-16 17:43:18,850 - INFO - [ThreadPoolExecutor-1_1:_click_on_page_back_button]   Attempting return to organization page...
+2026-02-16 17:43:18,850 - INFO -   Attempting return to organization page...
+2026-02-16 17:43:18,862 - INFO - [ThreadPoolExecutor-1_1:_click_on_page_back_button]     Direct navigation first: https://etenders.hry.nic.in/nicgep/app?page=FrontEndTendersByOrganisation&service=page
+2026-02-16 17:43:18,862 - INFO -     Direct navigation first: https://etenders.hry.nic.in/nicgep/app?page=FrontEndTendersByOrganisation&service=page
+2026-02-16 17:43:22,560 - INFO - [ThreadPoolExecutor-1_1:_click_on_page_back_button]     ✓ Direct navigation successful
+2026-02-16 17:43:22,560 - INFO -     ✓ Direct navigation successful
+2026-02-16 17:43:22,606 - INFO - [ThreadPoolExecutor-1_1:_click_on_page_back_button]     ✓ Direct navigation successful and organization table confirmed
+2026-02-16 17:43:22,606 - INFO -     ✓ Direct navigation successful and organization table confirmed
+2026-02-16 17:43:22,606 - INFO - [ThreadPoolExecutor-1_1:_worker_loop] [W2] Worker completed 1/1 departments
+2026-02-16 17:43:22,606 - INFO - [W2] Worker completed 1/1 departments
+2026-02-16 17:43:22,606 - INFO - [ThreadPoolExecutor-1_1:_worker_loop] [W2] Closing browser instance...
+2026-02-16 17:43:22,606 - INFO - [W2] Closing browser instance...
+2026-02-16 17:43:25,138 - INFO - [ThreadPoolExecutor-1_1:_worker_loop] [W2] ✓ Browser closed
+2026-02-16 17:43:25,138 - INFO - [W2] ✓ Browser closed
+2026-02-16 17:43:41,808 - INFO - [ThreadPoolExecutor-1_0:_scrape_tender_details]     Processing row 700/1205 (58%)...
+2026-02-16 17:43:41,808 - INFO -     Processing row 700/1205 (58%)...
+2026-02-16 17:44:06,373 - INFO - [ThreadPoolExecutor-1_0:_scrape_tender_details]     Processing row 800/1205 (66%)...
+2026-02-16 17:44:06,373 - INFO -     Processing row 800/1205 (66%)...
+2026-02-16 17:44:25,535 - INFO - [ThreadPoolExecutor-1_0:_scrape_tender_details]     Processing row 900/1205 (74%)...
+2026-02-16 17:44:25,535 - INFO -     Processing row 900/1205 (74%)...
+2026-02-16 17:44:43,305 - INFO - [ThreadPoolExecutor-1_0:_scrape_tender_details]     Processing row 1000/1205 (82%)...
+2026-02-16 17:44:43,305 - INFO -     Processing row 1000/1205 (82%)...
+2026-02-16 17:44:59,684 - INFO - [ThreadPoolExecutor-1_0:_scrape_tender_details]     Processing row 1100/1205 (91%)...
+2026-02-16 17:44:59,684 - INFO -     Processing row 1100/1205 (91%)...
+2026-02-16 17:45:17,859 - INFO - [ThreadPoolExecutor-1_0:_scrape_tender_details]     Processing row 1200/1205 (99%)...
+2026-02-16 17:45:17,859 - INFO -     Processing row 1200/1205 (99%)...
+2026-02-16 17:45:18,817 - INFO - [ThreadPoolExecutor-1_0:_scrape_tender_details]   Successfully extracted 1204 tenders from Haryana Government.
+2026-02-16 17:45:18,817 - INFO -   Successfully extracted 1204 tenders from Haryana Government.
+2026-02-16 17:45:18,818 - INFO - [ThreadPoolExecutor-1_0:_scrape_tender_details] 
+2026-02-16 17:45:18,818 - INFO - 
+2026-02-16 17:45:18,818 - INFO - [ThreadPoolExecutor-1_0:_scrape_tender_details] ********************************************************************************
+2026-02-16 17:45:18,818 - INFO - ********************************************************************************
+2026-02-16 17:45:18,818 - INFO - [ThreadPoolExecutor-1_0:_scrape_tender_details] 
+2026-02-16 17:45:18,818 - INFO - 
+2026-02-16 17:45:18,818 - INFO - [ThreadPoolExecutor-1_0:_process_department_with_driver] [W1] ⏱️ Table scraping time: 286.05s
+2026-02-16 17:45:18,818 - INFO - [W1] ⏱️ Table scraping time: 286.05s
+2026-02-16 17:45:18,831 - INFO - [ThreadPoolExecutor-1_0:_process_department_with_driver] [W1] Found 1204 tenders in department Haryana Government
+2026-02-16 17:45:18,831 - INFO - [W1] Found 1204 tenders in department Haryana Government
+2026-02-16 17:45:18,831 - INFO - [ThreadPoolExecutor-1_0:_process_department_with_driver] [W1] ⏱️ Total department time: 299.53s (Nav: 10.26s, Scrape: 286.05s)
+2026-02-16 17:45:18,831 - INFO - [W1] ⏱️ Total department time: 299.53s (Nav: 10.26s, Scrape: 286.05s)
+Progress: 1/2 (50.0%) - Dept 1/2: Haryana Government... | Scraped: 2588 | Pending: 1
+2026-02-16 17:45:18,844 - INFO - [ThreadPoolExecutor-1_0:_click_on_page_back_button]   Attempting return to organization page...
+2026-02-16 17:45:18,844 - INFO -   Attempting return to organization page...
+2026-02-16 17:45:18,854 - INFO - [ThreadPoolExecutor-1_0:_click_on_page_back_button]     Direct navigation first: https://etenders.hry.nic.in/nicgep/app?page=FrontEndTendersByOrganisation&service=page
+2026-02-16 17:45:18,854 - INFO -     Direct navigation first: https://etenders.hry.nic.in/nicgep/app?page=FrontEndTendersByOrganisation&service=page
+2026-02-16 17:45:22,455 - INFO - [ThreadPoolExecutor-1_0:_click_on_page_back_button]     ✓ Direct navigation successful
+2026-02-16 17:45:22,455 - INFO -     ✓ Direct navigation successful
+2026-02-16 17:45:22,468 - INFO - [ThreadPoolExecutor-1_0:_click_on_page_back_button]     ✓ Direct navigation successful and organization table confirmed
+2026-02-16 17:45:22,468 - INFO -     ✓ Direct navigation successful and organization table confirmed
+2026-02-16 17:45:22,468 - INFO - [ThreadPoolExecutor-1_0:_worker_loop] [W1] Worker completed 1/1 departments
+2026-02-16 17:45:22,468 - INFO - [W1] Worker completed 1/1 departments
+2026-02-16 17:45:22,469 - INFO - [ThreadPoolExecutor-1_0:_worker_loop] [W1] Closing browser instance...
+2026-02-16 17:45:22,469 - INFO - [W1] Closing browser instance...
+2026-02-16 17:45:24,917 - INFO - [ThreadPoolExecutor-1_0:_worker_loop] [W1] ✓ Browser closed
+2026-02-16 17:45:24,917 - INFO - [W1] ✓ Browser closed
+2026-02-16 17:45:24,918 - INFO - [MainThread:run_scraping_logic] Cleaning up worker browser instances...
+2026-02-16 17:45:24,918 - INFO - Cleaning up worker browser instances...
+2026-02-16 17:45:29,002 - WARNING - [MainThread:urlopen] Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPConnection(host='localhost', port=63032): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it")': /session/5b77ac4c78175d26a23c3bdbfd4c332c
+2026-02-16 17:45:29,002 - WARNING - Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPConnection(host='localhost', port=63032): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it")': /session/5b77ac4c78175d26a23c3bdbfd4c332c
+2026-02-16 17:45:33,067 - WARNING - [MainThread:urlopen] Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPConnection(host='localhost', port=63032): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it")': /session/5b77ac4c78175d26a23c3bdbfd4c332c
+2026-02-16 17:45:33,067 - WARNING - Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPConnection(host='localhost', port=63032): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it")': /session/5b77ac4c78175d26a23c3bdbfd4c332c
+2026-02-16 17:45:37,159 - WARNING - [MainThread:urlopen] Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPConnection(host='localhost', port=63032): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it")': /session/5b77ac4c78175d26a23c3bdbfd4c332c
+2026-02-16 17:45:37,159 - WARNING - Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPConnection(host='localhost', port=63032): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it")': /session/5b77ac4c78175d26a23c3bdbfd4c332c
+2026-02-16 17:45:41,222 - INFO - [MainThread:run_scraping_logic]   ✓ W1 browser cleaned up
+2026-02-16 17:45:41,222 - INFO -   ✓ W1 browser cleaned up
+2026-02-16 17:45:45,296 - WARNING - [MainThread:urlopen] Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPConnection(host='localhost', port=59020): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it")': /session/3023c0ace2fa0c0b8298332eba831f7a
+2026-02-16 17:45:45,296 - WARNING - Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPConnection(host='localhost', port=59020): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it")': /session/3023c0ace2fa0c0b8298332eba831f7a
+2026-02-16 17:45:49,381 - WARNING - [MainThread:urlopen] Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPConnection(host='localhost', port=59020): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it")': /session/3023c0ace2fa0c0b8298332eba831f7a
+2026-02-16 17:45:49,381 - WARNING - Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPConnection(host='localhost', port=59020): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it")': /session/3023c0ace2fa0c0b8298332eba831f7a
+2026-02-16 17:45:53,465 - WARNING - [MainThread:urlopen] Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPConnection(host='localhost', port=59020): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it")': /session/3023c0ace2fa0c0b8298332eba831f7a
+2026-02-16 17:45:53,465 - WARNING - Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPConnection(host='localhost', port=59020): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it")': /session/3023c0ace2fa0c0b8298332eba831f7a
+2026-02-16 17:45:57,539 - INFO - [MainThread:run_scraping_logic]   ✓ W2 browser cleaned up
+2026-02-16 17:45:57,539 - INFO -   ✓ W2 browser cleaned up
+2026-02-16 17:45:57,540 - INFO - [MainThread:run_scraping_logic] ✓ All worker browsers cleaned up
+2026-02-16 17:45:57,540 - INFO - ✓ All worker browsers cleaned up
+2026-02-16 17:46:08,798 - INFO - [MainThread:_save_tender_data_snapshot] [PERSIST] SQLite save: SUCCESS | run_id=11 | rows=1896
+2026-02-16 17:46:08,798 - INFO - [PERSIST] SQLite save: SUCCESS | run_id=11 | rows=1896
+2026-02-16 17:46:08,798 - INFO - [MainThread:_save_tender_data_snapshot] [PERSIST] SQLite DB path: D:\Dev84\BF 2.1.4\data\blackforest_tenders.sqlite3
+2026-02-16 17:46:08,798 - INFO - [PERSIST] SQLite DB path: D:\Dev84\BF 2.1.4\data\blackforest_tenders.sqlite3
+2026-02-16 17:46:08,798 - INFO - [MainThread:_save_tender_data_snapshot] [PERSIST] File export skipped (alternate_days_not_due_0.0)
+2026-02-16 17:46:08,798 - INFO - [PERSIST] File export skipped (alternate_days_not_due_0.0)
+2026-02-16 17:46:08,799 - INFO - [MainThread:run_scraping_logic] 
+2026-02-16 17:46:08,799 - INFO - 
+2026-02-16 17:46:08,799 - INFO - [MainThread:run_scraping_logic] ################################################################################
+2026-02-16 17:46:08,799 - INFO - ################################################################################
+2026-02-16 17:46:08,799 - INFO - [MainThread:run_scraping_logic] ################################################################################
+2026-02-16 17:46:08,799 - INFO - ################################################################################
+2026-02-16 17:46:08,799 - INFO - [MainThread:run_scraping_logic] 
+=== Scraping completed ===
+2026-02-16 17:46:08,799 - INFO - 
+=== Scraping completed ===
+2026-02-16 17:46:08,799 - INFO - [MainThread:run_scraping_logic] Processed 2 departments
+2026-02-16 17:46:08,799 - INFO - Processed 2 departments
+2026-02-16 17:46:08,799 - INFO - [MainThread:run_scraping_logic] Total tenders found: 2588
+2026-02-16 17:46:08,799 - INFO - Total tenders found: 2588
+2026-02-16 17:46:08,800 - INFO - [MainThread:run_scraping_logic] 
+2026-02-16 17:46:08,800 - INFO - 
+2026-02-16 17:46:08,800 - INFO - [MainThread:run_scraping_logic] ================================================================================
+2026-02-16 17:46:08,800 - INFO - ================================================================================
+2026-02-16 17:46:08,800 - INFO - [MainThread:run_scraping_logic] 📊 COMPREHENSIVE PERFORMANCE SUMMARY
+2026-02-16 17:46:08,800 - INFO - 📊 COMPREHENSIVE PERFORMANCE SUMMARY
+2026-02-16 17:46:08,800 - INFO - [MainThread:run_scraping_logic] ================================================================================
+2026-02-16 17:46:08,800 - INFO - ================================================================================
+2026-02-16 17:46:08,800 - INFO - [MainThread:run_scraping_logic] 
+2026-02-16 17:46:08,800 - INFO - 
+2026-02-16 17:46:08,800 - INFO - [MainThread:run_scraping_logic] ⏱️  TIMING BREAKDOWN:
+2026-02-16 17:46:08,800 - INFO - ⏱️  TIMING BREAKDOWN:
+2026-02-16 17:46:08,800 - INFO - [MainThread:run_scraping_logic]    Total Elapsed Time: 360.97s (6.02 min)
+2026-02-16 17:46:08,800 - INFO -    Total Elapsed Time: 360.97s (6.02 min)
+2026-02-16 17:46:08,800 - INFO - [MainThread:run_scraping_logic]    Browser Initialization: 6.23s (parallel startup)
+2026-02-16 17:46:08,800 - INFO -    Browser Initialization: 6.23s (parallel startup)
+2026-02-16 17:46:08,800 - INFO - [MainThread:run_scraping_logic]    Total Navigation Time: 21.92s
+2026-02-16 17:46:08,800 - INFO -    Total Navigation Time: 21.92s
+2026-02-16 17:46:08,800 - INFO - [MainThread:run_scraping_logic]    Total Scraping Time: 450.75s
+2026-02-16 17:46:08,800 - INFO -    Total Scraping Time: 450.75s
+2026-02-16 17:46:08,801 - INFO - [MainThread:run_scraping_logic]    Total Dept Processing: 479.04s
+2026-02-16 17:46:08,801 - INFO -    Total Dept Processing: 479.04s
+2026-02-16 17:46:08,801 - INFO - [MainThread:run_scraping_logic] 
+2026-02-16 17:46:08,801 - INFO - 
+2026-02-16 17:46:08,801 - INFO - [MainThread:run_scraping_logic] 📈 AVERAGE TIMES:
+2026-02-16 17:46:08,801 - INFO - 📈 AVERAGE TIMES:
+2026-02-16 17:46:08,801 - INFO - [MainThread:run_scraping_logic]    Per Department: 239.52s (Nav: 10.96s, Scrape: 225.38s)
+2026-02-16 17:46:08,801 - INFO -    Per Department: 239.52s (Nav: 10.96s, Scrape: 225.38s)
+2026-02-16 17:46:08,801 - INFO - [MainThread:run_scraping_logic]    Per New Tender: 0.17s
+2026-02-16 17:46:08,801 - INFO -    Per New Tender: 0.17s
+2026-02-16 17:46:08,801 - INFO - [MainThread:run_scraping_logic] 
+2026-02-16 17:46:08,801 - INFO - 
+2026-02-16 17:46:08,801 - INFO - [MainThread:run_scraping_logic] ⚡ MULTI-WORKER EFFICIENCY:
+2026-02-16 17:46:08,801 - INFO - ⚡ MULTI-WORKER EFFICIENCY:
+2026-02-16 17:46:08,801 - INFO - [MainThread:run_scraping_logic]    Workers Used: 2 (instance-based parallelism)
+2026-02-16 17:46:08,801 - INFO -    Workers Used: 2 (instance-based parallelism)
+2026-02-16 17:46:08,801 - INFO - [MainThread:run_scraping_logic]    Workers Successful: 2/2
+2026-02-16 17:46:08,801 - INFO -    Workers Successful: 2/2
+2026-02-16 17:46:08,802 - INFO - [MainThread:run_scraping_logic] 
+2026-02-16 17:46:08,802 - INFO - 
+2026-02-16 17:46:08,802 - INFO - [MainThread:run_scraping_logic]    Department Completion by Worker:
+2026-02-16 17:46:08,802 - INFO -    Department Completion by Worker:
+2026-02-16 17:46:08,802 - INFO - [MainThread:run_scraping_logic]       ✓ W2: 1/1 departments
+2026-02-16 17:46:08,802 - INFO -       ✓ W2: 1/1 departments
+2026-02-16 17:46:08,802 - INFO - [MainThread:run_scraping_logic]       ✓ W1: 1/1 departments
+2026-02-16 17:46:08,802 - INFO -       ✓ W1: 1/1 departments
+2026-02-16 17:46:08,802 - INFO - [MainThread:run_scraping_logic] 
+2026-02-16 17:46:08,802 - INFO - 
+2026-02-16 17:46:08,802 - INFO - [MainThread:run_scraping_logic]    Parallelism Speedup: 1.33x
+2026-02-16 17:46:08,802 - INFO -    Parallelism Speedup: 1.33x
+2026-02-16 17:46:08,802 - INFO - [MainThread:run_scraping_logic]    Worker Efficiency: 66.4% (ideal: 100%)
+2026-02-16 17:46:08,802 - INFO -    Worker Efficiency: 66.4% (ideal: 100%)
+2026-02-16 17:46:08,802 - INFO - [MainThread:run_scraping_logic] 
+2026-02-16 17:46:08,802 - INFO - 
+2026-02-16 17:46:08,802 - INFO - [MainThread:run_scraping_logic] 🚀 THROUGHPUT:
+2026-02-16 17:46:08,802 - INFO - 🚀 THROUGHPUT:
+2026-02-16 17:46:08,802 - INFO - [MainThread:run_scraping_logic]    New Tenders: 430.2 per minute
+2026-02-16 17:46:08,802 - INFO -    New Tenders: 430.2 per minute
+2026-02-16 17:46:08,802 - INFO - [MainThread:run_scraping_logic] 
+2026-02-16 17:46:08,802 - INFO - 
+2026-02-16 17:46:08,802 - INFO - [MainThread:run_scraping_logic] ================================================================================
+2026-02-16 17:46:08,802 - INFO - ================================================================================
+2026-02-16 17:46:08,803 - INFO - [MainThread:run_scraping_logic] 
+2026-02-16 17:46:08,803 - INFO - 
+2026-02-16 17:46:08,803 - INFO - [MainThread:run_scraping_logic] Department navigation summary: direct_success=0/0, fallback_click=0, click_only=2
+2026-02-16 17:46:08,803 - INFO - Department navigation summary: direct_success=0/0, fallback_click=0, click_only=2
+2026-02-16 17:46:08,803 - INFO - [MainThread:run_scraping_logic] Verification: expected approx 1896, extracted 2588
+2026-02-16 17:46:08,803 - INFO - Verification: expected approx 1896, extracted 2588
+2026-02-16 17:46:08,803 - INFO - [MainThread:run_scraping_logic] ################################################################################
+2026-02-16 17:46:08,803 - INFO - ################################################################################
+2026-02-16 17:46:08,803 - INFO - [MainThread:run_scraping_logic] ################################################################################
+2026-02-16 17:46:08,803 - INFO - ################################################################################
+2026-02-16 17:46:08,803 - INFO - [MainThread:run_scraping_logic] 
+2026-02-16 17:46:08,803 - INFO - 
+2026-02-16 17:46:08,803 - INFO - [MainThread:status_callback] STATUS: Scraping completed
+2026-02-16 17:46:08,803 - INFO - STATUS: Scraping completed
+2026-02-16 17:46:08,824 - INFO - [MainThread:run_scraping_logic] [PERSIST] SQLite finalize: SUCCESS | run_id=11
+2026-02-16 17:46:08,824 - INFO - [PERSIST] SQLite finalize: SUCCESS | run_id=11
+2026-02-16 17:46:08,825 - INFO - [MainThread:run_scraping_logic] [PERSIST] SQLite DB path: D:\Dev84\BF 2.1.4\data\blackforest_tenders.sqlite3
+2026-02-16 17:46:08,825 - INFO - [PERSIST] SQLite DB path: D:\Dev84\BF 2.1.4\data\blackforest_tenders.sqlite3
+2026-02-16 17:46:08,825 - INFO - [MainThread:_log_persistence_summary] [PERSIST] ---------- Persistence Summary ----------
+2026-02-16 17:46:08,825 - INFO - [PERSIST] ---------- Persistence Summary ----------
+2026-02-16 17:46:08,825 - INFO - [MainThread:_log_persistence_summary] [PERSIST] SQLite: SAVED | run_id=11 | path=D:\Dev84\BF 2.1.4\data\blackforest_tenders.sqlite3 | Scraping completed
+2026-02-16 17:46:08,825 - INFO - [PERSIST] SQLite: SAVED | run_id=11 | path=D:\Dev84\BF 2.1.4\data\blackforest_tenders.sqlite3 | Scraping completed
+2026-02-16 17:46:08,825 - INFO - [MainThread:_log_persistence_summary] [PERSIST] File: NOT GENERATED
+2026-02-16 17:46:08,825 - INFO - [PERSIST] File: NOT GENERATED
+2026-02-16 17:46:08,825 - INFO - [MainThread:_log_persistence_summary] [PERSIST] -----------------------------------------
+2026-02-16 17:46:08,825 - INFO - [PERSIST] -----------------------------------------
+2026-02-16 17:46:08,826 - INFO - [MainThread:run_department_scraping] Scraping completed in 361.0 seconds
+2026-02-16 17:46:08,826 - INFO - Scraping completed in 361.0 seconds
+
+✅ Scraping completed successfully in 361.0 seconds!
+📁 Output directory: C:\Users\kalia\Downloads
+2026-02-16 17:46:08,827 - INFO - [MainThread:safe_quit_driver] Closing WebDriver instance...
+2026-02-16 17:46:08,827 - INFO - Closing WebDriver instance...
+2026-02-16 17:46:08,827 - INFO - [MainThread:safe_quit_driver] Closing WebDriver instance...
+2026-02-16 17:46:08,827 - INFO - Closing WebDriver instance...
+2026-02-16 17:46:12,903 - WARNING - [MainThread:urlopen] Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPConnection(host='localhost', port=61340): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it")': /session/ecfd9be78e9f63c1d3227a744ea9240a
+2026-02-16 17:46:12,903 - WARNING - Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPConnection(host='localhost', port=61340): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it")': /session/ecfd9be78e9f63c1d3227a744ea9240a
+2026-02-16 17:46:16,963 - WARNING - [MainThread:urlopen] Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPConnection(host='localhost', port=61340): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it")': /session/ecfd9be78e9f63c1d3227a744ea9240a
+2026-02-16 17:46:16,963 - WARNING - Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPConnection(host='localhost', port=61340): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it")': /session/ecfd9be78e9f63c1d3227a744ea9240a
+2026-02-16 17:46:21,041 - WARNING - [MainThread:urlopen] Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPConnection(host='localhost', port=61340): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it")': /session/ecfd9be78e9f63c1d3227a744ea9240a
+2026-02-16 17:46:21,041 - WARNING - Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError("HTTPConnection(host='localhost', port=61340): Failed to establish a new connection: [WinError 10061] No connection could be made because the target machine actively refused it")': /session/ecfd9be78e9f63c1d3227a744ea9240a
+2026-02-16 17:46:25,139 - INFO - [MainThread:safe_quit_driver] WebDriver quit successfully.
+2026-02-16 17:46:25,139 - INFO - WebDriver quit successfully.

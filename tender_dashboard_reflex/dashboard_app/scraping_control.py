@@ -1,3 +1,4 @@
+# pyright: reportArgumentType=false, reportCallIssue=false, reportAttributeAccessIssue=false
 """
 Scraping Control Page - Real-time tender scraping with process-based workers.
 """

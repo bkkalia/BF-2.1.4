@@ -1,0 +1,38 @@
+[  181069ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_RESET @ http://localhost:3500/utils/react-theme.js?t=1771311744191:0
+[  181070ms] [ERROR] [vite] Failed to reload /app/root.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:3500/@vite/client:808
+[  181070ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_RESET @ http://localhost:3500/utils/components.jsx?t=1771311744191:0
+[  181073ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_RESET @ http://localhost:3500/utils/components.jsx?t=1771311744192:0
+[  181073ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_RESET @ http://localhost:3500/components/reflex/radix_themes_color_mode_provider.js?t=1771311744191:0
+[  181073ms] [ERROR] [vite] Failed to reload /utils/components.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:3500/@vite/client:808
+[  183388ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3500/utils/context.js?t=1771311744191:0
+[  183388ms] [ERROR] [vite] Failed to reload /app/routes/_index.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:3500/@vite/client:808
+[  183404ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3500/utils/state.js?t=1771311744191:0
+[  185731ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3500/app/routes/_index.jsx?t=1771311744208:0
+[  185731ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3500/app/root.jsx?t=1771311744208:0
+[  185732ms] [ERROR] [vite] Failed to reload /app/routes/_index.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:3500/@vite/client:808
+[  185732ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3500/utils/components.jsx?t=1771311744208:0
+[  185732ms] [ERROR] [vite] Failed to reload /app/root.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:3500/@vite/client:808
+[  185732ms] [ERROR] [vite] Failed to reload /utils/components.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:3500/@vite/client:808
+[  185733ms] [ERROR] [vite] Failed to reload /utils/components.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:3500/@vite/client:808
+[  188069ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3500/app/routes/_index.jsx?t=1771311744191:0
+[  188069ms] [ERROR] [vite] Failed to reload /app/routes/_index.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:3500/@vite/client:808
+[  188083ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3500/app/root.jsx?t=1771311744191:0
+[  188083ms] [ERROR] [vite] Failed to reload /app/root.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:3500/@vite/client:808
+[  188327ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3500/app/routes/_index.jsx?t=1771311744266:0
+[  188327ms] [ERROR] [vite] Failed to reload /app/routes/_index.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:3500/@vite/client:808
+[  190419ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3500/app/root.jsx?t=1771311744266:0
+[  190419ms] [ERROR] [vite] Failed to reload /app/root.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:3500/@vite/client:808
+[  190420ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3500/utils/components.jsx?t=1771311744266:0
+[  190420ms] [ERROR] [vite] Failed to reload /utils/components.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:3500/@vite/client:808
+[  192760ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3500/app/routes/_index.jsx?t=1771311744267:0
+[  192760ms] [ERROR] [vite] Failed to reload /app/routes/_index.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:3500/@vite/client:808
+[  192760ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3500/app/root.jsx?t=1771311744267:0
+[  192760ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3500/utils/components.jsx?t=1771311744267:0
+[  192760ms] [ERROR] [vite] Failed to reload /app/root.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:3500/@vite/client:808
+[  192761ms] [ERROR] [vite] Failed to reload /utils/components.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:3500/@vite/client:808
+[  193018ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3500/app/routes/_index.jsx?t=1771311744265:0
+[  193018ms] [ERROR] [vite] Failed to reload /app/routes/_index.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:3500/@vite/client:808
+[  195091ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3500/app/root.jsx?t=1771311744265:0
+[  195091ms] [ERROR] [vite] Failed to reload /app/root.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:3500/@vite/client:808
+[  195091ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3500/utils/components.jsx?t=1771311744265:0
+[  195091ms] [ERROR] [vite] Failed to reload /utils/components.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:3500/@vite/client:808
