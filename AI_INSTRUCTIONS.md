@@ -82,6 +82,16 @@
 - ❌ String operations on potentially None values
 - ❌ Creating web files (.js, .html, .css)
 
+## NIC TENDER ID RULE (CRITICAL)
+For NIC eProcure-style portals ("Tenders By Organisation" pages), **Tender ID** is the NIC bracket token in title text, e.g.:
+- `[2026_DCKUL_128804_1]`
+- `[2026_DCKUL_127773_1]`
+
+Do NOT treat these as S.No or local ref counters.
+Use portal-scoped uniqueness:
+- Unique key = `(portal_name, nic_tender_id)`
+Closing date may change later, so same `(portal_name, nic_tender_id)` can be reprocessed when closing date differs.
+
 ## RED FLAGS - NEVER SUGGEST
 - Creating .js, .html, .css files
 - React components or JSX syntax
