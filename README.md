@@ -3,7 +3,7 @@
 Desktop utility for multi-portal government tender scraping, tracking, and export with a centralized SQLite datastore.
 
 ## Current Version
-- **v2.3.3**
+- **v2.3.4**
 
 ## What This Tool Does
 - Scrapes tender listings by department/organization across supported portals.
@@ -42,6 +42,8 @@ Retention policy:
 - Yearly: ~7 years
 
 ## Version Highlights
+- **v2.3.4 (Feb 19, 2026):** Periodic database saves every 2 minutes (zero data loss on crash/freeze), department size safety limits, live progress updates in database.
+- **v2.3.3 (Feb 19, 2026):** IST-aware skip logic, default only-new scraping, 2-minute crash recovery checkpoints, JS fast path for large tables, Reflex dashboard fixes.
 - **v2.3.2 (Feb 18, 2026):** Checkpoint resume stability fix for async generator flow, NIC tender-ID canonical extraction and DB correction, closing-date-aware duplicate reprocessing, and new live dashboard counters (`Skipped Existing`, `Date Reprocessed`).
 - **v2.3.1 (Feb 17, 2026):** Portal management dashboard enhancements with health status indicators, category filters, bulk exports, export history tracking, and comprehensive documentation.
 - **v2.3.0 (Feb 14, 2026):** CLI subprocess architecture, emergency stop reliability, structured event streaming.

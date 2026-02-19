@@ -608,6 +608,30 @@ class TenderDataStore:
             "last_excel_export_path": str(last_excel[1]) if last_excel and len(last_excel) > 1 and last_excel[1] else None,
         }
 
+    def update_run_progress(self, run_id, expected_total=None, extracted_total=None, skipped_total=None):
+        """Update run progress counters without finalizing the run."""
+        with self._connect() as conn:
+            updates = []
+            params = []
+            if expected_total is not None:
+                updates.append("expected_total_tenders = ?")
+                params.append(int(expected_total))
+            if extracted_total is not None:
+                updates.append("extracted_total_tenders = ?")
+                params.append(int(extracted_total))
+            if skipped_total is not None:
+                updates.append("skipped_existing_total = ?")
+                params.append(int(skipped_total))
+            
+            if not updates:
+                return
+            
+            params.append(int(run_id))
+            conn.execute(
+                f"UPDATE runs SET {', '.join(updates)} WHERE id = ?",
+                params
+            )
+
     def finalize_run(self, run_id, status, expected_total, extracted_total, skipped_total, partial_saved=False, output_file_path=None, output_file_type=None):
         completed_at = datetime.now().isoformat(timespec="seconds")
         with self._connect() as conn:

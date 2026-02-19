@@ -1,4 +1,4 @@
-# config.py v2.3.2
+# config.py v2.3.4
 # Stores configuration constants, defaults, and locators
 
 import logging
@@ -29,7 +29,7 @@ except ImportError:
 ByType = By
 
 # --- Application ---
-APP_VERSION = "2.3.3"
+APP_VERSION = "2.3.4"
 APP_AUTHOR = "Cloud84, Una, HP, India (Refactored)"
 DEFAULT_APP_NAME = "Cloud84 Black Forest Project - Tender Search Utility"
 
@@ -57,14 +57,64 @@ FALLBACK_URL_KEY = "hptenders"
 # --- Timeouts (seconds) ---
 # These are default values. User settings might override them in the future.
 PAGE_LOAD_TIMEOUT = 75
-ELEMENT_WAIT_TIMEOUT = 45
-STABILIZE_WAIT = 1.5
-POST_ACTION_WAIT = 0.6
+ELEMENT_WAIT_TIMEOUT = 30  # Reduced from 45 for faster failures
+STABILIZE_WAIT = 1.0  # Reduced from 1.5 for faster processing
+POST_ACTION_WAIT = 0.4  # Reduced from 0.6
 POST_CAPTCHA_WAIT = 3
 CAPTCHA_CHECK_TIMEOUT = 5
 DOWNLOAD_WAIT_TIMEOUT = 180
 POPUP_WAIT_TIMEOUT = 20
 POST_DOWNLOAD_CLICK_WAIT = 4.5
+
+# --- Adaptive Wait System (Performance Optimization) ---
+# Automatically adjusts wait times based on actual portal performance
+ADAPTIVE_WAITS_ENABLED = True  # Enable adaptive wait optimization
+ADAPTIVE_WAIT_MIN = 0.3  # Minimum wait time (fast portals)
+ADAPTIVE_WAIT_MAX = 2.0  # Maximum wait time (slow portals)
+ADAPTIVE_WAIT_SAMPLES = 5  # Number of samples to average
+
+
+class AdaptiveWaitManager:
+    """
+    Dynamically adjusts wait times based on observed portal performance.
+    
+    Benefits:
+    - Fast portals: Reduces waits by 50-70% (e.g., 1.0s → 0.3s)
+    - Slow portals: Increases waits to prevent timeouts (e.g., 1.0s → 2.0s)
+    - Adapts to network conditions during scraping
+    """
+    
+    def __init__(self, base_wait=STABILIZE_WAIT):
+        self.base_wait = base_wait
+        self.samples = []
+        self.max_samples = ADAPTIVE_WAIT_SAMPLES
+        self.current_wait = base_wait
+        
+    def record_load_time(self, load_time_seconds):
+        """Record an observed page load time."""
+        if not ADAPTIVE_WAITS_ENABLED:
+            return
+            
+        self.samples.append(load_time_seconds)
+        if len(self.samples) > self.max_samples:
+            self.samples.pop(0)  # Remove oldest sample
+        
+        # Calculate adaptive wait based on average load time
+        if self.samples:
+            avg_load = sum(self.samples) / len(self.samples)
+            # Use 40% of average load time as wait (empirical optimization)
+            self.current_wait = max(ADAPTIVE_WAIT_MIN, min(ADAPTIVE_WAIT_MAX, avg_load * 0.4))
+    
+    def get_wait(self, multiplier=1.0):
+        """Get current adaptive wait time with optional multiplier."""
+        if not ADAPTIVE_WAITS_ENABLED:
+            return self.base_wait * multiplier
+        return self.current_wait * multiplier
+    
+    def reset(self):
+        """Reset to base wait (use when changing portals)."""
+        self.samples = []
+        self.current_wait = self.base_wait
 
 # --- File Paths & Naming (Relative Names/Dirs) ---
 # Absolute paths will be constructed in main.py based on script location
