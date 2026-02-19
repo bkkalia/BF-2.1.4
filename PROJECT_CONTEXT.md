@@ -1,4 +1,4 @@
-# Cloud84 Black Forest Project v2.3.2
+# Cloud84 Black Forest Project v2.3.3
 
 ## Project Overview
 Black Forest is a Python desktop application for scraping and managing government tender listings across multiple portals.
@@ -17,7 +17,7 @@ It focuses on:
 - Datastore: SQLite (primary source of truth)
 - Packaging: PyInstaller + Inno Setup
 
-## Current Architecture (v2.3.2)
+## Current Architecture (v2.3.3)
 - `main.py`: app startup, dependency checks, lifecycle handling.
 - `gui/main_window.py`: top-level shell, tabs, status/progress orchestration.
 - `gui/tab_department.py`: department-based scraping.
@@ -26,8 +26,8 @@ It focuses on:
 - `gui/tab_id_search.py`: tender ID-based lookup flow.
 - `gui/tab_url_process.py`: direct URL processing.
 - `gui/tab_help.py`: in-app help views from markdown sources.
-- `scraper/logic.py`: scraping execution and persistence callbacks.
-- `tender_store.py`: SQLite run/tender persistence, dedupe, export, backup policy.
+- `scraper/logic.py`: scraping execution, persistence callbacks, 2-min checkpoint system, JS fast path for large NIC tables.
+- `tender_store.py`: SQLite run/tender persistence, IST-aware dedupe, export, backup policy.
 
 ## Data Model and Integrity
 Primary SQLite tables:
@@ -68,8 +68,22 @@ Retention:
 - Excel/CSV outputs generated from persisted run data.
 - Department URL coverage tracking and report export (auto + manual).
 
+## Skip / Duplicate Logic (v2.3.3)
+- `--only-new` is **ON by default** in CLI; use `--full-rescrape` to disable.
+- `tender_store.py` performs IST-aware closing date comparison: a tender is considered "live" only if its closing date > `now(IST)`.
+- Same `portal + tender_id + closing_date` → skipped; same `portal + tender_id` with changed closing date → reprocessed.
+
+## Crash Recovery (v2.3.3)
+- `scraper/logic.py` runs a background thread saving checkpoint JSON every 120 seconds to `data/checkpoints/{portal_slug}_checkpoint.json`.
+- On next run for same portal, checkpoint is auto-loaded; scraping resumes from saved `all_tender_details` + `processed_department_names`.
+- Checkpoint deleted on clean finish; preserved on crash/kill.
+
+## Performance (v2.3.3)
+- `_js_extract_table_rows(driver)`: single `execute_script()` extracts all rows from NIC `#table` — replaces N×Selenium DOM round-trips for large departments.
+- Falls back to original element-loop on any JS failure.
+
 ## Current Status
-- Version: 2.3.2
+- Version: 2.3.3
 - Branch: `main`
 - Central datastore and backup system are active.
 - Documentation and website are aligned with latest release.

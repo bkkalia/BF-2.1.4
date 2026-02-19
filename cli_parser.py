@@ -137,7 +137,13 @@ For Windows Task Scheduler, use the batch file: run_hp_tenders.bat
         dept_parser.add_argument(
             '--only-new',
             action='store_true',
-            help='Skip already known tenders using manifest + SQLite seeds'
+            help='Skip already known tenders using DB (default behaviour — kept for back-compat)'
+        )
+
+        dept_parser.add_argument(
+            '--full-rescrape',
+            action='store_true',
+            help='Re-scrape ALL tenders ignoring existing DB records (overrides default only-new)'
         )
 
         dept_parser.add_argument(

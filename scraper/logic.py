@@ -610,6 +610,40 @@ def _find_and_click_dept_link(driver, dept_info, log_callback):
     return False
 
 
+def _js_extract_table_rows(driver):
+    """Batch-extract all table rows via a single JS call.
+    Returns list of {c: [cell_texts...], h: href_or_None} dicts, or None on any failure.
+    Automatically skips <th>-only header rows (querySelectorAll('td') returns empty for them).
+    """
+    try:
+        result = driver.execute_script("""
+            (function() {
+                var table = document.getElementById('table');
+                if (!table) return null;
+                var tbody = table.querySelector('tbody') || table;
+                var trs = Array.from(tbody.querySelectorAll('tr'));
+                var out = [];
+                for (var i = 0; i < trs.length; i++) {
+                    var tds = Array.from(trs[i].querySelectorAll('td'));
+                    if (tds.length === 0) continue;  // skip header <th> rows
+                    var texts = tds.map(function(td) {
+                        return (td.innerText || td.textContent || '').replace(/\\s+/g, ' ').trim();
+                    });
+                    var href = null;
+                    var link = trs[i].querySelector('td a');
+                    if (link) href = link.href || link.getAttribute('href') || null;
+                    out.push({c: texts, h: href});
+                }
+                return out;
+            })()
+        """)
+        if isinstance(result, list):
+            return result
+        return None
+    except Exception:
+        return None
+
+
 def _scrape_tender_details(
     driver,
     department_name,
@@ -703,7 +737,7 @@ def _scrape_tender_details(
             processed_count = 0
             skipped_count = 0
             req_cols = max(DETAILS_COL_SNO, DETAILS_COL_PUB_DATE, DETAILS_COL_CLOSE_DATE, DETAILS_COL_OPEN_DATE, DETAILS_COL_TITLE_REF, DETAILS_COL_ORG_CHAIN) + 1
-            
+
             # Detect actual column count from first data row for flexible handling
             actual_cols = 0
             if len(rows) > 0:
@@ -711,10 +745,119 @@ def _scrape_tender_details(
                 actual_cols = len(first_data_row_cells)
                 if actual_cols < req_cols:
                     log_callback(f"    INFO: Table has {actual_cols} columns (expected {req_cols}). Using flexible column detection.")
-                    # Adjust to actual available columns
                     req_cols = min(req_cols, actual_cols)
-            
-            for i, row in enumerate(rows, 1):
+
+            # ================================================================
+            # JS FAST PATH — batch-extract all row data in ONE browser call.
+            # Falls back to element-by-element mode automatically on any failure.
+            # ================================================================
+            _js_rows = _js_extract_table_rows(driver)
+            _use_js = False
+            if _js_rows is not None:
+                if abs(len(_js_rows) - total_rows) <= 2:   # ≤2 tolerance for edge header rows
+                    _use_js = True
+                    if total_rows >= 200:
+                        log_callback(f"    [JS] Fast mode: {len(_js_rows)} rows batch-extracted ({total_rows} DOM rows)")
+                else:
+                    log_callback(
+                        f"    [JS] Row count mismatch (JS={len(_js_rows)}, DOM={total_rows}) "
+                        f"\u2014 using element mode"
+                    )
+
+            if _use_js:
+                for i, js_row in enumerate(_js_rows, 1):
+                    if stop_event and stop_event.is_set():
+                        log_callback(f"  Stop requested at JS row {i}/{len(_js_rows)}.")
+                        return tender_data, skipped_existing_count, changed_closing_date_count
+
+                    if total_rows > 1000 and i % progress_interval == 0:
+                        log_callback(f"    [JS] Row {i}/{len(_js_rows)} ({int(i/len(_js_rows)*100)}%)...")
+
+                    cells_text = js_row.get('c', []) if isinstance(js_row, dict) else []
+                    href       = js_row.get('h')       if isinstance(js_row, dict) else None
+                    num_cells  = len(cells_text)
+
+                    if num_cells < 3:
+                        if any(str(t).strip() for t in cells_text):
+                            skipped_count += 1
+                        continue
+
+                    # Early duplicate check (title col only — fast path)
+                    title_col_index    = 1 if num_cells == 3 else DETAILS_COL_TITLE_REF
+                    title_text         = cells_text[title_col_index] if title_col_index < num_cells else ""
+                    quick_tid          = extract_tender_id_by_skill(title_text, portal_skill) if title_text else None
+                    _early_dup_checked = False  # track so final check doesn't double-count
+
+                    if quick_tid:
+                        quick_tid_norm = normalize_tender_id(quick_tid)
+                        if quick_tid_norm and quick_tid_norm in existing_tender_ids_normalized:
+                            _early_dup_checked = True  # this tender was handled here
+                            q_close  = normalize_closing_date(cells_text[2]) if num_cells > 2 else ""
+                            prev_rec = existing_tender_snapshot.get(quick_tid_norm, {})
+                            p_close  = normalize_closing_date(prev_rec.get("closing_date", ""))
+                            if q_close and p_close and q_close != p_close:
+                                changed_closing_date_count += 1
+                                # fall through — closing date changed, re-process
+                            else:
+                                skipped_existing_count += 1
+                                continue   # exact duplicate — skip
+
+                    # Build full data dict
+                    data = {DEPARTMENT_NAME_KEY: department_name}
+                    data["S.No"]             = cells_text[0] if num_cells > 0 else "N/A"
+                    data["e-Published Date"] = cells_text[1] if num_cells > 1 else "N/A"
+                    data["Closing Date"]     = cells_text[2] if num_cells > 2 else "N/A"
+                    data["Opening Date"]     = cells_text[3] if num_cells > 3 else "N/A"
+
+                    if num_cells == 3:
+                        c1, c2 = cells_text[1], cells_text[2]
+                        if re.search(r'\[.*?\]', c1):
+                            data[TITLE_REF_KEY]  = c1
+                            data["Closing Date"] = c2
+                        else:
+                            data["Closing Date"] = c1
+                            data[TITLE_REF_KEY]  = c2
+                        data["Opening Date"]       = "N/A"
+                        data["Organisation Chain"] = "N/A"
+                    else:
+                        data[TITLE_REF_KEY]        = cells_text[DETAILS_COL_TITLE_REF]  if DETAILS_COL_TITLE_REF  < num_cells else "N/A"
+                        data["Organisation Chain"] = cells_text[DETAILS_COL_ORG_CHAIN] if DETAILS_COL_ORG_CHAIN < num_cells else "N/A"
+
+                    direct_url = status_url = None
+                    if href:
+                        urls       = generate_tender_urls(href, base_url)
+                        direct_url = urls.get('direct_url')
+                        status_url = urls.get('status_url')
+
+                    final_title = data.get(TITLE_REF_KEY, "") or ""
+                    t_id = extract_tender_id_by_skill(final_title, portal_skill) if final_title else None
+
+                    # Final dup check — only runs when early check found no match in existing IDs
+                    # (guards against double-counting tenders already handled above)
+                    if not _early_dup_checked:
+                        t_id_norm = normalize_tender_id(t_id)
+                        if t_id_norm and t_id_norm in existing_tender_ids_normalized:
+                            r_close  = normalize_closing_date(data.get("Closing Date", ""))
+                            prev_rec = existing_tender_snapshot.get(t_id_norm, {})
+                            p_close  = normalize_closing_date(prev_rec.get("closing_date", ""))
+                            if r_close and p_close and r_close != p_close:
+                                changed_closing_date_count += 1
+                            else:
+                                skipped_existing_count += 1
+                                continue
+
+                    data["Tender ID (Extracted)"] = t_id
+                    data["Direct URL"]            = direct_url
+                    data["Status URL"]            = status_url
+                    tender_data.append(data)
+                    processed_count += 1
+
+            # ================================================================
+            # ELEMENT FALLBACK — original row-by-row Selenium extraction.
+            # Runs only when JS fast path was not used.
+            # ================================================================
+            _rows_for_element_loop = [] if _use_js else rows
+            for i, row in enumerate(_rows_for_element_loop, 1):
                 if stop_event and stop_event.is_set():
                     log_callback(f"  Stop requested during row scan for {department_name} at row {i}/{total_rows}.")
                     return tender_data, skipped_existing_count, changed_closing_date_count
@@ -1288,6 +1431,46 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
     except Exception:
         export_interval_days = 2
     force_excel_export = bool(kwargs.get("force_excel_export", False))
+
+    # --- Checkpoint setup (resume on kill/crash) ---
+    _portal_slug = re.sub(r'[^\w]+', '_', portal_name.lower()).strip('_') or 'portal'
+    _checkpoint_dir = os.path.join(os.path.dirname(os.path.abspath(sqlite_db_path or 'data')), 'checkpoints')
+    _checkpoint_path = os.path.join(_checkpoint_dir, f'{_portal_slug}_checkpoint.json')
+    _ckpt_stop_event = threading.Event()
+    _ckpt_thread = None
+    try:
+        os.makedirs(_checkpoint_dir, exist_ok=True)
+    except Exception:
+        _checkpoint_path = None
+
+    # Load existing checkpoint if it exists (auto-resume after kill)
+    if _checkpoint_path and os.path.exists(_checkpoint_path):
+        try:
+            with open(_checkpoint_path, 'r', encoding='utf-8') as _f:
+                _ckpt = json.load(_f)
+            if _ckpt.get('portal_name', '').lower() == portal_name.lower():
+                _ckpt_tenders = _ckpt.get('tenders', [])
+                _ckpt_depts = set(_ckpt.get('processed_departments', []))
+                if _ckpt_tenders:
+                    all_tender_details.extend(_ckpt_tenders)
+                    total_tenders = len(all_tender_details)
+                    existing_department_names.update(_ckpt_depts)
+                    for _t in _ckpt_tenders:
+                        _tid = str(_t.get('Tender ID (Extracted)', '')).strip()
+                        if _tid:
+                            existing_tender_ids.add(_tid)
+                            _norm = normalize_tender_id(_tid)
+                            if _norm:
+                                existing_tender_ids_normalized.add(_norm)
+                    log_callback(
+                        f"[CHECKPOINT] Resumed: loaded {len(_ckpt_tenders)} tenders, "
+                        f"{len(_ckpt_depts)} departments already done from previous run"
+                    )
+            else:
+                log_callback(f"[CHECKPOINT] Stale checkpoint (portal mismatch) — ignored")
+        except Exception as _ckpt_load_err:
+            log_callback(f"[CHECKPOINT] Could not load checkpoint: {_ckpt_load_err}")
+
     data_store = None
     sqlite_run_id = None
 
@@ -1543,6 +1726,34 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
         log_callback(f"Starting to process {total_depts} departments...")
         state_lock = threading.Lock()
         dept_queue = Queue()
+
+        # Start background checkpoint saver — writes every 2 minutes
+        def _checkpoint_saver_loop():
+            while not _ckpt_stop_event.wait(120):  # wake every 120s or on stop
+                if not _checkpoint_path:
+                    continue
+                try:
+                    with state_lock:
+                        _snap_tenders = list(all_tender_details)
+                        _snap_depts = list(processed_department_names)
+                    with open(_checkpoint_path, 'w', encoding='utf-8') as _cf:
+                        json.dump({
+                            'portal_name': portal_name,
+                            'run_started_at': start_time.isoformat(),
+                            'tenders': _snap_tenders,
+                            'processed_departments': _snap_depts,
+                        }, _cf)
+                    log_callback(
+                        f"[CHECKPOINT] Auto-saved {len(_snap_tenders)} tenders "
+                        f"({len(_snap_depts)} depts) → {os.path.basename(_checkpoint_path)}"
+                    )
+                except Exception as _ce:
+                    log_callback(f"[CHECKPOINT] Save failed: {_ce}")
+
+        if _checkpoint_path:
+            _ckpt_thread = threading.Thread(target=_checkpoint_saver_loop, name="ckpt-saver", daemon=True)
+            _ckpt_thread.start()
+            log_callback(f"[CHECKPOINT] Background saver started (every 2 min) → {os.path.basename(_checkpoint_path)}")
 
         def _process_department_with_driver(active_driver, dept_info, worker_label="W1"):
             nonlocal processed_depts, total_tenders, skipped_existing_total, closing_date_reprocessed_total
@@ -2230,6 +2441,17 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
             if str(item.get("Tender ID (Extracted)", "")).strip()
         })
 
+        # Stop checkpoint thread and delete checkpoint on clean completion
+        _ckpt_stop_event.set()
+        if _ckpt_thread and _ckpt_thread.is_alive():
+            _ckpt_thread.join(timeout=5)
+        if _checkpoint_path and os.path.exists(_checkpoint_path):
+            try:
+                os.remove(_checkpoint_path)
+                log_callback(f"[CHECKPOINT] Deleted on successful completion")
+            except Exception:
+                pass
+
         if data_store is not None and sqlite_run_id is not None:
             try:
                 data_store.finalize_run(
@@ -2286,6 +2508,23 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
     except Exception as e:
         log_callback(f"Error in run_scraping_logic: {e}")
         logger.error(f"Error in run_scraping_logic: {e}", exc_info=True)
+
+        # Stop checkpoint thread (keep checkpoint file so next run can resume)
+        _ckpt_stop_event.set()
+        if _ckpt_thread and _ckpt_thread.is_alive():
+            _ckpt_thread.join(timeout=3)
+        if _checkpoint_path and all_tender_details:
+            try:
+                with open(_checkpoint_path, 'w', encoding='utf-8') as _cf:
+                    json.dump({
+                        'portal_name': portal_name,
+                        'run_started_at': start_time.isoformat(),
+                        'tenders': list(all_tender_details),
+                        'processed_departments': list(processed_department_names),
+                    }, _cf)
+                log_callback(f"[CHECKPOINT] Final save on error: {len(all_tender_details)} tenders kept for resume")
+            except Exception:
+                pass
 
         partial_saved = False
         if all_tender_details:

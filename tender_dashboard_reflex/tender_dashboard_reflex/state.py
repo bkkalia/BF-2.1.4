@@ -4,11 +4,35 @@ from datetime import datetime
 from pydantic import BaseModel
 from typing import Any
 import os
+import re
 from pathlib import Path
 
 import reflex as rx
 
 from tender_dashboard_reflex import db
+
+
+def _extract_real_tender_id(raw_id: str, title_ref: str) -> str:
+    """Extract the real tender ID (e.g. 2026_PWD_128301_1) from title_ref
+    when raw_id is just a portal serial number like '1', '138'."""
+    # Already a proper ID (has underscores and year prefix like 2026_)
+    if "_" in raw_id and len(raw_id) > 8:
+        return raw_id
+    # Extract last [YEAR_PORTAL_NUMBER_VERSION] pattern embedded in title_ref
+    matches = re.findall(r"\[(\d{4}_[A-Z0-9]+_\d+_\d+)\]", title_ref or "")
+    if matches:
+        return matches[-1]
+    return raw_id
+
+
+def _clean_title_ref(title_ref: str) -> str:
+    """Remove tender ID stamp from end of title and strip outer brackets."""
+    # Remove [2026_PORTAL_NUMBER_VERSION] from the end
+    cleaned = re.sub(r"\s*\[\d{4}_[A-Z0-9]+_\d+_\d+\]\s*$", "", title_ref).strip()
+    # Strip leading/trailing outer bracket pair if the whole title is wrapped: [title text]
+    if cleaned.startswith("[") and cleaned.endswith("]"):
+        cleaned = cleaned[1:-1].strip()
+    return cleaned or title_ref
 
 
 class TenderRow(BaseModel):
@@ -268,8 +292,11 @@ class DashboardState(rx.State):
             TenderRow(
                 id=int(item.get("id") or 0),
                 portal_name=str(item.get("portal_name") or "-"),
-                tender_id_extracted=str(item.get("tender_id_extracted") or "-"),
-                title_ref=str(item.get("title_ref") or "-"),
+                tender_id_extracted=_extract_real_tender_id(
+                    str(item.get("tender_id_extracted") or ""),
+                    str(item.get("title_ref") or ""),
+                ),
+                title_ref=_clean_title_ref(str(item.get("title_ref") or "-")),
                 department_name=str(item.get("department_name") or "-"),
                 published_at=self._fmt_date(item.get("published_at")),
                 closing_at=self._fmt_date(item.get("closing_at")),

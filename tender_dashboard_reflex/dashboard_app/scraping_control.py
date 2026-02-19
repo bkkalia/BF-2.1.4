@@ -1049,6 +1049,59 @@ def scraping_settings_page() -> rx.Component:
 def scraping_control_page() -> rx.Component:
     return rx.box(
         rx.vstack(
+            # Navigation bar
+            rx.hstack(
+                rx.link(
+                    rx.button(
+                        rx.icon("bar-chart-2"),
+                        "Dashboard",
+                        variant="soft",
+                        size="2",
+                    ),
+                    href="/",
+                ),
+                rx.link(
+                    rx.button(
+                        rx.icon("globe"),
+                        "Portal Management",
+                        variant="soft",
+                        size="2",
+                    ),
+                    href="/portals",
+                ),
+                rx.link(
+                    rx.button(
+                        rx.icon("database"),
+                        "Data Visualization",
+                        variant="soft",
+                        size="2",
+                    ),
+                    href="/data",
+                ),
+                rx.link(
+                    rx.button(
+                        rx.icon("zap"),
+                        "Scraping Control",
+                        variant="soft",
+                        size="2",
+                        color_scheme="green",
+                    ),
+                    href="/scraping",
+                ),
+                rx.link(
+                    rx.button(
+                        rx.icon("upload"),
+                        "Import Data",
+                        variant="soft",
+                        size="2",
+                        color_scheme="orange",
+                    ),
+                    href="/import",
+                ),
+                spacing="2",
+                padding="0.5rem 0",
+            ),
+            rx.divider(),
             rx.heading("🚀 Scraping Control Center", size="7", weight="bold", margin_bottom="1rem"),
             rx.callout(
                 rx.text(

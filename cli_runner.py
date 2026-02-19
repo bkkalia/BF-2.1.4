@@ -743,7 +743,12 @@ class CLIRunner:
             known_departments = set()
             manifest = {'portals': {}}
             portal_manifest_data = {}
-            only_new = bool(getattr(self.args, 'only_new', False))
+            full_rescrape = bool(getattr(self.args, 'full_rescrape', False))
+            only_new = not full_rescrape  # default: only-new is ON; --full-rescrape opts out
+            if full_rescrape:
+                self.logger.info("Full rescrape mode: skipping duplicate detection")
+            else:
+                self.logger.info("Only-new mode (default): will skip tenders already in DB")
             delta_mode = str(getattr(self.args, 'delta_mode', 'quick') or 'quick').strip().lower()
             if delta_mode not in ('quick', 'full'):
                 delta_mode = 'quick'

@@ -3,7 +3,7 @@
 Desktop utility for multi-portal government tender scraping, tracking, and export with a centralized SQLite datastore.
 
 ## Current Version
-- **v2.3.2**
+- **v2.3.3**
 
 ## What This Tool Does
 - Scrapes tender listings by department/organization across supported portals.

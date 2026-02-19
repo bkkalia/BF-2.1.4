@@ -311,6 +311,26 @@ def portal_management_page() -> rx.Component:
                     ),
                     href="/data",
                 ),
+                rx.link(
+                    rx.button(
+                        rx.icon("zap"),
+                        "Scraping Control",
+                        variant="soft",
+                        size="2",
+                        color_scheme="green",
+                    ),
+                    href="/scraping",
+                ),
+                rx.link(
+                    rx.button(
+                        rx.icon("upload"),
+                        "Import Data",
+                        variant="soft",
+                        size="2",
+                        color_scheme="orange",
+                    ),
+                    href="/import",
+                ),
                 spacing="2",
                 padding="0.5rem 0",
             ),

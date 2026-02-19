@@ -9,6 +9,44 @@ Run the helper tool (from project root) to infer and update version dates:
 The tool makes a backup of CHANGELOG.md (CHANGELOG.md.bak.TIMESTAMP) before editing.
 -->
 
+## Version 2.3.3 (February 19, 2026)
+
+### ⏱️ IST-Aware Skip Logic
+- Rewrote `tender_store.py` skip methods with real-time IST closing date comparison (replaces stale `lifecycle_status='active'` label).
+- Added `_parse_closing_date_ist()` supporting 5 date format variants.
+- Updated `get_existing_tender_ids_for_portal()` and `get_existing_tender_snapshot_for_portal()` to exclude expired tenders using live IST datetime.
+- Verified: HP Tenders 329 live IDs returned (137 expired correctly excluded from 466 total).
+
+### 🔁 Default Only-New Scraping
+- Flipped CLI default: `--only-new` is now **ON by default**; use `--full-rescrape` to opt out.
+- Added `--full-rescrape` flag to `cli_parser.py`; updated `cli_runner.py` accordingly.
+- `--only-new` still accepted for back-compat (no-op, same as default).
+
+### 💾 2-Minute Crash Recovery Checkpoints
+- Added background checkpoint thread to `scraper/logic.py` saving progress every 120 seconds to `data/checkpoints/{portal_slug}_checkpoint.json`.
+- Auto-resume: on next run for the same portal, checkpoint is loaded and `all_tender_details` + `processed_department_names` are restored.
+- Checkpoint deleted on clean finish; preserved on crash/kill for recovery.
+
+### ⚡ JS Fast Path for Large Tables
+- Added `_js_extract_table_rows(driver)` helper: single `execute_script()` call extracts all NIC table rows (replaces N×Selenium DOM round-trips).
+- Applied JS fast path in `_scrape_tender_details()` with row-count validation (±2 tolerance) and silent fallback to original element loop.
+- Fixed double-counting bug: `_early_dup_checked` flag prevents `changed_closing_date_count` from incrementing twice for same tender.
+- Verified with 5 unit tests, all passed; syntax-checked `scraper/logic.py`.
+
+### 🖥️ Reflex Dashboard Fixes
+- Fixed tender ID display: `_extract_real_tender_id()` extracts canonical IDs from `title_ref` bracket token (e.g. `2026_PWD_128301_1`).
+- Added full consistent navbars (Scraping Control + Import Data links) on all 4 dashboard pages.
+
+### 🗃️ Scrape Results
+- HP Tenders: run_id=28, **1379 tenders**, 38 departments, ~4 min.
+- Punjab: run_id=30, **1274 new + 19 skipped** (skip logic verified), 32 departments, ~1.3 min.
+- Migrated both runs into dashboard SQLite DB (14,706 total tenders after migration).
+
+### 🔖 Release
+- Version bump to **2.3.3** across runtime config, installer scripts, and executable version metadata.
+
+---
+
 ## Version 2.3.2 (February 18, 2026)
 
 ### ♻️ Checkpoint Resume Reliability

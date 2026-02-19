@@ -589,6 +589,16 @@ def index() -> rx.Component:
                     ),
                     href="/scraping",
                 ),
+                rx.link(
+                    rx.button(
+                        rx.icon("upload"),
+                        "Import Data",
+                        variant="soft",
+                        size="2",
+                        color_scheme="orange",
+                    ),
+                    href="/import",
+                ),
                 spacing="2",
                 padding="0.5rem 0",
             ),

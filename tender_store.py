@@ -2,9 +2,13 @@ import os
 import re
 import shutil
 import sqlite3
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import pandas as pd
+
+
+# IST = UTC+5:30  (all portal closing times are in Indian Standard Time)
+_IST = timezone(timedelta(hours=5, minutes=30))
 
 
 class TenderDataStore:
@@ -214,33 +218,68 @@ class TenderDataStore:
 
         return backup_path
 
+    @staticmethod
+    def _parse_closing_date_ist(value: str) -> "datetime | None":
+        """Parse a closing date string (e.g. '05-Mar-2026 09:00 AM') as IST datetime.
+        Returns None if the string cannot be parsed.
+        """
+        text = str(value or "").strip()
+        if not text:
+            return None
+        for fmt in (
+            "%d-%b-%Y %I:%M %p",   # 05-Mar-2026 09:00 AM
+            "%d/%b/%Y %I:%M %p",   # 05/Mar/2026 09:00 AM
+            "%d-%m-%Y %I:%M %p",   # 05-03-2026 09:00 AM
+            "%d-%b-%Y %H:%M",      # 05-Mar-2026 09:00
+            "%Y-%m-%d %H:%M:%S",   # ISO format
+        ):
+            try:
+                return datetime.strptime(text, fmt).replace(tzinfo=_IST)
+            except ValueError:
+                continue
+        return None
+
     def get_existing_tender_ids_for_portal(self, portal_name):
         """
-        Fetch all active tender IDs for a given portal from the database.
-        
-        Args:
-            portal_name: Portal name to query (case-insensitive)
-            
-        Returns:
-            Set of tender IDs (strings)
+        Return the set of tender IDs from this portal that are still live
+        right now in IST (closing datetime > current IST time).
+
+        Only tenders that are genuinely not yet expired are loaded into memory
+        so the scraper skips exactly those — and re-scrapes anything whose
+        closing date has passed or whose ID is new.
+
+        Tenders with an unparseable / missing closing date are included
+        conservatively (to avoid re-scraping unknowns).
         """
         portal_key = str(portal_name or "").strip().lower()
         if not portal_key:
             return set()
-        
+
+        now_ist = datetime.now(tz=_IST)
+
         with self._connect() as conn:
-            cursor = conn.execute(
+            rows = conn.execute(
                 """
-                SELECT DISTINCT TRIM(tender_id_extracted)
+                SELECT DISTINCT
+                    TRIM(tender_id_extracted) AS tender_id,
+                    TRIM(COALESCE(closing_date, ''))  AS closing_date
                 FROM tenders
                 WHERE LOWER(TRIM(COALESCE(portal_name, ''))) = ?
                   AND TRIM(COALESCE(tender_id_extracted, '')) != ''
-                  AND lifecycle_status = 'active'
                 """,
-                (portal_key,)
-            )
-            # Return set of tender IDs
-            return {row[0] for row in cursor.fetchall() if row[0]}
+                (portal_key,),
+            ).fetchall()
+
+        live_ids: set[str] = set()
+        for row in rows:
+            tid = row["tender_id"]
+            if not tid:
+                continue
+            parsed = self._parse_closing_date_ist(row["closing_date"])
+            # Include if: still in future (IST) OR date couldn't be parsed
+            if parsed is None or parsed > now_ist:
+                live_ids.add(tid)
+        return live_ids
 
     @staticmethod
     def _normalize_date_text(value):
@@ -266,49 +305,53 @@ class TenderDataStore:
 
     def get_existing_tender_snapshot_for_portal(self, portal_name):
         """
-        Fetch active tender IDs for a portal with latest known closing dates.
+        Return a dict of { normalized_tender_id -> {tender_id, closing_date} }
+        for all tenders from this portal that are still live in IST.
 
-        Returns:
-            Dict keyed by normalized tender id:
-            {
-                "<NORMALIZED_ID>": {
-                    "tender_id": "<raw id>",
-                    "closing_date": "<normalized closing date text>"
-                }
-            }
+        Used by the scraper to:
+          - skip a row  when tender_id matches AND closing_date matches
+          - re-scrape   when tender_id matches BUT  closing_date differs (extended)
+          - scrape new  when tender_id is not present at all
+
+        Tenders with unparseable / missing closing date are included
+        conservatively.
         """
         portal_key = str(portal_name or "").strip().lower()
         if not portal_key:
             return {}
 
-        rows = []
+        now_ist = datetime.now(tz=_IST)
+
         with self._connect() as conn:
             rows = conn.execute(
                 """
                 SELECT TRIM(COALESCE(tender_id_extracted, '')) AS tender_id,
-                       TRIM(COALESCE(closing_date, '')) AS closing_date
+                       TRIM(COALESCE(closing_date, ''))        AS closing_date
                 FROM tenders
                 WHERE LOWER(TRIM(COALESCE(portal_name, ''))) = ?
                   AND TRIM(COALESCE(tender_id_extracted, '')) != ''
-                  AND lifecycle_status = 'active'
                 """,
-                (portal_key,)
+                (portal_key,),
             ).fetchall()
 
-        snapshot = {}
+        snapshot: dict = {}
         for row in rows:
             tender_id = str(row["tender_id"] or "").strip()
             if not tender_id:
                 continue
+            parsed = self._parse_closing_date_ist(row["closing_date"])
+            # Skip tenders that have already expired in IST
+            if parsed is not None and parsed <= now_ist:
+                continue
             normalized_id = self._normalize_tender_id_text(tender_id)
             if not normalized_id:
                 continue
-            if normalized_id in snapshot:
-                continue
-            snapshot[normalized_id] = {
-                "tender_id": tender_id,
-                "closing_date": self._normalize_date_text(row["closing_date"]),
-            }
+            # Keep first occurrence (most recent insert wins naturally)
+            if normalized_id not in snapshot:
+                snapshot[normalized_id] = {
+                    "tender_id": tender_id,
+                    "closing_date": self._normalize_date_text(row["closing_date"]),
+                }
 
         return snapshot
 
