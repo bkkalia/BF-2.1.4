@@ -19,6 +19,7 @@ from batch_config_memory import get_batch_memory
 from gui import gui_utils
 from scraper.driver_manager import setup_driver, safe_quit_driver
 from scraper.logic import fetch_department_list_from_site_v2, run_scraping_logic
+from scraper.playwright_logic import fetch_department_list_from_site_playwright
 from tender_store import TenderDataStore
 from utils import get_website_keyword_from_url, sanitise_filename
 
@@ -109,6 +110,25 @@ class BatchScrapeTab(ttk.Frame):
 
         self._create_widgets()
         self._load_initial_data()
+
+    def _selected_automation_engine(self):
+        engine = str((self.main_app.settings or {}).get("automation_engine", "playwright") or "playwright").strip().lower()
+        if engine not in {"selenium", "playwright"}:
+            return "playwright"
+        return engine
+
+    def _fetch_departments_for_portal(self, portal_config, portal_log):
+        engine = self._selected_automation_engine()
+        org_list_url = portal_config.get("OrgListURL")
+        portal_log(f"Automation engine: {engine}")
+
+        if engine == "playwright":
+            departments, estimated = fetch_department_list_from_site_playwright(org_list_url, portal_log)
+            if departments:
+                return departments, estimated
+            portal_log("Playwright department fetch returned no rows; falling back to Selenium")
+
+        return fetch_department_list_from_site_v2(org_list_url, portal_log)
 
     def _interruptible_sleep(self, seconds, stop_event=None, step=0.2):
         remaining = max(0.0, float(seconds or 0.0))
@@ -2035,7 +2055,7 @@ class BatchScrapeTab(ttk.Frame):
     ):
         if pre_fetched_departments is None:
             self._update_dashboard_threadsafe(portal_name, state="Fetching", message="Fetching departments...")
-            departments, _estimated = fetch_department_list_from_site_v2(portal_config.get("OrgListURL"), portal_log)
+            departments, _estimated = self._fetch_departments_for_portal(portal_config, portal_log)
         else:
             departments = list(pre_fetched_departments)
             _estimated = 0
@@ -2394,7 +2414,7 @@ class BatchScrapeTab(ttk.Frame):
                     )
                 else:
                     portal_log("Starting QUICK delta sweep (org list count/name compare)...")
-                    latest_departments, _latest_estimated = fetch_department_list_from_site_v2(portal_config.get("OrgListURL"), portal_log)
+                    latest_departments, _latest_estimated = self._fetch_departments_for_portal(portal_config, portal_log)
                     baseline_departments = list(first_pass_summary.get("source_departments", []))
                     latest_valid, _latest_expected = self._build_valid_departments(latest_departments or [])
                     delta_departments, quick_stats = self._plan_quick_delta_departments(baseline_departments, latest_valid, portal_log)

@@ -650,6 +650,38 @@ class ExportHistoryEntry(BaseModel):
     settings: dict[str, Any] = {}
 
 
+class DataRow(BaseModel):
+    """Data row for data visualization grid - displays ALL database columns."""
+    row_num: int = 0
+    portal_name: str = ""
+    tender_id_extracted: str = ""
+    title_ref: str = ""
+    department_name: str = ""
+    organisation_chain: str = ""
+    serial_no: str = ""
+    published_date: str = ""
+    opening_date: str = ""
+    closing_date: str = ""
+    emd_amount: str = ""
+    estimated_cost: str = ""
+    lifecycle_status: str = ""
+    tender_status: str = ""
+    state_name: str = ""
+    district: str = ""
+    city: str = ""
+    pincode: str = ""
+    location_text: str = ""
+    tender_type: str = ""
+    work_type: str = ""
+    payment_type: str = ""
+    direct_url: str = ""
+    status_url: str = ""
+    is_live: str = ""
+    run_id: str = ""
+    first_seen_at: str = ""
+    last_seen_at: str = ""
+
+
 class PortalManagementState(rx.State):
     """State for Portal Management page."""
     loading: bool = False
@@ -1053,3 +1085,635 @@ class PortalManagementState(rx.State):
         dashboard_state.portal_filter = portal_slug
         # Navigate will be handled by rx.link in UI
         return rx.redirect("/")
+
+
+class DataVisualizationState(rx.State):
+    """State for Data Visualization page."""
+    loading: bool = False
+    data_rows: list[DataRow] = []
+    
+    # Pagination
+    page: int = 1
+    per_page: int = 50
+    total_records: int = 0
+    
+    # Filters
+    selected_portal: str = "All"
+    lifecycle_filter: str = "All"  # All, Live, Expired
+    portal_options: list[str] = ["All"]
+    
+    # Database statistics (for schema tab)
+    db_total_records: int = 0
+    db_active_records: int = 0
+    db_portal_count: int = 0
+    
+    @rx.var
+    def total_pages(self) -> int:
+        """Calculate total pages."""
+        if self.total_records == 0:
+            return 1
+        return (self.total_records + self.per_page - 1) // self.per_page
+    
+    @rx.var
+    def showing_from(self) -> int:
+        """Calculate first record number on current page."""
+        return (self.page - 1) * self.per_page + 1
+    
+    @rx.var
+    def showing_to(self) -> int:
+        """Calculate last record number on current page."""
+        end = self.page * self.per_page
+        return min(end, self.total_records)
+    
+    def load_data(self):
+        """Load tender data with filters and pagination."""
+        self.loading = True
+        yield
+        
+        try:
+            # Build filters
+            filters = db.TenderFilters(
+                portal=self.selected_portal,
+                show_live_only=self.lifecycle_filter == "Live",
+                show_expired_only=self.lifecycle_filter == "Expired",
+            )
+            
+            # Get total count
+            self.total_records = db.get_tender_count(filters)
+            
+            # Get paginated data
+            offset = (self.page - 1) * self.per_page
+            rows_data = db.get_tender_data_paginated(filters, limit=self.per_page, offset=offset)
+            
+            # Convert to DataRow objects
+            self.data_rows = [
+                DataRow(
+                    row_num=offset + idx + 1,
+                    portal_name=row.get("portal_name", ""),
+                    tender_id=row.get("tender_id", ""),
+                    title=row.get("title", ""),
+                    department=row.get("department", ""),
+                    published_date=row.get("published_date", ""),
+                    closing_date=row.get("closing_date", ""),
+                    cost=row.get("cost", ""),
+                    status=row.get("status", ""),
+                    state=row.get("state", ""),
+                    district=row.get("district", ""),
+                    city=row.get("city", ""),
+                    tender_url=row.get("tender_url", ""),
+                )
+                for idx, row in enumerate(rows_data)
+            ]
+            
+            # Load portal options
+            self.portal_options = ["All", *db.get_portal_options()]
+            
+            # Load database statistics for schema tab
+            self.load_db_statistics()
+            
+        except Exception as ex:
+            print(f"Error loading data: {ex}")
+        finally:
+            self.loading = False
+            yield
+    
+    def load_db_statistics(self):
+        """Load database statistics for schema visualization."""
+        try:
+            stats = db.get_database_statistics()
+            self.db_total_records = stats.get("total_records", 0)
+            self.db_active_records = stats.get("active_records", 0)
+            self.db_portal_count = stats.get("portal_count", 0)
+        except Exception as ex:
+            print(f"Error loading DB statistics: {ex}")
+    
+    def set_selected_portal(self, value: str):
+        """Set selected portal filter."""
+        self.selected_portal = value
+        self.page = 1  # Reset to first page
+        self.load_data()
+    
+    def set_lifecycle_filter(self, value: str):
+        """Set lifecycle filter."""
+        self.lifecycle_filter = value
+        self.page = 1  # Reset to first page
+        self.load_data()
+    
+    def next_page(self):
+        """Go to next page."""
+        if self.page < self.total_pages:
+            self.page += 1
+            self.load_data()
+    
+    def prev_page(self):
+        """Go to previous page."""
+        if self.page > 1:
+            self.page -= 1
+            self.load_data()
+    
+    def first_page(self):
+        """Go to first page."""
+        self.page = 1
+        self.load_data()
+    
+    def last_page(self):
+        """Go to last page."""
+        self.page = self.total_pages
+        self.load_data()
+
+
+class ColumnMapping(BaseModel):
+    """Column mapping model for Excel import."""
+    db_column: str = ""
+    db_display_name: str = ""
+    excel_column: str = ""
+    is_required: bool = False
+    is_mapped: bool = False
+    sample_data: str = ""
+
+
+class ExcelImportState(rx.State):
+    """State for Excel/CSV import with smart column matching."""
+    
+    # File upload
+    max_file_size_mb: int = 50  # Maximum file size in MB
+    file_uploaded: bool = False
+    uploading: bool = False
+    file_name: str = ""
+    file_rows: int = 0
+    file_columns: int = 0
+    file_size_text: str = ""
+    file_path: str = ""
+    
+    # Column mapping
+    excel_columns: list[str] = []
+    column_mappings: list[ColumnMapping] = []
+    auto_matched_columns: int = 0
+    total_required_columns: int = 10
+    all_required_mapped: bool = False
+    
+    # Import settings
+    portal_name: str = ""
+    base_url: str = ""
+    skip_duplicates: bool = True
+    validate_data: bool = True
+    
+    # Import progress
+    importing: bool = False
+    import_progress: int = 0
+    import_status: str = ""
+    import_processed: int = 0
+    import_success: int = 0
+    import_skipped: int = 0
+    import_errors: int = 0
+    import_completed: bool = False
+    import_duration: str = ""
+    error_messages: list[str] = []
+    
+    @rx.var
+    def has_errors(self) -> bool:
+        """Check if there are any error messages."""
+        return len(self.error_messages) > 0
+    
+    @rx.var
+    def excel_columns_with_unmapped(self) -> list[str]:
+        """Get excel columns with '(Not Mapped)' option."""
+        return ["(Not Mapped)"] + self.excel_columns
+    
+    # Setter methods (auto_setters disabled in rxconfig)
+    def set_portal_name(self, value: str):
+        """Set portal name."""
+        self.portal_name = value
+    
+    def set_base_url(self, value: str):
+        """Set base URL."""
+        self.base_url = value
+    
+    def set_skip_duplicates(self, value: bool):
+        """Set skip duplicates flag."""
+        self.skip_duplicates = value
+    
+    def set_validate_data(self, value: bool):
+        """Set validate data flag."""
+        self.validate_data = value
+    
+    def toggle_skip_duplicates(self, value: bool):
+        """Toggle skip duplicates."""
+        self.skip_duplicates = value
+    
+    def toggle_validate_data(self, value: bool):
+        """Toggle validate data."""
+        self.validate_data = value
+    
+    # Database columns definition
+    _db_columns_config = {
+        "tender_id_extracted": {
+            "display": "Tender ID (Extracted)",
+            "required": True,
+            "keywords": ["tender", "id", "extracted", "tender_id", "tenderid"],
+        },
+        "department_name": {
+            "display": "Department Name",
+            "required": True,
+            "keywords": ["department", "dept", "name", "department_name"],
+        },
+        "serial_no": {
+            "display": "Serial No.",
+            "required": True,
+            "keywords": ["serial", "no", "s.no", "sno", "number", "s_no"],
+        },
+        "published_date": {
+            "display": "Published Date",
+            "required": True,
+            "keywords": ["published", "date", "e-published", "epublished", "publish"],
+        },
+        "closing_date": {
+            "display": "Closing Date",
+            "required": True,
+            "keywords": ["closing", "close", "date", "deadline"],
+        },
+        "opening_date": {
+            "display": "Opening Date",
+            "required": False,
+            "keywords": ["opening", "open", "date"],
+        },
+        "organisation_chain": {
+            "display": "Organisation Chain",
+            "required": False,
+            "keywords": ["organisation", "organization", "chain", "org"],
+        },
+        "title_ref": {
+            "display": "Title and Ref.No.",
+            "required": True,
+            "keywords": ["title", "ref", "reference", "no", "tender_id"],
+        },
+        "direct_url": {
+            "display": "Direct URL",
+            "required": True,
+            "keywords": ["direct", "url", "link", "tender_url"],
+        },
+        "status_url": {
+            "display": "Status URL",
+            "required": False,
+            "keywords": ["status", "url", "link"],
+        },
+        "emd_amount": {
+            "display": "EMD Amount",
+            "required": False,
+            "keywords": ["emd", "amount", "deposit", "earnest"],
+        },
+    }
+    
+    async def handle_upload(self, files: list[rx.UploadFile]):
+        """Handle file upload and auto-detect columns."""
+        self.uploading = True
+        yield
+        
+        try:
+            import pandas as pd
+            from pathlib import Path
+            import os
+            
+            if not files or len(files) == 0:
+                self.error_messages = ["No file uploaded"]
+                self.uploading = False
+                yield
+                return
+            
+            upload = files[0]
+            self.file_name = upload.filename
+            
+            # Save file temporarily
+            upload_dir = Path("temp_uploads")
+            upload_dir.mkdir(exist_ok=True)
+            upload_path = upload_dir / upload.filename
+            
+            # Read file content
+            file_content = await upload.read()
+            upload_path.write_bytes(file_content)
+            
+            self.file_path = str(upload_path)
+            self.file_size_text = self._format_file_size(len(file_content))
+            
+            # Read Excel/CSV based on extension
+            if upload.filename.endswith('.csv'):
+                df = pd.read_csv(upload_path)
+            else:
+                df = pd.read_excel(upload_path)
+            
+            self.file_rows = len(df)
+            self.file_columns = len(df.columns)
+            self.excel_columns = list(df.columns)
+            
+            # Auto-detect and match columns
+            self._smart_match_columns(df)
+            
+            # Auto-detect portal name from filename
+            self._auto_detect_portal_name(upload.filename)
+            
+            self.file_uploaded = True
+            
+        except Exception as ex:
+            self.error_messages = [f"Error uploading file: {str(ex)}"]
+            self.file_uploaded = False
+        finally:
+            self.uploading = False
+            yield
+    
+    def _format_file_size(self, size_bytes: int) -> str:
+        """Format file size in human-readable format."""
+        for unit in ['B', 'KB', 'MB', 'GB']:
+            if size_bytes < 1024.0:
+                return f"{size_bytes:.1f} {unit}"
+            size_bytes /= 1024.0
+        return f"{size_bytes:.1f} TB"
+    
+    def _smart_match_columns(self, df):
+        """Smart column matching algorithm."""
+        import re
+        
+        mappings = []
+        matched_count = 0
+        
+        for db_col, config in self._db_columns_config.items():
+            mapping = ColumnMapping(
+                db_column=db_col,
+                db_display_name=config["display"],
+                is_required=config["required"],
+                is_mapped=False,
+            )
+            
+            # Try to find matching Excel column
+            matched_excel_col = self._find_matching_column(
+                self.excel_columns, 
+                db_col, 
+                config["keywords"]
+            )
+            
+            if matched_excel_col:
+                mapping.excel_column = matched_excel_col
+                mapping.is_mapped = True
+                
+                # Get sample data (first non-null value)
+                try:
+                    sample_values = df[matched_excel_col].dropna().head(1)
+                    if len(sample_values) > 0:
+                        mapping.sample_data = str(sample_values.iloc[0])[:50]
+                except:
+                    mapping.sample_data = ""
+                
+                if config["required"]:
+                    matched_count += 1
+            
+            mappings.append(mapping)
+        
+        self.column_mappings = mappings
+        self.auto_matched_columns = matched_count
+        self.all_required_mapped = (matched_count == self.total_required_columns)
+    
+    def _find_matching_column(self, excel_cols: list[str], db_col: str, keywords: list[str]) -> str:
+        """Find matching Excel column using smart matching."""
+        import re
+        
+        def normalize(s: str) -> str:
+            """Normalize string for matching."""
+            return re.sub(r'[^a-z0-9]', '', s.lower())
+        
+        db_normalized = normalize(db_col)
+        
+        # Strategy 1: Exact match (case-insensitive)
+        for excel_col in excel_cols:
+            if excel_col.lower() == db_col.lower():
+                return excel_col
+        
+        # Strategy 2: Normalized exact match
+        for excel_col in excel_cols:
+            if normalize(excel_col) == db_normalized:
+                return excel_col
+        
+        # Strategy 3: Keyword matching
+        for excel_col in excel_cols:
+            excel_normalized = normalize(excel_col)
+            # Check if all keywords in DB column appear in Excel column
+            for keyword in keywords:
+                keyword_normalized = normalize(keyword)
+                if keyword_normalized in excel_normalized:
+                    # Additional check: multiple keywords match
+                    match_count = sum(1 for kw in keywords if normalize(kw) in excel_normalized)
+                    if match_count >= 2:  # At least 2 keywords match
+                        return excel_col
+        
+        # Strategy 4: Any keyword match (single keyword)
+        best_match = None
+        best_score = 0
+        
+        for excel_col in excel_cols:
+            excel_normalized = normalize(excel_col)
+            score = sum(1 for kw in keywords if normalize(kw) in excel_normalized)
+            if score > best_score:
+                best_score = score
+                best_match = excel_col
+        
+        if best_score > 0:
+            return best_match
+        
+        return ""
+    
+    def _auto_detect_portal_name(self, filename: str):
+        """Auto-detect portal name from filename."""
+        import re
+        
+        # Remove extension
+        name = filename.rsplit('.', 1)[0]
+        
+        # Common portal patterns
+        patterns = {
+            r'hptenders': 'hptenders.gov.in',
+            r'eprocure': 'eprocure',
+            r'etenders': 'etenders',
+            r'cppp': 'eprocure.gov.in',
+            r'ddtenders': 'ddtenders.gov.in',
+            r'tender': 'custom',
+        }
+        
+        for pattern, portal in patterns.items():
+            if re.search(pattern, name.lower()):
+                self.portal_name = portal
+                # Set base URL based on portal
+                if 'hptenders' in name.lower():
+                    self.base_url = 'https://hptenders.gov.in'
+                elif 'cppp' in name.lower() or 'eprocure.gov' in name.lower():
+                    self.base_url = 'https://eprocure.gov.in'
+                return
+        
+        # Default
+        self.portal_name = "imported"
+        self.base_url = ""
+    
+    def update_column_mapping(self, db_column: str, excel_column: str):
+        """Update column mapping manually."""
+        for mapping in self.column_mappings:
+            if mapping.db_column == db_column:
+                mapping.excel_column = excel_column
+                mapping.is_mapped = (excel_column != "" and excel_column != "(Not Mapped)")
+                break
+        
+        # Recalculate match status
+        matched = sum(1 for m in self.column_mappings if m.is_mapped and m.is_required)
+        self.auto_matched_columns = matched
+        self.all_required_mapped = (matched == self.total_required_columns)
+    
+    async def start_import(self):
+        """Start importing data to database."""
+        self.importing = True
+        self.import_progress = 0
+        self.import_status = "Starting import..."
+        self.import_processed = 0
+        self.import_success = 0
+        self.import_skipped = 0
+        self.import_errors = 0
+        self.error_messages = []
+        yield
+        
+        try:
+            import pandas as pd
+            from datetime import datetime
+            import sys
+            import os
+            
+            # Add parent directory to path to import tender_store
+            workspace_root = Path(__file__).parent.parent.parent
+            sys.path.insert(0, str(workspace_root))
+            
+            from tender_store import TenderDataStore
+            
+            # Read the uploaded file
+            self.import_status = "Reading file..."
+            yield
+            
+            if self.file_path.endswith('.csv'):
+                df = pd.read_csv(self.file_path)
+            else:
+                df = pd.read_excel(self.file_path)
+            
+            # Create mapping dict: excel_column -> db_column
+            excel_to_db = {}
+            for mapping in self.column_mappings:
+                if mapping.is_mapped and mapping.excel_column:
+                    excel_to_db[mapping.excel_column] = mapping.db_column
+            
+            # Initialize database
+            db_path = workspace_root / "database" / "blackforest_tenders.sqlite3"
+            store = TenderDataStore(str(db_path))
+            
+            # Get or create run_id
+            run_id = store.get_or_create_run(
+                portal_name=self.portal_name or "imported",
+                base_url=self.base_url or "",
+                scraper_type="excel_import"
+            )
+            
+            # Convert DataFrame to tender list
+            tenders = []
+            start_time = datetime.now()
+            total_rows = len(df)
+            
+            for idx, row in df.iterrows():
+                self.import_processed = idx + 1
+                self.import_progress = int((idx + 1) / total_rows * 90)  # Reserve 10% for DB write
+                self.import_status = f"Processing row {idx + 1}/{total_rows}..."
+                
+                if idx % 10 == 0:  # Update UI every 10 rows
+                    yield
+                
+                try:
+                    tender = {"portal_name": self.portal_name or "imported"}
+                    
+                    # Map columns
+                    for excel_col, db_col in excel_to_db.items():
+                        value = row.get(excel_col, "")
+                        # Convert to string, handle NaN
+                        if pd.isna(value):
+                            value = ""
+                        else:
+                            value = str(value).strip()
+                        tender[db_col] = value
+                    
+                    # Validate required fields if enabled
+                    if self.validate_data:
+                        if not tender.get("tender_id_extracted"):
+                            self.import_errors += 1
+                            self.error_messages.append(f"Row {idx + 1}: Missing tender ID")
+                            continue
+                    
+                    tenders.append(tender)
+                    
+                except Exception as ex:
+                    self.import_errors += 1
+                    self.error_messages.append(f"Row {idx + 1}: {str(ex)}")
+            
+            # Import to database
+            self.import_status = "Importing to database..."
+            self.import_progress = 95
+            yield
+            
+            result = store.replace_run_tenders(run_id, tenders)
+            
+            self.import_success = result.get("imported", 0)
+            self.import_skipped = result.get("skipped", 0) if self.skip_duplicates else 0
+            
+            # Calculate duration
+            end_time = datetime.now()
+            duration = end_time - start_time
+            minutes = int(duration.total_seconds() // 60)
+            seconds = int(duration.total_seconds() % 60)
+            self.import_duration = f"{minutes} minute{'s' if minutes != 1 else ''} {seconds} second{'s' if seconds != 1 else ''}"
+            
+            self.import_progress = 100
+            self.import_status = f"Import completed! {self.import_success} tenders imported successfully."
+            self.import_completed = True
+            
+        except Exception as ex:
+            self.error_messages.append(f"Import failed: {str(ex)}")
+            self.import_status = f"Import failed: {str(ex)}"
+            import traceback
+            print(f"Import error: {traceback.format_exc()}")
+        finally:
+            self.importing = False
+            yield
+    
+    def clear_upload(self):
+        """Clear upload and reset state."""
+        import os
+        from pathlib import Path
+        
+        # Delete temp file
+        if self.file_path and os.path.exists(self.file_path):
+            try:
+                os.remove(self.file_path)
+            except:
+                pass
+        
+        # Reset state
+        self.file_uploaded = False
+        self.file_name = ""
+        self.file_rows = 0
+        self.file_columns = 0
+        self.file_size_text = ""
+        self.file_path = ""
+        self.excel_columns = []
+        self.column_mappings = []
+        self.auto_matched_columns = 0
+        self.all_required_mapped = False
+        self.portal_name = ""
+        self.base_url = ""
+        self.importing = False
+        self.import_progress = 0
+        self.import_status = ""
+        self.import_processed = 0
+        self.import_success = 0
+        self.import_skipped = 0
+        self.import_errors = 0
+        self.import_completed = False
+        self.import_duration = ""
+        self.error_messages = []

@@ -40,6 +40,7 @@ try:
     from cli_parser import CLIParser, validate_paths
     from config import APP_VERSION
     from scraper.logic import fetch_department_list_from_site_v2, run_scraping_logic
+    from scraper.playwright_logic import fetch_department_list_from_site_playwright
     from scraper.driver_manager import setup_driver, safe_quit_driver
     from app_settings import load_settings
     from tender_store import TenderDataStore
@@ -548,6 +549,11 @@ class CLIRunner:
         try:
             self.show_banner()
             self._emit_event('start', command='department', portal=getattr(self.args, 'url', None) or 'HP Tenders')
+            selected_engine = str(getattr(self.args, 'engine', 'selenium') or 'selenium').strip().lower()
+            if selected_engine not in ('selenium', 'playwright'):
+                selected_engine = 'selenium'
+            self.logger.info(f"Selected engine: {selected_engine}")
+            self._emit_event('engine', engine=selected_engine)
 
             if self.args.dry_run:
                 self.logger.info("DRY RUN MODE - No actual scraping will be performed")
@@ -578,11 +584,23 @@ class CLIRunner:
             # Determine which departments to scrape
             if self.args.all or not self.args.departments:
                 # Scrape all departments
-                self.logger.info("Fetching department list from HP Tenders...")
-                departments, total_tenders = fetch_department_list_from_site_v2(
-                    base_urls_config['OrgListURL'],
-                    self.logger.info
-                )
+                self.logger.info("Fetching department list from portal...")
+                if selected_engine == 'playwright':
+                    departments, total_tenders = fetch_department_list_from_site_playwright(
+                        base_urls_config['OrgListURL'],
+                        self.logger.info
+                    )
+                    if not departments:
+                        self.logger.warning("Playwright department fetch returned no rows; falling back to Selenium fetch")
+                        departments, total_tenders = fetch_department_list_from_site_v2(
+                            base_urls_config['OrgListURL'],
+                            self.logger.info
+                        )
+                else:
+                    departments, total_tenders = fetch_department_list_from_site_v2(
+                        base_urls_config['OrgListURL'],
+                        self.logger.info
+                    )
 
                 if not departments:
                     self.logger.error("No departments found!")
@@ -620,10 +638,22 @@ class CLIRunner:
                 # This is a simplified version - in practice you'd want to match against actual department names
                 self.logger.warning("Specific department scraping requires department list lookup")
                 self.logger.warning("Falling back to 'all departments' mode")
-                departments, total_tenders = fetch_department_list_from_site_v2(
-                    base_urls_config['OrgListURL'],
-                    self.logger.info
-                )
+                if selected_engine == 'playwright':
+                    departments, total_tenders = fetch_department_list_from_site_playwright(
+                        base_urls_config['OrgListURL'],
+                        self.logger.info
+                    )
+                    if not departments:
+                        self.logger.warning("Playwright department fetch returned no rows; falling back to Selenium fetch")
+                        departments, total_tenders = fetch_department_list_from_site_v2(
+                            base_urls_config['OrgListURL'],
+                            self.logger.info
+                        )
+                else:
+                    departments, total_tenders = fetch_department_list_from_site_v2(
+                        base_urls_config['OrgListURL'],
+                        self.logger.info
+                    )
 
                 if department_names:
                     # Filter to requested departments (case-insensitive partial match)

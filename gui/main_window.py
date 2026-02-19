@@ -4,6 +4,7 @@ import logging
 import os
 import re
 import sys
+import time
 import threading
 from datetime import datetime
 from collections import deque
@@ -26,7 +27,7 @@ from config import (
     LOG_DIR_NAME, BASE_URLS_FILENAME
 )
 from app_settings import FALLBACK_URL_CONFIG, save_settings, DEFAULT_SETTINGS_STRUCTURE
-from ui_message_queue import get_pending_messages, check_stuck_workers
+from ui_message_queue import get_pending_messages, check_stuck_workers, get_queue_size
 from gui.tab_department import DepartmentTab
 from gui.tab_id_search import IdSearchTab
 from gui.tab_url_process import UrlProcessTab
@@ -75,11 +76,24 @@ class MainWindow:
             self.timer_id = None
             self.total_estimated_tenders_for_run = 0
             self._all_log_messages = []
-            self._max_log_history = 20000
+            self._max_log_history = 10000
             self._max_log_widget_lines = 2000
-            self._pending_log_messages = deque()
+            self._pending_log_messages = deque(maxlen=4000)
+            self._log_widget_line_count = 0
             self._log_flush_job = None
+            self._ui_queue_fetch_limit = 600
+            self._ui_queue_max_messages_per_tick = 80
+            self._ui_queue_progress_log_interval_sec = 2.0
+            self._ui_queue_progress_ui_interval_sec = 2.0
+            self._ui_queue_worker_log_interval_sec = 2.0
+            self._ui_queue_last_progress_log_at = {}
+            self._ui_queue_last_progress_ui_at = {}
+            self._ui_queue_last_worker_log_at = {}
+            self._ui_queue_last_backlog_log_at = 0.0
+            self._ui_queue_last_suppressed_log_at = 0.0
+            self._ui_queue_next_stuck_check_at = 0.0
             self.log_filter_var = StringVar(value="All")
+            self._active_section_name = "Dashboard"
             self.logs_portal_rows = {}
             self.status_context = {
                 "run_type": "Idle",
@@ -122,6 +136,7 @@ class MainWindow:
             # Initialize Tkinter variables
             print("Initializing Tkinter variables...")
             self._init_tkinter_vars()
+            self._apply_ui_update_interval_setting()
             print("Tkinter variables initialized")
             
             # Configure window
@@ -599,14 +614,21 @@ class MainWindow:
             if "watch" in lowered or "refresh" in lowered or "department" in lowered:
                 self._queue_status_message(message)
 
-            if hasattr(self, 'log_text') and self.log_text and self.log_text.winfo_exists() and self._passes_log_filter(formatted_message):
+            if (
+                self._is_logs_section_active()
+                and hasattr(self, 'log_text') and self.log_text and self.log_text.winfo_exists()
+                and self._passes_log_filter(formatted_message)
+            ):
                 self._pending_log_messages.append(formatted_message)
-                if self._log_flush_job is None:
+                if threading.current_thread() is threading.main_thread() and self._log_flush_job is None:
                     self._log_flush_job = self.log_text.after(120, self._flush_log_buffer)
 
             logger.debug(f"Log updated: {message[:100]}")
         except Exception as e:
             logger.error(f"Error updating log: {e}")
+
+    def _is_logs_section_active(self):
+        return getattr(self, "_active_section_name", "") == "Logs"
 
     def _start_ui_queue_polling(self):
         """Start polling the UI message queue for worker messages."""
@@ -615,8 +637,23 @@ class MainWindow:
     def _process_ui_queue(self):
         """Process pending messages from worker threads via message queue."""
         try:
-            # Get all pending messages from the queue
-            messages = get_pending_messages()
+            queue_size = get_queue_size()
+            messages = get_pending_messages(max_messages=self._ui_queue_fetch_limit)
+            now = time.time()
+
+            total_messages = max(queue_size, len(messages))
+            if total_messages > self._ui_queue_max_messages_per_tick:
+                head_count = max(1, self._ui_queue_max_messages_per_tick // 2)
+                tail_count = self._ui_queue_max_messages_per_tick - head_count
+                messages = messages[:head_count] + messages[-tail_count:]
+                if now - float(self._ui_queue_last_backlog_log_at or 0.0) >= 2.0:
+                    self.update_log(
+                        f"⚠️  UI queue backlog detected ({total_messages} events); sampled {len(messages)} to keep UI responsive."
+                    )
+                    self._ui_queue_last_backlog_log_at = now
+
+            worker_log_events_processed = 0
+            suppressed_worker_logs = 0
             
             for msg in messages:
                 msg_type = msg.get("type")
@@ -625,7 +662,17 @@ class MainWindow:
                 if msg_type == "log":
                     # Process log message
                     log_msg = msg.get("message", "")
-                    self.update_log(f"[Queue:{worker_id}] {log_msg}")
+                    worker_key = str(worker_id)
+                    last_worker_log_at = float(self._ui_queue_last_worker_log_at.get(worker_key, 0.0) or 0.0)
+                    if (now - last_worker_log_at) >= float(self._ui_queue_worker_log_interval_sec):
+                        if worker_log_events_processed < 40:
+                            self.update_log(f"[Queue:{worker_id}] {log_msg}")
+                            worker_log_events_processed += 1
+                            self._ui_queue_last_worker_log_at[worker_key] = now
+                        else:
+                            suppressed_worker_logs += 1
+                    else:
+                        suppressed_worker_logs += 1
                     
                 elif msg_type == "progress":
                     # Process progress update
@@ -647,15 +694,29 @@ class MainWindow:
                         self.cumulative_skipped_duplicates += skipped_duplicates
                     
                     if dept_name:
-                        progress_text = f"{worker_id}: {status} ({current}/{total})"
-                        if skipped_duplicates > 0:
-                            progress_text += f" | ✓ Skipped {skipped_duplicates} duplicates"
-                        if self.cumulative_skipped_duplicates > 0:
-                            progress_text += f" (Total: {self.cumulative_skipped_duplicates})"
-                        self.update_log(progress_text)
+                        worker_log_key = str(worker_id)
+                        last_log_at = float(self._ui_queue_last_progress_log_at.get(worker_log_key, 0.0) or 0.0)
+                        should_log_progress = (
+                            skipped_duplicates > 0
+                            or (now - last_log_at) >= float(self._ui_queue_progress_log_interval_sec)
+                        )
+                        if should_log_progress:
+                            progress_text = f"{worker_id}: {status} ({current}/{total})"
+                            if skipped_duplicates > 0:
+                                progress_text += f" | ✓ Skipped {skipped_duplicates} duplicates"
+                            if self.cumulative_skipped_duplicates > 0:
+                                progress_text += f" (Total: {self.cumulative_skipped_duplicates})"
+                            self.update_log(progress_text)
+                            self._ui_queue_last_progress_log_at[worker_log_key] = now
                         
                         # Update GUI widgets (progress bars and labels)
                         try:
+                            worker_ui_key = str(worker_id)
+                            last_ui_at = float(self._ui_queue_last_progress_ui_at.get(worker_ui_key, 0.0) or 0.0)
+                            if (now - last_ui_at) < float(self._ui_queue_progress_ui_interval_sec):
+                                continue
+                            self._ui_queue_last_progress_ui_at[worker_ui_key] = now
+
                             # Update department progress bar
                             if hasattr(self, 'dept_progress_bar') and hasattr(self, 'dept_progress_label'):
                                 gui_utils.update_dept_progress(
@@ -683,25 +744,37 @@ class MainWindow:
                     # Worker error
                     error_msg = msg.get("error", "Unknown error")
                     self.update_log(f"[Queue:{worker_id}] ✗ ERROR: {error_msg}")
+
+            if suppressed_worker_logs > 0 and (now - float(self._ui_queue_last_suppressed_log_at or 0.0) >= 2.0):
+                self.update_log(f"⚠️  Suppressed {suppressed_worker_logs} worker log events this cycle to keep UI responsive.")
+                self._ui_queue_last_suppressed_log_at = now
             
             # Check for stuck workers (if scraping is active)
-            if self.scraping_in_progress:
+            if self.scraping_in_progress and now >= float(self._ui_queue_next_stuck_check_at or 0.0):
                 stuck = check_stuck_workers(timeout_seconds=300)
                 if stuck:
                     stuck_list = ", ".join(stuck)
                     self.update_log(f"⚠️  WARNING: Stuck workers detected: {stuck_list}")
+                self._ui_queue_next_stuck_check_at = now + 10.0
             
         except Exception as poll_err:
             # Don't crash the UI if queue processing fails
             logger.error(f"UI queue polling error: {poll_err}", exc_info=True)
+
+        if self._pending_log_messages and self._log_flush_job is None and hasattr(self, 'log_text') and self.log_text and self.log_text.winfo_exists():
+            self._log_flush_job = self.log_text.after(80, self._flush_log_buffer)
         
         # Schedule next poll (every 100ms)
         if self.root and self.root.winfo_exists():
-            self._ui_queue_poll_job = self.root.after(100, self._process_ui_queue)
+            next_delay_ms = max(120, int(float(self._ui_queue_progress_ui_interval_sec) * 250)) if self.scraping_in_progress else 180
+            self._ui_queue_poll_job = self.root.after(next_delay_ms, self._process_ui_queue)
 
     def _flush_log_buffer(self):
         self._log_flush_job = None
         if not hasattr(self, 'log_text') or not self.log_text or not self.log_text.winfo_exists():
+            self._pending_log_messages.clear()
+            return
+        if not self._is_logs_section_active():
             self._pending_log_messages.clear()
             return
         if not self._pending_log_messages:
@@ -709,19 +782,17 @@ class MainWindow:
 
         try:
             batch = []
-            while self._pending_log_messages and len(batch) < 300:
+            while self._pending_log_messages and len(batch) < 80:
                 batch.append(self._pending_log_messages.popleft())
 
             self.log_text.config(state=tk.NORMAL)
             self.log_text.insert(tk.END, "\n".join(batch) + "\n")
 
-            try:
-                line_count = int(self.log_text.index('end-1c').split('.')[0])
-            except Exception:
-                line_count = 0
-            overflow = line_count - int(self._max_log_widget_lines)
+            self._log_widget_line_count = max(0, int(self._log_widget_line_count) + len(batch))
+            overflow = self._log_widget_line_count - int(self._max_log_widget_lines)
             if overflow > 0:
                 self.log_text.delete('1.0', f'{overflow + 1}.0')
+                self._log_widget_line_count = int(self._max_log_widget_lines)
 
             self.log_text.see(tk.END)
             self.log_text.config(state=tk.DISABLED)
@@ -767,6 +838,7 @@ class MainWindow:
                 filtered = filtered[-self._max_log_widget_lines:]
             if filtered:
                 self.log_text.insert(tk.END, "\n".join(filtered) + "\n")
+            self._log_widget_line_count = len(filtered)
 
             self.log_text.see(tk.END)
             self.log_text.config(state=tk.DISABLED)
@@ -786,6 +858,7 @@ class MainWindow:
         self.selected_theme_var = StringVar(value=self.settings.get("selected_theme", DEFAULT_THEME))
         self.use_undetected_driver_var = BooleanVar(value=self.settings.get("use_undetected_driver", USE_UNDETECTED_DRIVER_DEFAULT))
         self.headless_mode_var = BooleanVar(value=self.settings.get("headless_mode", HEADLESS_MODE_DEFAULT))
+        self.ui_update_interval_var = StringVar(value=str(self.settings.get("ui_update_interval_seconds", 2.0)))
         self.department_parallel_workers_var = StringVar(value=str(self.settings.get("department_parallel_workers", 1)))
 
         # Initialize timeout variables
@@ -809,6 +882,29 @@ class MainWindow:
         # Additional paths needed for settings tab
         self.abs_log_dir = os.path.join(os.path.dirname(self.settings_filepath), LOG_DIR_NAME)
         self.abs_base_urls_file = os.path.join(os.path.dirname(self.settings_filepath), BASE_URLS_FILENAME)
+
+    def _parse_ui_update_interval_seconds(self, raw_value):
+        try:
+            value = float(str(raw_value).strip())
+        except Exception:
+            value = 2.0
+        return max(0.5, min(5.0, value))
+
+    def _apply_ui_update_interval_setting(self):
+        interval = self._parse_ui_update_interval_seconds(
+            self.ui_update_interval_var.get() if hasattr(self, "ui_update_interval_var") else self.settings.get("ui_update_interval_seconds", 2.0)
+        )
+        self.settings["ui_update_interval_seconds"] = interval
+        if hasattr(self, "ui_update_interval_var"):
+            self.ui_update_interval_var.set(f"{interval:g}")
+
+        self._ui_queue_progress_log_interval_sec = interval
+        self._ui_queue_progress_ui_interval_sec = interval
+        self._ui_queue_worker_log_interval_sec = interval
+
+    def apply_ui_update_interval_from_var(self):
+        self._apply_ui_update_interval_setting()
+        self.update_log(f"UI update interval set to {self.settings.get('ui_update_interval_seconds', 2.0):g}s")
 
     def _configure_window(self):
         """Configure main window properties."""
@@ -1292,6 +1388,7 @@ class MainWindow:
         frame_to_show = self.section_frames[section_name]
         frame_to_show.lift()
         self.global_panel.lift()  # Always keep global panel visible
+        self._active_section_name = section_name
         logger.debug(f"Lifted frame for section: {section_name}")
         for label, button in self.sidebar_buttons.items():
             if label == section_name:
@@ -1314,6 +1411,9 @@ class MainWindow:
                 except Exception:
                     pass
                 del self._filter_trace_id
+
+        if section_name == "Logs":
+            self._apply_log_filter()
 
     def _show_department(self): self._show_section("By Department")
     def _show_dashboard(self): self._show_section("Dashboard")
@@ -1573,10 +1673,12 @@ class MainWindow:
         self.settings["selected_theme"] = self.selected_theme_var.get()
         self.settings["use_undetected_driver"] = self.use_undetected_driver_var.get()
         self.settings["headless_mode"] = self.headless_mode_var.get()
+        self.settings["ui_update_interval_seconds"] = self._parse_ui_update_interval_seconds(self.ui_update_interval_var.get())
         try:
             self.settings["department_parallel_workers"] = max(1, min(5, int(str(self.department_parallel_workers_var.get() or "1").strip())))
         except (TypeError, ValueError):
             self.settings["department_parallel_workers"] = 1
+        self._apply_ui_update_interval_setting()
 
         # Sound settings
         self.settings["enable_sounds"] = self.enable_sounds_var.get()
@@ -1839,31 +1941,45 @@ class MainWindow:
 
     def _kill_current_process(self):
         """Force kill the current running process."""
-        tab_stop_handled = self._notify_tabs_emergency_stop()
-
-        if (self.background_thread and self.background_thread.is_alive()) or tab_stop_handled:
-            try:
-                # Note: In Python, we can't forcefully terminate threads easily
-                # This will set the stop event and log the kill request
-                self.stop_event.set()
-                if self.driver:
-                    try:
-                        safe_quit_driver(self.driver, self.update_log)
-                    except Exception as close_err:
-                        self.update_log(f"Warning: failed to close active browser during kill: {close_err}")
-                    finally:
-                        self.driver = None
-                self.update_status("Kill requested...")
-                self.update_log("Kill request sent to active task/subprocess - attempting forceful termination.")
-                # For more forceful termination, we could use process-based approach
-                # but for now, we'll rely on the stop event
-                self.stop_button.config(state=tk.DISABLED)
-                self.root.after(2000, self._sync_stop_button_state)
-            except Exception as e:
-                self.update_log(f"Error during kill operation: {e}")
-                logger.error(f"Kill operation error: {e}")
-        else:
+        has_background = bool(self.background_thread and self.background_thread.is_alive())
+        if not has_background and not self.scraping_in_progress:
             self.update_log("Kill requested but no task is running.")
+            return
+
+        self.stop_event.set()
+        self.update_status("Kill requested...")
+        self.update_log("Kill request sent to active task/subprocess - attempting forceful termination.")
+        try:
+            self.stop_button.config(state=tk.DISABLED)
+        except Exception:
+            pass
+        self.root.after(2000, self._sync_stop_button_state)
+
+        def _do_emergency_cleanup():
+            try:
+                self._notify_tabs_emergency_stop()
+            except Exception as tab_err:
+                logger.warning(f"Emergency-stop tab notification failed: {tab_err}")
+
+            try:
+                self.process_supervisor.stop_all(force=True)
+            except Exception as supervisor_err:
+                logger.warning(f"Emergency-stop supervisor stop_all failed: {supervisor_err}")
+
+            if self.driver:
+                try:
+                    safe_quit_driver(self.driver, self.update_log)
+                except Exception as close_err:
+                    logger.warning(f"Emergency-stop active driver close failed: {close_err}")
+                finally:
+                    self.driver = None
+
+            try:
+                self.root.after(0, lambda: self.update_log("Emergency cleanup complete."))
+            except Exception:
+                pass
+
+        threading.Thread(target=_do_emergency_cleanup, daemon=True, name="EmergencyCleanupThread").start()
 
     def _notify_tabs_emergency_stop(self):
         handled = False
@@ -1971,7 +2087,7 @@ class MainWindow:
             return False
         return True
 
-    def _save_current_settings_and_show_message(self):
+    def _save_current_settings_and_show_message(self, show_popup=True):
         """Gathers current settings from UI variables, saves them, and shows a confirmation message."""
         logger.info("Saving current settings...")
         self.settings["download_directory"] = self.download_dir_var.get()
@@ -1983,6 +2099,8 @@ class MainWindow:
         self.settings["selected_theme"] = self.selected_theme_var.get()
         self.settings["use_undetected_driver"] = self.use_undetected_driver_var.get()
         self.settings["headless_mode"] = self.headless_mode_var.get()
+        self.settings["ui_update_interval_seconds"] = self._parse_ui_update_interval_seconds(self.ui_update_interval_var.get())
+        self._apply_ui_update_interval_setting()
         for key, var in self.timeout_vars.items():
             try:
                 self.settings[key] = float(var.get())
@@ -1996,7 +2114,8 @@ class MainWindow:
             logger.warning("Could not get window geometry, possibly already closed.")
         save_settings(self.settings, self.settings_filepath)
         self.update_log("Settings saved.")
-        gui_utils.show_message("Settings Saved", "Current settings have been saved.", type="info", parent=self.root)
+        if show_popup:
+            gui_utils.show_message("Settings Saved", "Current settings have been saved.", type="info", parent=self.root)
 
     def reset_to_defaults(self):
         """Resets UI settings to default values and saves."""
@@ -2012,6 +2131,8 @@ class MainWindow:
         self.selected_theme_var.set(DEFAULT_SETTINGS_STRUCTURE["selected_theme"])
         self.use_undetected_driver_var.set(DEFAULT_SETTINGS_STRUCTURE["use_undetected_driver"])
         self.headless_mode_var.set(DEFAULT_SETTINGS_STRUCTURE["headless_mode"])
+        self.ui_update_interval_var.set(str(DEFAULT_SETTINGS_STRUCTURE.get("ui_update_interval_seconds", 2.0)))
+        self._apply_ui_update_interval_setting()
         self.settings["refresh_watch_enabled"] = bool(DEFAULT_SETTINGS_STRUCTURE.get("refresh_watch_enabled", False))
         self.settings["refresh_watch_loop_seconds"] = int(DEFAULT_SETTINGS_STRUCTURE.get("refresh_watch_loop_seconds", 30))
         self.settings["refresh_watch_portals"] = list(DEFAULT_SETTINGS_STRUCTURE.get("refresh_watch_portals", []))
@@ -2033,7 +2154,7 @@ class MainWindow:
         logger.info("Close requested.")
         try:
             # Save settings before checking for running tasks
-            self._save_current_settings_and_show_message()
+            self._save_current_settings_and_show_message(show_popup=False)
         except Exception as e:
             logger.error(f"Failed to save settings on exit: {e}")
 

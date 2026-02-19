@@ -111,6 +111,9 @@ WEBDRIVER_EXCEPTION_MSG = "WebDriverException"
 UNEXPECTED_ERROR_MSG = "Unexpected error"
 CRITICAL_ERROR_MSG = "CRITICAL"
 
+PORTAL_SKILL_NIC = "NIC_SCRAPING_SKILL"
+PORTAL_SKILL_GENERIC = "GENERIC_SCRAPING_SKILL"
+
 
 def _sleep_with_stop(seconds, stop_event=None, step=0.2):
     remaining = max(0.0, float(seconds or 0.0))
@@ -158,6 +161,72 @@ def normalize_tender_id(value):
     text = re.sub(r'[\s\-\./]+', '_', text)
     text = re.sub(r'_+', '_', text).strip('_')
     return text
+
+
+def normalize_closing_date(value):
+    """Normalize closing-date text for stable comparisons."""
+    text = str(value or "").strip().upper()
+    if not text:
+        return ""
+    text = text.replace("-", "/").replace(".", "/")
+    text = re.sub(r"\s+", " ", text)
+    return text
+
+
+def extract_tender_id_from_title(title_text):
+    """
+    Canonical tender-id extraction.
+
+    Rule for NIC portals:
+    - Prefer bracketed NIC token like [2026_DCKUL_128804_1]
+    - Ignore local refs/S.No tokens when NIC token is present
+    - If NIC token is not present, fallback to strongest bracket token
+    """
+    text = str(title_text or "").strip()
+    if not text:
+        return ""
+
+    nic_match = re.search(r'\[(\d{4}_[A-Z0-9_]+(?:_\d+)?)\]', text, flags=re.IGNORECASE)
+    if nic_match:
+        return normalize_tender_id(nic_match.group(1))
+
+    bracket_tokens = re.findall(r'\[([^\]]+)\]', text)
+    for token in reversed(bracket_tokens):
+        candidate = normalize_tender_id(token)
+        if candidate and re.fullmatch(r'[A-Z0-9_]{5,}', candidate):
+            return candidate
+
+    fallback = re.search(r'(\d{4}_[A-Z0-9_]+(?:_\d+)?)', text, flags=re.IGNORECASE)
+    if fallback:
+        return normalize_tender_id(fallback.group(1))
+
+    return ""
+
+
+def resolve_portal_skill(base_url_config):
+    """Resolve scraping skill by portal metadata/URL. Extensible for future skills."""
+    portal_name = str((base_url_config or {}).get("Name", "")).strip().lower()
+    base_url = str((base_url_config or {}).get("BaseURL", "")).strip().lower()
+    org_list_url = str((base_url_config or {}).get("OrgListURL", "")).strip().lower()
+    combined = f"{portal_name} {base_url} {org_list_url}"
+
+    nic_indicators = [
+        "eprocure",
+        "tenders.gov.in",
+        "nic.in",
+        "tendershimachal",
+        "etenders",
+    ]
+    if any(token in combined for token in nic_indicators):
+        return PORTAL_SKILL_NIC
+    return PORTAL_SKILL_GENERIC
+
+
+def extract_tender_id_by_skill(title_text, portal_skill):
+    """Skill-aware tender ID extraction entrypoint."""
+    if portal_skill == PORTAL_SKILL_NIC:
+        return extract_tender_id_from_title(title_text)
+    return extract_tender_id_from_title(title_text)
 
 
 def sanitize_department_direct_url(url):
@@ -354,8 +423,9 @@ def _is_header_row(s_no):
 
 def _find_target_row(driver, s_no, attempt, log_callback):
     """Find the target row for the given S.No."""
+    quick_wait = min(ELEMENT_WAIT_TIMEOUT, 6 + (attempt * 2))
     try:
-        table_body = WebDriverWait(driver, ELEMENT_WAIT_TIMEOUT).until(
+        table_body = WebDriverWait(driver, quick_wait).until(
             EC.presence_of_element_located(MAIN_TABLE_BODY_LOCATOR)
         )
         rows = table_body.find_elements(By.TAG_NAME, "tr")
@@ -377,7 +447,28 @@ def _find_target_row(driver, s_no, attempt, log_callback):
                 return None
         return None
     except (TimeoutException, NoSuchElementException):
-        log_callback(f"    ERROR: Table body ({MAIN_TABLE_BODY_LOCATOR}) not found att {attempt+1}.")
+        log_callback(f"    WARN: Table body ({MAIN_TABLE_BODY_LOCATOR}) not ready in {quick_wait}s (att {attempt+1}); trying main table fallback.")
+        try:
+            main_table = WebDriverWait(driver, min(quick_wait, 5)).until(
+                EC.presence_of_element_located(MAIN_TABLE_LOCATOR)
+            )
+            rows = main_table.find_elements(By.TAG_NAME, "tr")
+            log_callback(f"    Fallback: Check {len(rows)} table rows for S.No '{s_no}'...")
+            for idx, row in enumerate(rows):
+                try:
+                    cells = row.find_elements(By.TAG_NAME, "td")
+                    if len(cells) > DEPT_LIST_SNO_COLUMN_INDEX:
+                        cell_text = cells[DEPT_LIST_SNO_COLUMN_INDEX].text.strip()
+                        if _is_header_row(cell_text):
+                            continue
+                        if cell_text == s_no:
+                            log_callback(f"    Found match row index {idx} (fallback).")
+                            return row
+                except StaleElementReferenceException:
+                    return None
+        except (TimeoutException, NoSuchElementException):
+            pass
+        log_callback(f"    ERROR: Department table not found for S.No '{s_no}' att {attempt+1}.")
         return None
 
 def _click_department_link(driver, target_row, s_no, name, log_callback):
@@ -519,7 +610,17 @@ def _find_and_click_dept_link(driver, dept_info, log_callback):
     return False
 
 
-def _scrape_tender_details(driver, department_name, base_url, log_callback, existing_tender_ids=None, existing_tender_ids_normalized=None, stop_event=None):
+def _scrape_tender_details(
+    driver,
+    department_name,
+    base_url,
+    log_callback,
+    existing_tender_ids=None,
+    existing_tender_ids_normalized=None,
+    existing_tender_snapshot=None,
+    portal_skill=PORTAL_SKILL_NIC,
+    stop_event=None,
+):
     """ Scrapes tender details from the department's tender list page with enhanced retry logic for large tables."""
     tender_data = []
     existing_tender_ids = existing_tender_ids or set()
@@ -530,18 +631,20 @@ def _scrape_tender_details(driver, department_name, base_url, log_callback, exis
             if normalize_tender_id(item)
         }
     skipped_existing_count = 0
+    changed_closing_date_count = 0
+    existing_tender_snapshot = existing_tender_snapshot or {}
     log_callback(f"  Scraping details for: {department_name}...")
 
     if stop_event and stop_event.is_set():
         log_callback(f"  Stop requested before scraping rows for {department_name}.")
-        return [], 0
+        return [], 0, 0
     
     # Check session before starting
     try:
         driver.current_url
     except Exception as session_err:
         log_callback(f"  ERROR: Driver session invalid before scraping {department_name}: {session_err}")
-        return [], 0
+        return [], 0, 0
     
     # Maximum retries for stale element issues
     MAX_TABLE_REFETCH_RETRIES = 3
@@ -549,18 +652,18 @@ def _scrape_tender_details(driver, department_name, base_url, log_callback, exis
     for table_attempt in range(MAX_TABLE_REFETCH_RETRIES):
         if stop_event and stop_event.is_set():
             log_callback(f"  Stop requested while preparing table for {department_name}.")
-            return tender_data, skipped_existing_count
+            return tender_data, skipped_existing_count, changed_closing_date_count
         try:
             # Add extra stabilization wait for large tables
             if table_attempt > 0:
                 log_callback(f"    Retry {table_attempt}/{MAX_TABLE_REFETCH_RETRIES-1} for table fetch...")
                 if not _sleep_with_stop(STABILIZE_WAIT * 2, stop_event=stop_event):
-                    return tender_data, skipped_existing_count
+                    return tender_data, skipped_existing_count, changed_closing_date_count
             
             table = _wait_for_presence_with_stop(driver, DETAILS_TABLE_LOCATOR, ELEMENT_WAIT_TIMEOUT, stop_event=stop_event)
             log_callback("    Details table located.")
             if not _sleep_with_stop(STABILIZE_WAIT, stop_event=stop_event):
-                return tender_data, skipped_existing_count
+                return tender_data, skipped_existing_count, changed_closing_date_count
             
             try: 
                 body = table.find_element(*DETAILS_TABLE_BODY_LOCATOR)
@@ -614,7 +717,7 @@ def _scrape_tender_details(driver, department_name, base_url, log_callback, exis
             for i, row in enumerate(rows, 1):
                 if stop_event and stop_event.is_set():
                     log_callback(f"  Stop requested during row scan for {department_name} at row {i}/{total_rows}.")
-                    return tender_data, skipped_existing_count
+                    return tender_data, skipped_existing_count, changed_closing_date_count
 
                 # Progress logging for large tables
                 if total_rows > 1000 and i % progress_interval == 0:
@@ -630,7 +733,7 @@ def _scrape_tender_details(driver, department_name, base_url, log_callback, exis
                 for row_attempt in range(MAX_ROW_RETRIES):
                     if stop_event and stop_event.is_set():
                         log_callback(f"{prefix} Stop requested during row retry loop.")
-                        return tender_data, skipped_existing_count
+                        return tender_data, skipped_existing_count, changed_closing_date_count
                     try:
                         cells = row.find_elements(By.TAG_NAME, "td")
                         
@@ -653,10 +756,7 @@ def _scrape_tender_details(driver, department_name, base_url, log_callback, exis
                             try:
                                 title_cell = cells[title_col_index]
                                 title_text = title_cell.text.strip()
-                                # Extract tender ID from title text (pattern: [2024_XYZ_123] or [ABC123])
-                                match = re.search(r'\[(\d{4}_[A-Z0-9_]+(?:_\d+)?)\]', title_text) or re.search(r'\[([A-Z0-9_]{5,})\]', title_text)
-                                if match:
-                                    quick_tender_id = match.group(1)
+                                quick_tender_id = extract_tender_id_by_skill(title_text, portal_skill)
                             except Exception:
                                 pass  # Will extract properly later if not duplicate
                         
@@ -664,9 +764,20 @@ def _scrape_tender_details(driver, department_name, base_url, log_callback, exis
                         if quick_tender_id:
                             quick_id_normalized = normalize_tender_id(quick_tender_id)
                             if quick_id_normalized and quick_id_normalized in existing_tender_ids_normalized:
-                                skipped_existing_count += 1
-                                row_processed = True
-                                break  # Skip this duplicate row early, saving time
+                                quick_closing_date = ""
+                                if num_cells > 2:
+                                    try:
+                                        quick_closing_date = normalize_closing_date(cells[2].text.strip())
+                                    except Exception:
+                                        quick_closing_date = ""
+                                existing_record = existing_tender_snapshot.get(quick_id_normalized, {})
+                                existing_closing_date = normalize_closing_date(existing_record.get("closing_date", ""))
+                                if quick_closing_date and existing_closing_date and quick_closing_date != existing_closing_date:
+                                    changed_closing_date_count += 1
+                                else:
+                                    skipped_existing_count += 1
+                                    row_processed = True
+                                    break  # Skip this duplicate row early, saving time
                         
                         # Not a duplicate or no tender ID found yet - proceed with full extraction
                         # Proceed with flexible extraction
@@ -724,9 +835,8 @@ def _scrape_tender_details(driver, department_name, base_url, log_callback, exis
                                 else: 
                                     logger.debug(f"{prefix} No link in title cell.")
                                     
-                                match = re.search(r'\[(\d{4}_[A-Z0-9_]+(?:_\d+)?)\]', title_text) or re.search(r'\[([A-Z0-9_]{5,})\]', title_text)
-                                if match: 
-                                    t_id = match.group(1)
+                                t_id = extract_tender_id_by_skill(title_text, portal_skill)
+                                if t_id:
                                     logger.debug(f"{prefix} Extracted ID: {t_id}")
                                 else: 
                                     logger.debug(f"{prefix} No ID pattern in title: '{title_text[:50]}...'")
@@ -739,9 +849,15 @@ def _scrape_tender_details(driver, department_name, base_url, log_callback, exis
                         # Final duplicate check (in case tender ID wasn't extractable earlier)
                         t_id_normalized = normalize_tender_id(t_id)
                         if t_id_normalized and t_id_normalized in existing_tender_ids_normalized:
-                            skipped_existing_count += 1
-                            row_processed = True
-                            break
+                            row_closing_date = normalize_closing_date(data.get("Closing Date", ""))
+                            existing_record = existing_tender_snapshot.get(t_id_normalized, {})
+                            existing_closing_date = normalize_closing_date(existing_record.get("closing_date", ""))
+                            if row_closing_date and existing_closing_date and row_closing_date != existing_closing_date:
+                                changed_closing_date_count += 1
+                            else:
+                                skipped_existing_count += 1
+                                row_processed = True
+                                break
 
                         data["Tender ID (Extracted)"] = t_id
                         data["Direct URL"] = direct_url
@@ -754,10 +870,10 @@ def _scrape_tender_details(driver, department_name, base_url, log_callback, exis
                     except StaleElementReferenceException:
                         if row_attempt < MAX_ROW_RETRIES - 1:
                             if stop_event and stop_event.is_set():
-                                return tender_data, skipped_existing_count
+                                return tender_data, skipped_existing_count, changed_closing_date_count
                             log_callback(f"{prefix} WARN - Stale element, retrying ({row_attempt + 1}/{MAX_ROW_RETRIES})...")
                             if not _sleep_with_stop(0.3, stop_event=stop_event):
-                                return tender_data, skipped_existing_count
+                                return tender_data, skipped_existing_count, changed_closing_date_count
                             # Re-fetch the row from the table
                             try:
                                 table = driver.find_element(*DETAILS_TABLE_LOCATOR)
@@ -784,25 +900,27 @@ def _scrape_tender_details(driver, department_name, base_url, log_callback, exis
             log_callback(f"  Successfully extracted {processed_count} tenders from {department_name}.")
             if skipped_existing_count > 0:
                 log_callback(f"  ✓ SKIPPED {skipped_existing_count} DUPLICATE tenders (already in database) from {department_name}")
+            if changed_closing_date_count > 0:
+                log_callback(f"  ↻ PROCESSED {changed_closing_date_count} tender(s) due to closing date change in {department_name}")
             if skipped_count > 0:
                 log_callback(f"  ⚠ Skipped {skipped_count} rows due to errors or insufficient data.")
             log_callback("")  # Blank line for readability
             log_callback("*" * 80)  # Department completion separator
             log_callback("")  # Blank line
             
-            return tender_data, skipped_existing_count
+            return tender_data, skipped_existing_count, changed_closing_date_count
             
         except (TimeoutException, NoSuchElementException) as table_err:
             if stop_event and stop_event.is_set():
-                return tender_data, skipped_existing_count
+                return tender_data, skipped_existing_count, changed_closing_date_count
             if table_attempt < MAX_TABLE_REFETCH_RETRIES - 1:
                 log_callback(f"  WARN: Table fetch error (attempt {table_attempt + 1}/{MAX_TABLE_REFETCH_RETRIES}): {table_err}")
                 if not _sleep_with_stop(STABILIZE_WAIT * 2, stop_event=stop_event):
-                    return tender_data, skipped_existing_count
+                    return tender_data, skipped_existing_count, changed_closing_date_count
                 continue
             else:
                 log_callback(f"  ERROR: Details table ({DETAILS_TABLE_LOCATOR}) not found after {MAX_TABLE_REFETCH_RETRIES} attempts for {department_name}: {table_err}")
-                return [], 0
+                return [], 0, 0
         except WebDriverException as wde: 
             # Check if it's a session error
             if "invalid session id" in str(wde).lower() or "session deleted" in str(wde).lower():
@@ -1106,12 +1224,24 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
         for item in existing_tender_ids
         if normalize_tender_id(item)
     }
+    existing_tender_snapshot_raw = kwargs.get("existing_tender_snapshot") or {}
+    existing_tender_snapshot = {}
+    if isinstance(existing_tender_snapshot_raw, dict):
+        for key, value in existing_tender_snapshot_raw.items():
+            normalized_id = normalize_tender_id(key)
+            if not normalized_id:
+                continue
+            value_dict = value if isinstance(value, dict) else {}
+            existing_tender_snapshot[normalized_id] = {
+                "closing_date": normalize_closing_date(value_dict.get("closing_date", ""))
+            }
     existing_department_names = {
         str(name).strip().lower()
         for name in (kwargs.get("existing_department_names") or [])
         if str(name).strip()
     }
     skipped_existing_total = 0
+    closing_date_reprocessed_total = 0
     skipped_resume_departments = 0
     expected_total_tenders = 0
     department_summaries = []
@@ -1128,12 +1258,14 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
     browser_init_time_total = 0.0
     portal_name = str(base_url_config.get('Name', 'Unknown')).strip() or "Unknown"
     portal_base_url = str(base_url_config.get('BaseURL', '')).strip()
+    portal_skill = resolve_portal_skill(base_url_config)
     scope_mode = "only_new" if existing_tender_ids or existing_department_names else "all"
     departments_to_scrape = _prepare_department_tasks(
         departments_to_scrape,
         log_callback,
         base_reference_url=base_url_config.get('OrgListURL') or base_url_config.get('BaseURL')
     )
+    log_callback(f"[SKILL] Using {portal_skill} for portal '{portal_name}'")
 
     try:
         portal_host = (urlparse(portal_base_url).hostname or "").strip().lower()
@@ -1413,7 +1545,7 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
         dept_queue = Queue()
 
         def _process_department_with_driver(active_driver, dept_info, worker_label="W1"):
-            nonlocal processed_depts, total_tenders, skipped_existing_total
+            nonlocal processed_depts, total_tenders, skipped_existing_total, closing_date_reprocessed_total
             nonlocal skipped_resume_departments, direct_nav_attempted, direct_nav_success
             nonlocal direct_nav_fallback_click, click_only_success
             nonlocal total_nav_time, total_scrape_time, total_dept_processing_time
@@ -1527,13 +1659,15 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
                 return
 
             scrape_start_time = time.time()
-            tender_data, skipped_existing = _scrape_tender_details(
+            tender_data, skipped_existing, changed_closing_date_count = _scrape_tender_details(
                 driver=active_driver,
                 department_name=dept_name,
                 base_url=base_url_config['BaseURL'],
                 log_callback=log_callback,
                 existing_tender_ids=existing_tender_ids,
                 existing_tender_ids_normalized=existing_tender_ids_normalized,
+                existing_tender_snapshot=existing_tender_snapshot,
+                portal_skill=portal_skill,
                 stop_event=stop_event
             )
             scrape_time = time.time() - scrape_start_time
@@ -1542,6 +1676,7 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
             expected_for_dept = int(str(dept_info.get('count_text', '0')).strip()) if str(dept_info.get('count_text', '')).strip().isdigit() else None
             with state_lock:
                 skipped_existing_total += skipped_existing
+                closing_date_reprocessed_total += changed_closing_date_count
                 if dept_name_norm:
                     processed_department_names.add(dept_name_norm)
 
@@ -1563,6 +1698,13 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
                     all_tender_details.extend(tender_data)
                     existing_tender_ids.update(new_ids)
                     existing_tender_ids_normalized.update(new_normalized_ids)
+                    for item in tender_data:
+                        fresh_id = normalize_tender_id(item.get("Tender ID (Extracted)"))
+                        if not fresh_id:
+                            continue
+                        existing_tender_snapshot[fresh_id] = {
+                            "closing_date": normalize_closing_date(item.get("Closing Date", ""))
+                        }
                     department_summaries.append({
                         "department": dept_name,
                         "expected": expected_for_dept,
@@ -1583,6 +1725,8 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
                 log_callback(f"[{worker_label}] ⏱️ Total department time: {dept_total_time:.2f}s (Nav: {nav_time:.2f}s, Scrape: {scrape_time:.2f}s)")
                 if skipped_existing > 0:
                     log_callback(f"[{worker_label}] ⏭️  Skipped {skipped_existing} duplicates in {dept_name}")
+                if changed_closing_date_count > 0:
+                    log_callback(f"[{worker_label}] ↻ Reprocessed {changed_closing_date_count} due to closing date changes in {dept_name}")
 
                 if progress_callback:
                     progress_details = (
@@ -1594,7 +1738,8 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
                         "scraped_tenders": dept_tender_count,
                         "total_tenders": current_total,
                         "pending_depts": pending_depts,
-                        "skipped_duplicates": skipped_existing
+                        "skipped_duplicates": skipped_existing,
+                        "closing_date_reprocessed": changed_closing_date_count
                     }
                     progress_callback(current_processed, total_depts, progress_details, extra_info)
                     
@@ -1609,7 +1754,8 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
                         "scraped_tenders": dept_tender_count,
                         "total_tenders": current_total,
                         "pending_depts": pending_depts,
-                        "skipped_duplicates": skipped_existing
+                        "skipped_duplicates": skipped_existing,
+                        "closing_date_reprocessed": changed_closing_date_count
                     }
                 )
             else:
@@ -1699,7 +1845,38 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
                     worker_label = f"W{worker_idx + 1}"
                     try:
                         log_callback(f"  [{worker_label}] Starting browser...")
-                        worker_driver = setup_driver(initial_download_dir=download_dir)
+                        worker_driver = None
+                        worker_org_url = str(base_url_config.get('OrgListURL') or base_url_config.get('BaseURL') or '').strip()
+                        for prime_attempt in range(2):
+                            if worker_driver is None:
+                                worker_driver = setup_driver(initial_download_dir=download_dir)
+
+                            if not worker_org_url:
+                                break
+
+                            log_callback(f"  [{worker_label}] Priming browser to org list page...")
+                            try:
+                                prime_ok = navigate_to_org_list(worker_driver, lambda msg: log_callback(f"  [{worker_label}] {msg}"), org_list_url=worker_org_url)
+                                primed_url = str(worker_driver.current_url or '')
+                                invalid_primed = (
+                                    primed_url.startswith('data:')
+                                    or primed_url.startswith('about:blank')
+                                    or primed_url.startswith('chrome-error://')
+                                    or primed_url.startswith('edge-error://')
+                                )
+                                if prime_ok and not invalid_primed:
+                                    break
+
+                                log_callback(f"  [{worker_label}] Priming failed ({primed_url[:60]}), recreating browser and retrying...")
+                            except Exception as warmup_err:
+                                log_callback(f"  [{worker_label}] ⚠ Browser priming warning: {warmup_err}")
+
+                            safe_quit_driver(worker_driver, lambda _msg: None)
+                            worker_driver = None
+                        
+                        if worker_driver is None:
+                            raise Exception("Worker browser could not be primed to organization page")
+
                         log_callback(f"  ✓ [{worker_label}] Browser ready")
                         return (worker_idx, worker_driver, None)
                     except Exception as init_err:
@@ -2028,6 +2205,10 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
             log_callback(f"   Total duplicates skipped: {skipped_existing_total} tenders")
             log_callback(f"   (These tenders already exist in database with same closing date)")
             log_callback("")
+        if closing_date_reprocessed_total > 0:
+            log_callback(f"📊 CLOSING DATE CHANGE SUMMARY:")
+            log_callback(f"   Reprocessed due to closing date change: {closing_date_reprocessed_total} tenders")
+            log_callback("")
         log_callback(
             f"Department navigation summary: "
             f"direct_success={direct_nav_success}/{direct_nav_attempted}, "
@@ -2079,6 +2260,7 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
             "expected_total_tenders": expected_total_tenders,
             "extracted_total_tenders": total_tenders,
             "skipped_existing_total": skipped_existing_total,
+            "closing_date_reprocessed_total": closing_date_reprocessed_total,
             "skipped_resume_departments": skipped_resume_departments,
             "department_summaries": department_summaries,
             "direct_nav_attempted": direct_nav_attempted,
@@ -2154,6 +2336,7 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
             "expected_total_tenders": expected_total_tenders,
             "extracted_total_tenders": len(all_tender_details),
             "skipped_existing_total": skipped_existing_total,
+            "closing_date_reprocessed_total": closing_date_reprocessed_total,
             "skipped_resume_departments": skipped_resume_departments,
             "department_summaries": department_summaries,
             "direct_nav_attempted": direct_nav_attempted,
@@ -2175,6 +2358,7 @@ def process_department(dept_info, base_url_config, download_dir, driver,
     # Create no-op callbacks if None provided
     log_callback = log_callback or (lambda x: None)
     progress_callback = progress_callback or (lambda *args: None)
+    portal_skill = resolve_portal_skill(base_url_config)
 
     try:
         if not dept_info['has_link'] or dept_info['processed']:
@@ -2197,11 +2381,12 @@ def process_department(dept_info, base_url_config, download_dir, driver,
             return None
 
         # Extract tender details
-        tender_data, _skipped_existing = _scrape_tender_details(
+        tender_data, _skipped_existing, _changed_closing_date_count = _scrape_tender_details(
             driver=driver,
             department_name=dept_info['name'],
             base_url=base_url_config['BaseURL'],
             log_callback=log_callback,
+            portal_skill=portal_skill,
             stop_event=stop_event
         )
 
@@ -2416,7 +2601,7 @@ def _find_and_trigger_downloads(driver, identifier, target_subfolder, log_callba
         log_callback(f"    ℹ️ No downloads initiated despite {len(final_links)} links found.")
 
 
-def _perform_tender_processing(driver, identifier, base_download_dir, log_callback, status_callback, stop_event, dl_more_details=True, dl_zip=True, dl_notice_pdfs=True):
+def _perform_tender_processing(driver, identifier, base_download_dir, log_callback, status_callback, stop_event, dl_more_details=True, dl_zip=True, dl_notice_pdfs=True, portal_skill=PORTAL_SKILL_NIC):
     """Core logic for processing a single tender page - IMMEDIATE DOWNLOAD START."""
     if stop_event.is_set(): return False
     log_callback(f"  ⚡ Processing details page for: {identifier}")
@@ -2452,9 +2637,8 @@ def _perform_tender_processing(driver, identifier, base_download_dir, log_callba
     if not tender_id:
         title = safe_extract_text(driver, TENDER_TITLE_LOCATOR, "Tender Title", quick_mode=True)
         if title:
-            match = re.search(r'(\d{4}_[A-Z0-9_]+(?:_\d+)?)', title) or re.search(r'([A-Z0-9_]{6,})', title)
-            if match:
-                tender_id = match.group(1)
+            tender_id = extract_tender_id_by_skill(title, portal_skill)
+            if tender_id:
                 log_callback(f"    🆔 Extracted ID: {tender_id}")
 
     folder_base = tender_id if tender_id else identifier
@@ -2557,6 +2741,7 @@ def search_and_download_tenders(tender_ids, base_url_config, download_dir, drive
 
     try:
         total_tenders = len(tender_ids)
+        portal_skill = resolve_portal_skill(base_url_config)
         log_callback(f"Processing {total_tenders} tender IDs...")
 
         for idx, tender_id in enumerate(tender_ids, 1):
@@ -2617,7 +2802,8 @@ def search_and_download_tenders(tender_ids, base_url_config, download_dir, drive
                         stop_event=stop_event,
                         dl_more_details=True,
                         dl_zip=True,
-                        dl_notice_pdfs=True
+                        dl_notice_pdfs=True,
+                        portal_skill=portal_skill
                     )
 
                 except TimeoutException:
@@ -2686,6 +2872,7 @@ def process_direct_urls(urls, base_dir, *args, **kwargs):
     dl_more_details = kwargs.get('dl_more_details', True)
     dl_zip = kwargs.get('dl_zip', True)
     dl_notice_pdfs = kwargs.get('dl_notice_pdfs', True)
+    portal_skill = kwargs.get('portal_skill', PORTAL_SKILL_NIC)
     
     def _handle_session_timeout(url, max_retries=3):
         """Handle session timeout by finding and clicking restart link."""
@@ -2733,7 +2920,8 @@ def process_direct_urls(urls, base_dir, *args, **kwargs):
                     stop_event=stop_event,
                     dl_more_details=dl_more_details,
                     dl_zip=dl_zip,
-                    dl_notice_pdfs=dl_notice_pdfs
+                    dl_notice_pdfs=dl_notice_pdfs,
+                    portal_skill=portal_skill
                 )
 
                 processed += 1

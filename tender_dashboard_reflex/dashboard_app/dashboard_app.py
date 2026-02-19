@@ -4,19 +4,13 @@ import reflex as rx
 
 from tender_dashboard_reflex.state import DashboardState, TenderRow
 from dashboard_app.portal_management import portal_management_page
+from dashboard_app.data_visualization import data_visualization_page
+from dashboard_app.scraping_control import scraping_control_page, scraping_settings_page
+from dashboard_app.excel_import import excel_import_page
 
 
-def stat_card(title: str, value: rx.Var | str, accent: str, on_click=None) -> rx.Component:
+def stat_card(title: str, value, accent: str, on_click=None) -> rx.Component:
     """KPI card with gradient background. Optionally clickable."""
-    base_props = {
-        "padding": "1rem",
-        "border_radius": "12px",
-        "background": accent,
-        "box_shadow": "lg",
-        "width": "100%",
-        "min_height": "85px",
-    }
-    
     if on_click:
         return rx.box(
             rx.text(title, size="2", color="white", weight="medium"),
@@ -24,13 +18,23 @@ def stat_card(title: str, value: rx.Var | str, accent: str, on_click=None) -> rx
             on_click=on_click,
             cursor="pointer",
             _hover={"transform": "scale(1.02)", "box_shadow": "xl", "transition": "all 0.2s"},
-            **base_props,
+            padding="1rem",
+            border_radius="12px",
+            background=accent,
+            box_shadow="lg",
+            width="100%",
+            min_height="85px",
         )
     else:
         return rx.box(
             rx.text(title, size="2", color="white", weight="medium"),
             rx.heading(value, size="6", color="white", weight="bold"),
-            **base_props,
+            padding="1rem",
+            border_radius="12px",
+            background=accent,
+            box_shadow="lg",
+            width="100%",
+            min_height="85px",
         )
 
 
@@ -107,7 +111,7 @@ def google_search_bar() -> rx.Component:
     )
 
 
-def filter_input(label: str, placeholder: str, value: rx.Var, on_change, input_type: str = "text") -> rx.Component:
+def filter_input(label: str, placeholder: str, value, on_change, input_type: str = "text") -> rx.Component:
     return rx.vstack(
         rx.text(label, size="2", weight="medium", color="gray.11"),
         rx.input(value=value, on_change=on_change, placeholder=placeholder, type=input_type, width="100%", size="2"),
@@ -115,7 +119,7 @@ def filter_input(label: str, placeholder: str, value: rx.Var, on_change, input_t
     )
 
 
-def filter_select(label: str, options: list[str] | rx.Var, value: rx.Var, on_change) -> rx.Component:
+def filter_select(label: str, options, value, on_change) -> rx.Component:
     return rx.vstack(
         rx.text(label, size="2", weight="medium", color="gray.11"),
         rx.select(options, value=value, on_change=on_change, width="100%", size="2"),
@@ -565,6 +569,25 @@ def index() -> rx.Component:
                     ),
                     href="/portals",
                 ),
+                rx.link(
+                    rx.button(
+                        rx.icon("database"),
+                        "Data Visualization",
+                        variant="soft",
+                        size="2",
+                    ),
+                    href="/data",
+                ),
+                rx.link(
+                    rx.button(
+                        rx.icon("zap"),
+                        "Scraping Control",
+                        variant="soft",
+                        size="2",
+                        color_scheme="green",
+                    ),
+                    href="/scraping",
+                ),
                 spacing="2",
                 padding="0.5rem 0",
             ),
@@ -651,3 +674,7 @@ def index() -> rx.Component:
 app = rx.App()
 app.add_page(index, route="/", title="Tender Dashboard - Enhanced v2.1")
 app.add_page(portal_management_page, route="/portals", title="Portal Management")
+app.add_page(data_visualization_page, route="/data", title="Data Visualization")
+app.add_page(scraping_control_page, route="/scraping", title="Scraping Control")
+app.add_page(scraping_settings_page, route="/scraping-settings", title="Scraping Settings")
+app.add_page(excel_import_page, route="/import", title="Import Data")

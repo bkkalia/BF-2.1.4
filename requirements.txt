@@ -3,6 +3,7 @@ debugpy>=1.8.0  # Debugging support
 pandas  # For handling CSV files like base_urls.csv
 numpy  # For potential data manipulation
 selenium>=4.16.0  # For web scraping and browser automation
+playwright>=1.50.0  # JS-capable browser automation alternative
 webdriver-manager  # For managing browser drivers
 openpyxl  # For Excel file operations
 pdfplumber  # For handling PDF files (if needed for PDF parsing)
@@ -28,3 +29,4 @@ pytest>=8.0.0  # Testing
 
 # Build dependencies
 pyinstaller>=6.3.0
+reflex>=0.6.6

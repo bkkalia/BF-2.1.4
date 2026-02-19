@@ -81,6 +81,14 @@ For Windows Task Scheduler, use the batch file: run_hp_tenders.bat
         )
 
         self.parser.add_argument(
+            '--engine',
+            type=str,
+            choices=['selenium', 'playwright'],
+            default='playwright',
+            help='Automation engine for portal navigation (default: playwright)'
+        )
+
+        self.parser.add_argument(
             '--json-events',
             action='store_true',
             help='Emit structured JSON events to stdout for GUI subprocess monitoring'

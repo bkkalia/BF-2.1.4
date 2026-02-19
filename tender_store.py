@@ -1,4 +1,5 @@
 import os
+import re
 import shutil
 import sqlite3
 from datetime import datetime, timedelta
@@ -241,6 +242,76 @@ class TenderDataStore:
             # Return set of tender IDs
             return {row[0] for row in cursor.fetchall() if row[0]}
 
+    @staticmethod
+    def _normalize_date_text(value):
+        text = str(value or "").strip().upper()
+        if not text:
+            return ""
+        text = text.replace("-", "/").replace(".", "/")
+        text = re.sub(r"\s+", " ", text)
+        return text
+
+    @staticmethod
+    def _normalize_tender_id_text(value):
+        text = str(value or "").strip()
+        if not text:
+            return ""
+        text = re.sub(r'(?i)^\s*(tender\s*id|tenderid|id)\s*[:#\-]?\s*', '', text)
+        if text.startswith('[') and text.endswith(']') and len(text) > 2:
+            text = text[1:-1]
+        text = text.upper().strip()
+        text = re.sub(r'[\s\-\./]+', '_', text)
+        text = re.sub(r'_+', '_', text).strip('_')
+        return text
+
+    def get_existing_tender_snapshot_for_portal(self, portal_name):
+        """
+        Fetch active tender IDs for a portal with latest known closing dates.
+
+        Returns:
+            Dict keyed by normalized tender id:
+            {
+                "<NORMALIZED_ID>": {
+                    "tender_id": "<raw id>",
+                    "closing_date": "<normalized closing date text>"
+                }
+            }
+        """
+        portal_key = str(portal_name or "").strip().lower()
+        if not portal_key:
+            return {}
+
+        rows = []
+        with self._connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT TRIM(COALESCE(tender_id_extracted, '')) AS tender_id,
+                       TRIM(COALESCE(closing_date, '')) AS closing_date
+                FROM tenders
+                WHERE LOWER(TRIM(COALESCE(portal_name, ''))) = ?
+                  AND TRIM(COALESCE(tender_id_extracted, '')) != ''
+                  AND lifecycle_status = 'active'
+                """,
+                (portal_key,)
+            ).fetchall()
+
+        snapshot = {}
+        for row in rows:
+            tender_id = str(row["tender_id"] or "").strip()
+            if not tender_id:
+                continue
+            normalized_id = self._normalize_tender_id_text(tender_id)
+            if not normalized_id:
+                continue
+            if normalized_id in snapshot:
+                continue
+            snapshot[normalized_id] = {
+                "tender_id": tender_id,
+                "closing_date": self._normalize_date_text(row["closing_date"]),
+            }
+
+        return snapshot
+
     def start_run(self, portal_name, base_url, scope_mode="all"):
         started_at = datetime.now().isoformat(timespec="seconds")
         with self._connect() as conn:
@@ -305,8 +376,8 @@ class TenderDataStore:
                         run_id,
                         portal_name,
                         _normalize_text(item.get("Department Name")),
-                        _normalize_text(item.get("S.No")),
                         tender_id,
+                        _normalize_text(item.get("S.No")),
                         _normalize_text(item.get("Published Date") or item.get("e-Published Date")),
                         _normalize_text(item.get("Closing Date")),
                         _normalize_text(item.get("Opening Date")),
@@ -341,7 +412,10 @@ class TenderDataStore:
                         SELECT 1
                         FROM _incoming_keys k
                         WHERE k.portal_key = LOWER(TRIM(COALESCE(tenders.portal_name, '')))
-                          AND k.tender_key = TRIM(COALESCE(tenders.tender_id_extracted, ''))
+                          AND (
+                              k.tender_key = TRIM(COALESCE(tenders.tender_id_extracted, ''))
+                              OR COALESCE(tenders.title_ref, '') LIKE '%[' || k.tender_key || ']%'
+                          )
                     )
                     """
                 )
@@ -374,7 +448,10 @@ class TenderDataStore:
                 status_url AS [Status URL],
                 title_ref AS [Title and Ref.No./Tender ID],
                 organisation_chain AS [Organisation Chain],
-                tender_id_extracted AS [Tender ID (Extracted)],
+                CASE
+                    WHEN TRIM(COALESCE(tender_id_extracted, '')) <> '' THEN TRIM(tender_id_extracted)
+                    ELSE TRIM(COALESCE(serial_no, ''))
+                END AS [Tender ID (Extracted)],
                 lifecycle_status AS [Lifecycle Status],
                 cancelled_detected_at AS [Cancelled Detected At],
                 cancelled_source AS [Cancelled Source],

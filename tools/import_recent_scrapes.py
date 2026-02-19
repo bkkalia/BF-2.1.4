@@ -87,16 +87,27 @@ def infer_portal_name(file_path: Path, row_df: pd.DataFrame) -> str:
 def to_store_rows(df: pd.DataFrame, portal_name: str):
     rows = []
     for _, row in df.iterrows():
+        published_value = str(row.get("Published Date", "") or "").strip()
+        if not published_value:
+            published_value = str(row.get("e-Published Date", "") or "").strip()
+
+        tender_id = str(row.get("Tender ID (Extracted)", "") or "").strip()
+        if not tender_id:
+            continue
+
         rows.append(
             {
                 "Portal": portal_name,
                 "Department Name": str(row.get("Department Name", "")).strip(),
-                "Published Date": str(row.get("Published Date", "")).strip(),
+                "S.No": str(row.get("S.No", "") or "").strip(),
+                "Published Date": published_value,
                 "Closing Date": str(row.get("Closing Date", "")).strip(),
                 "Opening Date": str(row.get("Opening Date", "")).strip(),
                 "Title and Ref.No./Tender ID": str(row.get("Title and Ref.No./Tender ID", "")).strip(),
                 "Organisation Chain": str(row.get("Organisation Chain", "")).strip(),
-                "Tender ID (Extracted)": str(row.get("Tender ID (Extracted)", "")).strip(),
+                "Tender ID (Extracted)": tender_id,
+                "Direct URL": str(row.get("Direct URL", "") or "").strip(),
+                "Status URL": str(row.get("Status URL", "") or "").strip(),
                 "EMD Amount": str(row.get("EMD Amount", "")).strip() if row.get("EMD Amount", "") is not None else "",
                 "EMD Amount (Numeric)": None,
             }

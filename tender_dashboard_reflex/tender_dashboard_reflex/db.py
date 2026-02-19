@@ -1106,3 +1106,208 @@ def get_export_history(limit: int = 20) -> list[dict[str, Any]]:
         return list(reversed(history[-limit:]))
     except:
         return []
+
+
+def get_tender_count(filters: TenderFilters) -> int:
+    """Get total count of tenders matching filters.
+    
+    Args:
+        filters: TenderFilters object with filter criteria
+    
+    Returns:
+        int: Total number of matching tenders
+    """
+    where_sql, where_params = _build_where(filters)
+    use_v3 = _is_v3_schema()
+    
+    with _get_connection() as conn:
+        cursor = conn.cursor()
+        
+        if use_v3:
+            query = f"""
+                SELECT COUNT(*) as count
+                FROM tender_items ti
+                JOIN portals p ON p.id = ti.portal_id
+                WHERE {where_sql}
+            """
+        else:
+            query = f"""
+                SELECT COUNT(*) as count
+                FROM tenders ti
+                WHERE {where_sql}
+            """
+        
+        cursor.execute(query, where_params)
+        result = cursor.fetchone()
+        return int(result["count"]) if result else 0
+
+
+def get_tender_data_paginated(filters: TenderFilters, limit: int = 50, offset: int = 0) -> list[dict[str, Any]]:
+    """Get paginated tender data for data grid display.
+    
+    Returns RAW database values without any text processing or formatting.
+    This allows users to see exactly how data is stored in the database.
+    
+    Args:
+        filters: TenderFilters object with filter criteria
+        limit: Number of records to return
+        offset: Number of records to skip
+    
+    Returns:
+        List of tender data dictionaries with raw values
+    """
+    where_sql, where_params = _build_where(filters)
+    use_v3 = _is_v3_schema()
+    
+    with _get_connection() as conn:
+        cursor = conn.cursor()
+        
+        if use_v3:
+            query = f"""
+                SELECT 
+                    p.portal_name,
+                    ti.tender_id_extracted,
+                    ti.title_ref,
+                    ti.department_name,
+                    ti.organization_chain as organisation_chain,
+                    '' as serial_no,
+                    ti.published_at as published_date,
+                    ti.opening_at as opening_date,
+                    ti.closing_at as closing_date,
+                    ti.emd_amount_raw as emd_amount,
+                    ti.estimated_cost_raw as estimated_cost,
+                    CASE WHEN ti.is_live = 1 THEN 'Live' ELSE 'Expired' END as lifecycle_status,
+                    ti.tender_status,
+                    ti.state_name,
+                    ti.district,
+                    ti.city,
+                    ti.pincode,
+                    ti.location_text,
+                    ti.tender_type,
+                    ti.work_type,
+                    ti.payment_type,
+                    ti.direct_url,
+                    ti.status_url,
+                    CAST(ti.is_live AS TEXT) as is_live,
+                    CAST(ti.source_run_id AS TEXT) as run_id,
+                    ti.first_seen_at,
+                    ti.last_seen_at
+                FROM tender_items ti
+                JOIN portals p ON p.id = ti.portal_id
+                WHERE {where_sql}
+                ORDER BY ti.published_at DESC
+                LIMIT ? OFFSET ?
+            """
+        else:
+            query = f"""
+                SELECT 
+                    ti.portal_name,
+                    ti.tender_id_extracted,
+                    ti.title_ref,
+                    ti.department_name,
+                    ti.organisation_chain,
+                    ti.serial_no,
+                    ti.published_date,
+                    ti.opening_date,
+                    ti.closing_date,
+                    ti.emd_amount,
+                    '' as estimated_cost,
+                    ti.lifecycle_status,
+                    ti.lifecycle_status as tender_status,
+                    '' as state_name,
+                    '' as district,
+                    '' as city,
+                    '' as pincode,
+                    '' as location_text,
+                    '' as tender_type,
+                    '' as work_type,
+                    '' as payment_type,
+                    ti.direct_url,
+                    ti.status_url,
+                    CASE WHEN ti.lifecycle_status = 'active' THEN '1' ELSE '0' END as is_live,
+                    CAST(ti.run_id AS TEXT) as run_id,
+                    '' as first_seen_at,
+                    '' as last_seen_at
+                FROM tenders ti
+                WHERE {where_sql}
+                ORDER BY ti.published_date DESC
+                LIMIT ? OFFSET ?
+            """
+        
+        cursor.execute(query, where_params + [limit, offset])
+        results = []
+        
+        for row in cursor.fetchall():
+            # Display RAW database values without any processing
+            # This allows users to see exactly how data is stored
+            
+            results.append({
+                "portal_name": str(row["portal_name"] or ""),
+                "tender_id_extracted": str(row["tender_id_extracted"] or ""),
+                "title_ref": str(row["title_ref"] or ""),
+                "department_name": str(row["department_name"] or ""),
+                "organisation_chain": str(row["organisation_chain"] or ""),
+                "serial_no": str(row["serial_no"] or ""),
+                "published_date": str(row["published_date"] or ""),
+                "opening_date": str(row["opening_date"] or ""),
+                "closing_date": str(row["closing_date"] or ""),
+                "emd_amount": str(row["emd_amount"] or ""),
+                "estimated_cost": str(row["estimated_cost"] or ""),
+                "lifecycle_status": str(row["lifecycle_status"] or ""),
+                "tender_status": str(row["tender_status"] or ""),
+                "state_name": str(row["state_name"] or ""),
+                "district": str(row["district"] or ""),
+                "city": str(row["city"] or ""),
+                "pincode": str(row["pincode"] or ""),
+                "location_text": str(row["location_text"] or ""),
+                "tender_type": str(row["tender_type"] or ""),
+                "work_type": str(row["work_type"] or ""),
+                "payment_type": str(row["payment_type"] or ""),
+                "direct_url": str(row["direct_url"] or ""),
+                "status_url": str(row["status_url"] or ""),
+                "is_live": str(row["is_live"] or ""),
+                "run_id": str(row["run_id"] or ""),
+                "first_seen_at": str(row["first_seen_at"] or ""),
+                "last_seen_at": str(row["last_seen_at"] or ""),
+            })
+        
+        return results
+
+
+def get_database_statistics() -> dict[str, int]:
+    """Get database statistics for schema visualization.
+    
+    Returns:
+        Dictionary with database statistics
+    """
+    use_v3 = _is_v3_schema()
+    
+    with _get_connection() as conn:
+        cursor = conn.cursor()
+        
+        # Total records
+        if use_v3:
+            cursor.execute("SELECT COUNT(*) as count FROM tender_items")
+        else:
+            cursor.execute("SELECT COUNT(*) as count FROM tenders")
+        total_records = int(cursor.fetchone()["count"])
+        
+        # Active records
+        if use_v3:
+            cursor.execute("SELECT COUNT(*) as count FROM tender_items WHERE is_live = 1")
+        else:
+            cursor.execute("SELECT COUNT(*) as count FROM tenders WHERE LOWER(COALESCE(lifecycle_status, '')) = 'active'")
+        active_records = int(cursor.fetchone()["count"])
+        
+        # Portal count
+        if use_v3:
+            cursor.execute("SELECT COUNT(DISTINCT portal_id) as count FROM tender_items")
+        else:
+            cursor.execute("SELECT COUNT(DISTINCT portal_name) as count FROM tenders")
+        portal_count = int(cursor.fetchone()["count"])
+        
+        return {
+            "total_records": total_records,
+            "active_records": active_records,
+            "portal_count": portal_count,
+        }

@@ -223,8 +223,8 @@ def portal_table_row(portal: PortalRow) -> rx.Component:
     return rx.table.row(
         rx.table.cell(
             rx.checkbox(
-                checked=PortalManagementState.export_selected_portals.contains(portal.portal_slug),
-                on_change=PortalManagementState.toggle_portal_selection(portal.portal_slug),
+                checked=PortalManagementState.export_selected_portals.contains(portal.portal_slug),  # type: ignore
+                on_change=PortalManagementState.toggle_portal_selection(portal.portal_slug),  # type: ignore
             )
         ),
         rx.table.cell(
@@ -300,6 +300,15 @@ def portal_management_page() -> rx.Component:
                         color_scheme="blue",
                     ),
                     href="/portals",
+                ),
+                rx.link(
+                    rx.button(
+                        rx.icon("database"),
+                        "Data Visualization",
+                        variant="soft",
+                        size="2",
+                    ),
+                    href="/data",
                 ),
                 spacing="2",
                 padding="0.5rem 0",
@@ -409,7 +418,7 @@ def portal_management_page() -> rx.Component:
                     rx.button(
                         rx.icon("download"),
                         "Central Portals",
-                        on_click=PortalManagementState.export_category_portals("Central"),
+                        on_click=PortalManagementState.export_category_portals("Central"),  # type: ignore
                         color_scheme="blue",
                         variant="soft",
                         size="2",
@@ -418,7 +427,7 @@ def portal_management_page() -> rx.Component:
                     rx.button(
                         rx.icon("download"),
                         "State Portals",
-                        on_click=PortalManagementState.export_category_portals("State"),
+                        on_click=PortalManagementState.export_category_portals("State"),  # type: ignore
                         color_scheme="green",
                         variant="soft",
                         size="2",
@@ -427,7 +436,7 @@ def portal_management_page() -> rx.Component:
                     rx.button(
                         rx.icon("download"),
                         "PSU Portals",
-                        on_click=PortalManagementState.export_category_portals("PSU"),
+                        on_click=PortalManagementState.export_category_portals("PSU"),  # type: ignore
                         color_scheme="purple",
                         variant="soft",
                         size="2",

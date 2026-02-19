@@ -64,6 +64,21 @@ class SettingsTab(ttk.Frame):
                        variable=self.main_app.headless_mode_var).pack(side=tk.LEFT)
 
         row += 1
+        ttk.Label(section, text="UI Update Interval:", font=self.main_app.label_font).grid(row=row, column=0, sticky="w", padx=5, pady=3)
+        update_frame = ttk.Frame(section)
+        update_frame.grid(row=row, column=1, columnspan=2, sticky="w", padx=5, pady=3)
+        self.ui_update_combo = ttk.Combobox(
+            update_frame,
+            textvariable=self.main_app.ui_update_interval_var,
+            values=["0.5", "1", "2", "3", "5"],
+            state="readonly",
+            width=8
+        )
+        self.ui_update_combo.pack(side=tk.LEFT, padx=(0, 10))
+        self.ui_update_combo.bind("<<ComboboxSelected>>", lambda _e: self.main_app.apply_ui_update_interval_from_var())
+        ttk.Label(update_frame, text="seconds (higher = smoother UI, less frequent updates)").pack(side=tk.LEFT)
+
+        row += 1
         ttk.Label(section, text="Dept Browser Workers:", font=self.main_app.label_font).grid(row=row, column=0, sticky="w", padx=5, pady=3)
         ttk.Spinbox(
             section,
