@@ -865,16 +865,46 @@ class PortalManagementState(rx.State):
             from pathlib import Path
             import subprocess
 
+            # Prefer opening the exact last export path when available
+            if self.last_export_path:
+                target = Path(self.last_export_path)
+                if target.exists():
+                    # If target is a file, open its containing folder and select if possible
+                    if target.is_file():
+                        folder = target.parent
+                        path_to_open = str(folder.resolve())
+                        if os.name == "nt":
+                            # Windows: explorer /select,<file>
+                            subprocess.Popen(["explorer", "/select,", str(target.resolve())])
+                        else:
+                            # macOS/Linux: open folder
+                            if sys.platform == "darwin":
+                                subprocess.Popen(["open", path_to_open])
+                            else:
+                                subprocess.Popen(["xdg-open", path_to_open])
+                        self.show_toast_notification(f"Opened export file location: {path_to_open}", "success")
+                        return
+                    else:
+                        path_to_open = str(target.resolve())
+                        if os.name == "nt":
+                            os.startfile(path_to_open)
+                        else:
+                            if sys.platform == "darwin":
+                                subprocess.Popen(["open", path_to_open])
+                            else:
+                                subprocess.Popen(["xdg-open", path_to_open])
+                        self.show_toast_notification(f"Opened export folder: {path_to_open}", "success")
+                        return
+
+            # Fallback to base export folder
             base = Path(self.export_base_dir)
             if not base.exists():
                 base.mkdir(parents=True, exist_ok=True)
 
             path_to_open = str(base.resolve())
-            # Windows
             if os.name == "nt":
                 os.startfile(path_to_open)
             else:
-                # macOS / Linux
                 if sys.platform == "darwin":
                     subprocess.Popen(["open", path_to_open])
                 else:
@@ -883,6 +913,15 @@ class PortalManagementState(rx.State):
             self.show_toast_notification(f"Opened folder: {path_to_open}", "success")
         except Exception as ex:
             self.show_toast_notification(f"Failed to open folder: {ex}", "error")
+
+    def toggle_sort_order(self):
+        """Toggle sort order between asc and desc and re-apply sort."""
+        try:
+            self.sort_order = "desc" if self.sort_order == "asc" else "asc"
+            # Apply sorting immediately
+            self._apply_sort()
+        except Exception:
+            pass
     
     def set_export_expired_days(self, value: str):
         """Set expired days for export."""

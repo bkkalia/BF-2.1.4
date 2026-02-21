@@ -512,6 +512,32 @@ def portal_management_page() -> rx.Component:
             rx.vstack(
                 # First row: Days filter and category filter
                 rx.hstack(
+                    # Sort controls
+                    rx.hstack(
+                        rx.text("Sort By:", size="2", weight="medium"),
+                        rx.select(
+                            [
+                                ("portal_name", "Portal Name"),
+                                ("total_tenders", "Total Tenders"),
+                                ("live_tenders", "Live Tenders"),
+                                ("last_updated", "Last Updated"),
+                            ],
+                            value=PortalManagementState.sort_by,
+                            on_change=PortalManagementState.set_sort_by,
+                            size="2",
+                            width="180px",
+                        ),
+                        rx.tooltip(
+                            rx.icon_button(
+                                rx.icon(rx.cond(PortalManagementState.sort_order == "asc", "arrow-up", "arrow-down")),
+                                on_click=PortalManagementState.toggle_sort_order,
+                                size="2",
+                            ),
+                            content="Toggle sort order",
+                        ),
+                        spacing="2",
+                        align="center",
+                    ),
                     rx.hstack(
                         rx.text("Updated in last:", size="2", weight="medium"),
                         rx.select(
