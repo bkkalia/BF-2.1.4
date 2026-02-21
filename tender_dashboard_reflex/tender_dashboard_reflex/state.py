@@ -970,6 +970,194 @@ class PortalManagementState(rx.State):
             self.exporting = False
             self.show_export_dialog = False
             yield
+
+    async def export_selected_portals_single_excel(self):
+        """Export selected portals into a single Excel workbook (one sheet per portal + combined sheet)."""
+        self.exporting = True
+        yield
+
+        try:
+            import pandas as pd
+
+            if not self.export_selected_portals:
+                self.show_toast_notification("Please select at least one portal to export", "error")
+                self.exporting = False
+                yield
+                return
+
+            # Create export directory
+            export_dir = Path("Portal_Exports") / datetime.now().strftime("%Y%m%d_%H%M%S")
+            export_dir.mkdir(parents=True, exist_ok=True)
+
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"portals_selected_tenders_{timestamp}.xlsx"
+            filepath = export_dir / filename
+
+            # Create ExcelWriter and write each portal to its own sheet
+            with pd.ExcelWriter(filepath, engine="openpyxl") as writer:
+                combined_rows = []
+
+                for portal_slug in self.export_selected_portals:
+                    portal = next((p for p in self.portal_rows if p.portal_slug == portal_slug), None)
+                    if not portal:
+                        continue
+
+                    tenders = db.export_portal_data(
+                        portal_slug=portal.portal_slug,
+                        portal_name=portal.portal_name,
+                        base_url=portal.base_url,
+                        expired_days=self.export_expired_days,
+                        live_only=self.export_live_only,
+                    )
+
+                    if not tenders:
+                        continue
+
+                    df = pd.DataFrame(tenders)
+                    # Ensure expected columns exist
+                    column_order = [
+                        "Department Name",
+                        "S.No",
+                        "e-Published Date",
+                        "Closing Date",
+                        "Opening Date",
+                        "Organisation Chain",
+                        "Title and Ref.No./Tender ID",
+                        "Tender ID (Extracted)",
+                        "Direct URL",
+                        "Status URL",
+                    ]
+                    # Reindex to keep columns present; missing columns will be filled with NaN
+                    df = df.reindex(columns=column_order)
+
+                    sheet_name = portal.portal_slug[:31] if portal.portal_slug else portal.portal_name[:31]
+                    # Avoid empty sheet name
+                    if not sheet_name:
+                        sheet_name = f"portal_{portal_slug}"
+
+                    df.to_excel(writer, sheet_name=sheet_name, index=False)
+                    combined_rows.extend(tenders)
+
+                # Write combined sheet
+                if combined_rows:
+                    combined_df = pd.DataFrame(combined_rows)
+                    combined_df = combined_df.reindex(columns=column_order)
+                    combined_df.to_excel(writer, sheet_name="All_Portals", index=False)
+
+            # Log export history
+            portal_names = [p.portal_name for p in self.portal_rows if p.portal_slug in self.export_selected_portals]
+            db.log_export_history(
+                export_type="selected_portals_single_file",
+                portals=portal_names,
+                total_tenders=len(combined_rows),
+                file_count=1,
+                export_dir=export_dir.name,
+                settings={
+                    "live_only": self.export_live_only,
+                    "expired_days": self.export_expired_days,
+                }
+            )
+
+            message = f"✅ Exported {len(portal_names)} portal(s) into single file: {filename} ({len(combined_rows)} tenders)"
+            self.show_toast_notification(message, "success")
+
+        except Exception as ex:
+            error_msg = f"Export failed: {type(ex).__name__}: {ex}"
+            self.show_toast_notification(error_msg, "error")
+
+        finally:
+            self.exporting = False
+            self.show_export_dialog = False
+            yield
+
+    async def export_all_portals_single_excel(self):
+        """Export all visible portals into a single Excel workbook (one sheet per portal + combined sheet)."""
+        self.exporting = True
+        yield
+
+        try:
+            import pandas as pd
+
+            portals_to_export = self.portal_rows
+            if not portals_to_export:
+                self.show_toast_notification("No portals available for export", "error")
+                self.exporting = False
+                yield
+                return
+
+            # Create export directory
+            export_dir = Path("Portal_Exports") / datetime.now().strftime("%Y%m%d_%H%M%S")
+            export_dir.mkdir(parents=True, exist_ok=True)
+
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"portals_all_tenders_{timestamp}.xlsx"
+            filepath = export_dir / filename
+
+            with pd.ExcelWriter(filepath, engine="openpyxl") as writer:
+                combined_rows = []
+
+                for portal in portals_to_export:
+                    tenders = db.export_portal_data(
+                        portal_slug=portal.portal_slug,
+                        portal_name=portal.portal_name,
+                        base_url=portal.base_url,
+                        expired_days=self.export_expired_days,
+                        live_only=self.export_live_only,
+                    )
+
+                    if not tenders:
+                        continue
+
+                    df = pd.DataFrame(tenders)
+                    column_order = [
+                        "Department Name",
+                        "S.No",
+                        "e-Published Date",
+                        "Closing Date",
+                        "Opening Date",
+                        "Organisation Chain",
+                        "Title and Ref.No./Tender ID",
+                        "Tender ID (Extracted)",
+                        "Direct URL",
+                        "Status URL",
+                    ]
+                    df = df.reindex(columns=column_order)
+
+                    sheet_name = portal.portal_slug[:31] if portal.portal_slug else portal.portal_name[:31]
+                    if not sheet_name:
+                        sheet_name = f"portal_{portal.portal_slug}"
+
+                    df.to_excel(writer, sheet_name=sheet_name, index=False)
+                    combined_rows.extend(tenders)
+
+                if combined_rows:
+                    combined_df = pd.DataFrame(combined_rows)
+                    combined_df = combined_df.reindex(columns=column_order)
+                    combined_df.to_excel(writer, sheet_name="All_Portals", index=False)
+
+            portal_names = [p.portal_name for p in portals_to_export]
+            db.log_export_history(
+                export_type="all_portals_single_file",
+                portals=portal_names,
+                total_tenders=len(combined_rows),
+                file_count=1,
+                export_dir=export_dir.name,
+                settings={
+                    "live_only": self.export_live_only,
+                    "expired_days": self.export_expired_days,
+                }
+            )
+
+            message = f"✅ Exported all portals into single file: {filename} ({len(combined_rows)} tenders)"
+            self.show_toast_notification(message, "success")
+
+        except Exception as ex:
+            error_msg = f"Export failed: {type(ex).__name__}: {ex}"
+            self.show_toast_notification(error_msg, "error")
+
+        finally:
+            self.exporting = False
+            yield
     
     def show_toast_notification(self, message: str, toast_type: str = "info"):
         """Show toast notification."""
