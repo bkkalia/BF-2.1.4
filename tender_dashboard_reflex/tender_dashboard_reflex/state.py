@@ -721,6 +721,8 @@ class PortalManagementState(rx.State):
     export_live_only: bool = False  # Export only live tenders
     export_selected_portals: list[str] = []  # Selected portal slugs for export
     exporting: bool = False
+    export_base_dir: str = "Portal_Exports"
+    last_export_path: str = ""
     
     # Toast notifications
     toast_message: str = ""
@@ -847,6 +849,40 @@ class PortalManagementState(rx.State):
             self.export_days_filter = int(value)
         except ValueError:
             self.export_days_filter = 0
+
+    def set_export_base_dir(self, value: str):
+        """Set base directory where export files are written."""
+        try:
+            self.export_base_dir = str(value).strip() or "Portal_Exports"
+        except Exception:
+            self.export_base_dir = "Portal_Exports"
+
+    def open_export_base_dir(self):
+        """Open the export base directory in the OS file explorer (server-side action)."""
+        try:
+            import os
+            import sys
+            from pathlib import Path
+            import subprocess
+
+            base = Path(self.export_base_dir)
+            if not base.exists():
+                base.mkdir(parents=True, exist_ok=True)
+
+            path_to_open = str(base.resolve())
+            # Windows
+            if os.name == "nt":
+                os.startfile(path_to_open)
+            else:
+                # macOS / Linux
+                if sys.platform == "darwin":
+                    subprocess.Popen(["open", path_to_open])
+                else:
+                    subprocess.Popen(["xdg-open", path_to_open])
+
+            self.show_toast_notification(f"Opened folder: {path_to_open}", "success")
+        except Exception as ex:
+            self.show_toast_notification(f"Failed to open folder: {ex}", "error")
     
     def set_export_expired_days(self, value: str):
         """Set expired days for export."""
@@ -1044,8 +1080,10 @@ class PortalManagementState(rx.State):
                     combined_df = combined_df.reindex(columns=column_order)
                     combined_df.to_excel(writer, sheet_name="All_Portals", index=False)
 
-            # Log export history
+            # Log export history and record full path
             portal_names = [p.portal_name for p in self.portal_rows if p.portal_slug in self.export_selected_portals]
+            full_path = str(filepath.resolve())
+            self.last_export_path = full_path
             db.log_export_history(
                 export_type="selected_portals_single_file",
                 portals=portal_names,
@@ -1055,10 +1093,11 @@ class PortalManagementState(rx.State):
                 settings={
                     "live_only": self.export_live_only,
                     "expired_days": self.export_expired_days,
+                    "export_path": full_path,
                 }
             )
 
-            message = f"✅ Exported {len(portal_names)} portal(s) into single file: {filename} ({len(combined_rows)} tenders)"
+            message = f"✅ Exported {len(portal_names)} portal(s) into single file: {filename}"
             self.show_toast_notification(message, "success")
 
         except Exception as ex:
@@ -1136,6 +1175,8 @@ class PortalManagementState(rx.State):
                     combined_df.to_excel(writer, sheet_name="All_Portals", index=False)
 
             portal_names = [p.portal_name for p in portals_to_export]
+            full_path = str(filepath.resolve())
+            self.last_export_path = full_path
             db.log_export_history(
                 export_type="all_portals_single_file",
                 portals=portal_names,
@@ -1145,10 +1186,11 @@ class PortalManagementState(rx.State):
                 settings={
                     "live_only": self.export_live_only,
                     "expired_days": self.export_expired_days,
+                    "export_path": full_path,
                 }
             )
 
-            message = f"✅ Exported all portals into single file: {filename} ({len(combined_rows)} tenders)"
+            message = f"✅ Exported all portals into single file: {filename}"
             self.show_toast_notification(message, "success")
 
         except Exception as ex:

@@ -160,6 +160,22 @@ def export_settings_dialog() -> rx.Component:
                             spacing="2",
                         ),
                     ),
+
+                    rx.hstack(
+                        rx.text("Export Folder:", size="2", weight="medium"),
+                        rx.input(
+                            value=PortalManagementState.export_base_dir,
+                            on_change=PortalManagementState.set_export_base_dir,
+                            size="2",
+                            width="280px",
+                        ),
+                        rx.tooltip(
+                            rx.icon_button(rx.icon("folder"), on_click=PortalManagementState.open_export_base_dir, size="2"),
+                            content="Open export folder",
+                        ),
+                        spacing="2",
+                        align="center",
+                    ),
                     
                     align="start",
                     spacing="3",
@@ -659,6 +675,18 @@ def portal_management_page() -> rx.Component:
                             ),
                         ),
                         rx.text(PortalManagementState.toast_message, size="2", weight="medium", color="white"),
+                        rx.cond(
+                            PortalManagementState.last_export_path != "" and PortalManagementState.toast_type == "success",
+                            rx.button(
+                                rx.icon("folder"),
+                                "Open Folder",
+                                on_click=PortalManagementState.open_export_base_dir,
+                                size="2",
+                                variant="solid",
+                                color_scheme="gray",
+                            ),
+                            rx.fragment(),
+                        ),
                         rx.icon_button(
                             rx.icon("x", size=16),
                             on_click=PortalManagementState.hide_toast,
