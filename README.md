@@ -21,12 +21,29 @@ Desktop utility for multi-portal government tender scraping, tracking, and expor
 - **Large Historical Import Tools** for Excel/CSV consolidation into SQLite.
 
 ## Innovations (Recent)
-- **SQLite-first pipeline** with run metadata and DB-backed exports.
-- **High-volume dedupe optimization** using normalized composite indexing.
-- **Tiered backup policy** (daily/weekly/monthly/yearly) with retention windows.
-- **Operational resilience** via portal recovery, checkpoint continuity, and mode-based delta strategy.
-- **Quick Delta by default** with optional Full Delta for stricter verification.
-- **Department URL coverage tracking** with automatic and manual coverage reports.
+**SQLite-first pipeline** with run metadata and DB-backed exports.
+**High-volume dedupe optimization** using normalized composite indexing.
+**Tiered backup policy** (daily/weekly/monthly/yearly) with retention windows.
+**Operational resilience** via portal recovery, checkpoint continuity, and mode-based delta strategy.
+**Quick Delta by default** with optional Full Delta for stricter verification.
+**Department URL coverage tracking** with automatic and manual coverage reports.
+
+## Recent Features
+- Actionable data integrity dashboard
+- Portal status dashboard with sorting/filtering/quick actions
+- JS batch scraping optimization
+- Bug fixes for tender ID extraction and column names
+
+## Known Limitations
+- Real-time worker feedback is lost after dashboard/server restart during ongoing scraping
+- Restoration and reconnection to ongoing jobs is planned for future releases (see TODO)
+
+## TODO
+- Restore worker feedback after restart
+- Reconnect dashboard to ongoing scraping jobs
+
+## Version Highlights
+- **v2.3.5 (Feb 21, 2026):** Documentation update, planning for worker feedback restoration after restart, version bump.
 
 ## Backup & Retention
 Configured backup directory receives:
