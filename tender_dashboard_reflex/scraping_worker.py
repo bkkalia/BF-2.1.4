@@ -21,11 +21,15 @@ class ScrapingWorkerManager:
         worker_count: int,
         project_root: str,
         portal_resume_data: Optional[Dict[str, Dict]] = None,
+        js_batch_threshold: int = 300,
+        js_batch_size: int = 2000,
     ):
         self.selected_portals = selected_portals
         self.worker_count = worker_count
         self.project_root = Path(project_root)
         self.portal_resume_data = portal_resume_data or {}
+        self.js_batch_threshold = js_batch_threshold
+        self.js_batch_size = js_batch_size
         
         # Multiprocessing queues for communication
         self.task_queue = mp.Queue()
@@ -110,7 +114,7 @@ class ScrapingWorkerManager:
                 for worker_id in range(self.worker_count):
                     process = mp.Process(
                         target=ScrapingWorkerManager._worker_process,
-                        args=(worker_id, self.task_queue, self.result_queue, str(self.project_root))
+                        args=(worker_id, self.task_queue, self.result_queue, str(self.project_root), self.js_batch_threshold, self.js_batch_size)
                     )
                     process.daemon = True
                     process.start()
@@ -197,7 +201,7 @@ class ScrapingWorkerManager:
             })
     
     @staticmethod
-    def _worker_process(worker_id: int, task_queue: mp.Queue, result_queue: mp.Queue, project_root: str):
+    def _worker_process(worker_id: int, task_queue: mp.Queue, result_queue: mp.Queue, project_root: str, js_batch_threshold: int = 300, js_batch_size: int = 2000):
         """Worker process function - runs in separate process."""
         try:
             # Send immediate startup log
@@ -261,7 +265,9 @@ class ScrapingWorkerManager:
                         worker_id,
                         portal_config,
                         result_queue,
-                        project_root_path
+                        project_root_path,
+                        js_batch_threshold,
+                        js_batch_size
                     )
                 
                 except queue.Empty:
@@ -280,7 +286,7 @@ class ScrapingWorkerManager:
             })
     
     @staticmethod
-    def _scrape_portal_worker(worker_id: int, portal_config: Dict, result_queue: mp.Queue, project_root: Path):
+    def _scrape_portal_worker(worker_id: int, portal_config: Dict, result_queue: mp.Queue, project_root: Path, js_batch_threshold: int = 300, js_batch_size: int = 2000):
         """Scrape a single portal (runs in worker process)."""
         driver = None
         portal_name = portal_config.get('Name', 'Unknown') if portal_config else 'Unknown'
@@ -310,6 +316,13 @@ class ScrapingWorkerManager:
                 store = TenderDataStore(str(db_path))
                 db_known_tender_ids = set(store.get_existing_tender_ids_for_portal(portal_name) or [])
                 db_tender_snapshot = dict(store.get_existing_tender_snapshot_for_portal(portal_name) or {})
+                
+                # Log duplicate detection status
+                if db_known_tender_ids:
+                    result_queue.put({
+                        "type": "log",
+                        "message": f"Worker {worker_id + 1}: 🔍 Duplicate detection active - {len(db_known_tender_ids)} existing tender(s) in DB will be skipped"
+                    })
             except Exception as known_ids_err:
                 result_queue.put({
                     "type": "log",
@@ -343,7 +356,15 @@ class ScrapingWorkerManager:
                     "message": f"Worker {worker_id + 1}: {msg}"
                 })
             
-            org_list_url = portal_config.get('OrgListURL', base_url)
+            # Construct the proper OrgListURL with FrontEndTendersByOrganisation query parameter
+            org_list_url = portal_config.get('OrgListURL', None)
+            if not org_list_url:
+                # Auto-construct the direct URL pattern for faster navigation
+                org_list_url = f"{base_url}?page=FrontEndTendersByOrganisation&service=page"
+                result_queue.put({
+                    "type": "log",
+                    "message": f"Worker {worker_id + 1}: 🚀 Using direct URL pattern: {org_list_url}"
+                })
             departments, total_count = fetch_department_list_from_site_playwright(
                 org_list_url,
                 log_callback=log_callback
@@ -384,8 +405,15 @@ class ScrapingWorkerManager:
             if resume_dept_count > 0:
                 result_queue.put({
                     "type": "log",
-                    "message": f"Worker {worker_id + 1}: Resume enabled for '{portal_name}' with {resume_dept_count} checkpointed department(s)"
+                    "message": f"Worker {worker_id + 1}: ✓ Resume mode for '{portal_name}' - {resume_dept_count} department(s) will be skipped"
                 })
+                # Show first few department names for verification
+                if processed_department_names:
+                    sample_depts = list(processed_department_names)[:3]
+                    result_queue.put({
+                        "type": "log",
+                        "message": f"Worker {worker_id + 1}: Completed depts (sample): {', '.join(sample_depts)}"
+                    })
             
             # Setup WebDriver for scraping
             download_dir = project_root / "Tender_Downloads" / portal_name
@@ -396,6 +424,14 @@ class ScrapingWorkerManager:
             # Setup database
             db_path = project_root / "database" / "blackforest_tenders.sqlite3"
             db_path.parent.mkdir(parents=True, exist_ok=True)
+            
+            # Timer for periodic checkpoint saves (every 2 minutes)
+            import time
+            last_checkpoint_time = [time.time()]  # Use list for mutable reference
+            CHECKPOINT_INTERVAL = 120  # 2 minutes in seconds
+            
+            # Track cumulative skipped duplicates for this worker
+            worker_skipped_existing = [0]  # Use list for mutable reference
             
             # Callbacks for progress updates
             def progress_callback(*args, **kwargs):
@@ -413,15 +449,25 @@ class ScrapingWorkerManager:
                 dept_name = ""
                 tenders_scraped = 0
                 pending_depts = 0
-                
-                checkpoint_department_completed = ""
+                checkpoint_department_completed = ""  # Track completed departments
+                normalized_dept = ""  # For periodic checkpoint saves
 
                 # Parse based on number of arguments
                 if len(args) == 7:
                     # Pattern 1: (current, total, status_msg, dept_name, skipped, tenders_scraped, pending_depts)
                     dept_name = args[3] if isinstance(args[3], str) else str(args[3])
+                    skipped_existing_this_dept = args[4] if len(args) > 4 else 0
                     tenders_scraped = args[5]
                     pending_depts = args[6]
+                    # Track cumulative skipped count
+                    if skipped_existing_this_dept > 0:
+                        worker_skipped_existing[0] += skipped_existing_this_dept
+                    # Mark department as complete when processing finishes
+                    if dept_name:
+                        normalized_dept = str(dept_name).strip().lower()
+                        if normalized_dept not in processed_department_names:
+                            processed_department_names.add(normalized_dept)
+                            checkpoint_department_completed = normalized_dept
                 elif len(args) >= 4:
                     # Pattern 2: (current, total, status_msg, extra_info)
                     extra_info = args[3]
@@ -429,9 +475,13 @@ class ScrapingWorkerManager:
                         dept_name = extra_info.get("dept_name", "")
                         tenders_scraped = extra_info.get("total_tenders", 0)
                         pending_depts = extra_info.get("pending_depts", 0)
+                        skipped_existing_this_dept = extra_info.get("skipped_duplicates", 0)
+                        # Track cumulative skipped count
+                        if skipped_existing_this_dept > 0:
+                            worker_skipped_existing[0] += skipped_existing_this_dept
                         if dept_name:
                             normalized_dept = str(dept_name).strip().lower()
-                            if normalized_dept:
+                            if normalized_dept not in processed_department_names:
                                 processed_department_names.add(normalized_dept)
                                 checkpoint_department_completed = normalized_dept
                 
@@ -461,8 +511,25 @@ class ScrapingWorkerManager:
                         "tender_percent": tender_percent,
                         "pending_depts": pending_depts,
                         "progress_percent": percent,
+                        "skipped_existing": worker_skipped_existing[0],
                         "checkpoint_department_completed": checkpoint_department_completed,
                     })
+                    
+                    # Periodic checkpoint save (every 2 minutes for large departments)
+                    current_time = time.time()
+                    time_since_last_checkpoint = current_time - last_checkpoint_time[0]
+                    if time_since_last_checkpoint >= CHECKPOINT_INTERVAL:
+                        result_queue.put({
+                            "type": "log",
+                            "message": f"Worker {worker_id + 1}: 💾 Periodic checkpoint (2min timer) - {current}/{total} depts, {tenders_scraped} tenders"
+                        })
+                        # Send checkpoint signal
+                        result_queue.put({
+                            "type": "worker_status",
+                            "worker_id": worker_id,
+                            "checkpoint_department_completed": normalized_dept if dept_name else "",
+                        })
+                        last_checkpoint_time[0] = current_time
                     
                     # Also send totals update
                     result_queue.put({
@@ -484,11 +551,16 @@ class ScrapingWorkerManager:
                             "type": "worker_status",
                             "worker_id": worker_id,
                             "tenders_found": tenders_found[0],
+                            "skipped_existing": worker_skipped_existing[0],
                         })
                     except:
                         pass
             
             # Run scraping logic (imported from existing code)
+            # DUPLICATE DETECTION: Passing existing_tender_ids and existing_tender_snapshot
+            # enables automatic duplicate skipping - only new tenders will be scraped
+            # PARALLEL PROCESSING: department_parallel_workers=3 enables multi-department parallelism
+            # BATCHED JS EXTRACTION: js_batch_threshold and js_batch_size control large department handling
             summary = run_scraping_logic(
                 departments_to_scrape=departments,
                 base_url_config={
@@ -502,11 +574,14 @@ class ScrapingWorkerManager:
                 status_callback=status_callback,
                 driver=driver,
                 deep_scrape=False,  # Only listing page for now
-                existing_tender_ids=db_known_tender_ids,
-                existing_tender_snapshot=db_tender_snapshot,
-                existing_department_names=processed_department_names,
+                existing_tender_ids=db_known_tender_ids,  # Skip duplicates
+                existing_tender_snapshot=db_tender_snapshot,  # Check for closing date changes
+                existing_department_names=processed_department_names,  # Resume from checkpoint
                 sqlite_db_path=str(db_path),
                 export_policy="always",
+                department_parallel_workers=3,  # Enable 3-worker parallel department processing (3x faster!)
+                js_batch_threshold=js_batch_threshold,  # User-configurable via GUI
+                js_batch_size=js_batch_size,  # User-configurable via GUI
             )
             
             # Extract results
@@ -522,6 +597,12 @@ class ScrapingWorkerManager:
             }
             processed_department_names.update(normalized_summary_departments)
             
+            # Log duplicate detection summary
+            result_queue.put({
+                "type": "log",
+                "message": f"Worker {worker_id + 1}: ✅ '{portal_name}' complete - New: {final_tender_count}, Skipped: {skipped_existing_total}, Extended: {closing_date_reprocessed_total}"
+            })
+            
             result_queue.put({
                 "type": "worker_status",
                 "worker_id": worker_id,
@@ -534,6 +615,7 @@ class ScrapingWorkerManager:
                 "expected_tenders": int(total_count or final_tender_count),
                 "tender_percent": 100,
                 "progress_percent": 100,
+                "skipped_existing": skipped_existing_total,
                 "checkpoint_processed_departments": sorted(processed_department_names),
             })
             

@@ -3,11 +3,15 @@ from __future__ import annotations
 import sqlite3
 import csv
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 import os
 from pathlib import Path
 from typing import Any
 import json
+
+
+# IST = UTC+5:30 (Indian Standard Time used by all NIC portals)
+_IST = timezone(timedelta(hours=5, minutes=30))
 
 
 def _resolve_db_path() -> Path:
@@ -110,12 +114,19 @@ def _is_v3_schema() -> bool:
 
 
 def _parse_portal_datetime(value: str | None) -> datetime | None:
+    """
+    Parse portal datetime string as IST (Indian Standard Time).
+    All NIC government portals use IST for tender dates/times.
+    Returns timezone-aware datetime object for proper timezone conversion in browser.
+    """
     text = str(value or "").strip()
     if not text:
         return None
     for fmt in ("%d-%b-%Y %I:%M %p", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d"):
         try:
-            return datetime.strptime(text, fmt)
+            dt = datetime.strptime(text, fmt)
+            # Mark as IST so browsers can convert to local timezone
+            return dt.replace(tzinfo=_IST)
         except ValueError:
             continue
     return None

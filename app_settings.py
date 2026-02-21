@@ -48,6 +48,8 @@ DEFAULT_SETTINGS_STRUCTURE = {
     "central_sqlite_db_path": None,
     "sqlite_backup_directory": None,
     "sqlite_backup_retention_days": 30,
+    "js_batch_threshold": 300,  # Trigger batched JS extraction for departments with more than this many rows
+    "js_batch_size": 2000,  # Number of rows to extract per batch
     "excel_export_policy": "on_demand",
     "excel_export_interval_days": 2,
     **_initial_timeout_settings  # Unpack all timeout settings

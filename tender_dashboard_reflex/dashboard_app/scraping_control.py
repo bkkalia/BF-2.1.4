@@ -5,6 +5,7 @@ Scraping Control Page - Real-time tender scraping with process-based workers.
 
 import asyncio
 import json
+import logging
 import queue as py_queue
 from datetime import datetime
 from pathlib import Path
@@ -12,6 +13,8 @@ from typing import Dict, List, Optional
 
 import reflex as rx
 from pydantic import BaseModel
+
+logger = logging.getLogger(__name__)
 
 
 class WorkerStatus(BaseModel):
@@ -31,6 +34,7 @@ class WorkerStatus(BaseModel):
     tender_percent: int = 0
     pending_depts: int = 0
     progress_percent: int = 0
+    skipped_existing: int = 0
     last_update: str = ""
 
 
@@ -42,11 +46,15 @@ class ScrapingControlState(rx.State):
 
     worker_count: int = 2
     worker_names: List[str] = ["Worker 1", "Worker 2", "Worker 3", "Worker 4"]
+    js_batch_threshold: int = 300  # Trigger batched extraction for departments with 300+ rows
+    js_batch_size: int = 2000  # Extract rows in batches of this size
+    settings_saved: bool = False  # Track if settings have been saved
 
     workers: List[WorkerStatus] = []
 
     is_scraping: bool = False
     scraping_start_time: Optional[str] = None
+    elapsed_seconds: int = 0  # Track elapsed time in seconds
 
     log_messages: List[str] = []
     max_log_messages: int = 100
@@ -74,6 +82,34 @@ class ScrapingControlState(rx.State):
 
     auto_refresh_enabled: bool = False
     last_refresh: str = ""
+
+    # Portal status management
+    portal_status_list: List[Dict] = []
+    portal_sort_by: str = "status"  # status, name, tenders, date
+    portal_filter: str = "all"  # all, scraped, pending
+    portal_search_query: str = ""
+    show_portal_dashboard: bool = True
+
+    def on_load(self):
+        """Load saved worker settings and portal status when page loads"""
+        try:
+            config_path = Path("portal_config_memory.json")
+            if config_path.exists():
+                with open(config_path, "r", encoding="utf-8") as f:
+                    config_data = json.load(f)
+                    if "worker_count" in config_data:
+                        self.worker_count = int(config_data["worker_count"])
+                    if "worker_names" in config_data and isinstance(config_data["worker_names"], list):
+                        self.worker_names = config_data["worker_names"][:]
+                    if "js_batch_threshold" in config_data:
+                        self.js_batch_threshold = int(config_data["js_batch_threshold"])
+                    if "js_batch_size" in config_data:
+                        self.js_batch_size = int(config_data["js_batch_size"])
+            
+            # Load portal status from database
+            self._load_portal_status()
+        except Exception as e:
+            logger.warning(f"Could not load worker settings: {e}")
 
     @rx.var
     def global_expected_departments(self) -> int:
@@ -106,6 +142,231 @@ class ScrapingControlState(rx.State):
     @rx.var
     def has_checkpoint(self) -> bool:
         return self.checkpoint_available
+
+    @rx.var
+    def elapsed_time_formatted(self) -> str:
+        """Format elapsed time as HH:MM:SS"""
+        hours = self.elapsed_seconds // 3600
+        minutes = (self.elapsed_seconds % 3600) // 60
+        seconds = self.elapsed_seconds % 60
+        return f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+
+    @rx.var
+    def tenders_per_minute(self) -> str:
+        """Calculate tenders processed per minute"""
+        if self.elapsed_seconds < 10 or self.total_tenders_found == 0:
+            return "0.0"
+        rate = (self.total_tenders_found / self.elapsed_seconds) * 60
+        return f"{rate:.1f}"
+
+    @rx.var
+    def departments_per_minute(self) -> str:
+        """Calculate departments processed per minute"""
+        if self.elapsed_seconds < 10 or self.total_departments_processed == 0:
+            return "0.0"
+        rate = (self.total_departments_processed / self.elapsed_seconds) * 60
+        return f"{rate:.1f}"
+
+    async def save_worker_settings(self):
+        """Save worker count and names to persistent config"""
+        try:
+            # Save to portal_config_memory for persistence
+            from pathlib import Path
+            import json
+            config_path = Path("portal_config_memory.json")
+            
+            config_data = {}
+            if config_path.exists():
+                try:
+                    with open(config_path, "r", encoding="utf-8") as f:
+                        config_data = json.load(f)
+                except:
+                    config_data = {}
+            
+            config_data["worker_count"] = self.worker_count
+            config_data["worker_names"] = self.worker_names[:]
+            config_data["js_batch_threshold"] = self.js_batch_threshold
+            config_data["js_batch_size"] = self.js_batch_size
+            
+            with open(config_path, "w", encoding="utf-8") as f:
+                json.dump(config_data, f, indent=2)
+            
+            self.settings_saved = True
+            self.add_log(f"💾 Settings saved: {self.worker_count} workers, batch threshold: {self.js_batch_threshold}, batch size: {self.js_batch_size}")
+            await asyncio.sleep(2)
+            self.settings_saved = False
+        except Exception as e:
+            self.add_log(f"❌ Failed to save settings: {str(e)}")
+
+    async def pause_worker(self, worker_id: int):
+        """Pause a specific worker."""
+        try:
+            if self.worker_manager:
+                # TODO: Implement actual pause logic in worker manager
+                self.add_log(f"⏸️ Pausing worker {worker_id + 1}...")
+                await asyncio.sleep(0.1)
+        except Exception as e:
+            logger.error(f"Error pausing worker {worker_id}: {e}")
+
+    async def resume_worker(self, worker_id: int):
+        """Resume a paused worker."""
+        try:
+            if self.worker_manager:
+                # TODO: Implement actual resume logic in worker manager
+                self.add_log(f"▶️ Resuming worker {worker_id + 1}...")
+                await asyncio.sleep(0.1)
+        except Exception as e:
+            logger.error(f"Error resuming worker {worker_id}: {e}")
+
+    async def stop_worker(self, worker_id: int):
+        """Stop a specific worker."""
+        try:
+            if self.worker_manager:
+                # TODO: Implement actual stop logic in worker manager
+                self.add_log(f"⏹️ Stopping worker {worker_id + 1}...")
+                await asyncio.sleep(0.1)
+        except Exception as e:
+            logger.error(f"Error stopping worker {worker_id}: {e}")
+
+    def _load_portal_status(self):
+        """Load portal status from database and base_urls.csv"""
+        try:
+            import csv
+            import sqlite3
+            
+            # Read all configured portals
+            portals_config = {}
+            csv_path = Path("base_urls.csv")
+            if csv_path.exists():
+                with open(csv_path, 'r', encoding='utf-8') as f:
+                    reader = csv.DictReader(f)
+                    for row in reader:
+                        if row.get('Name'):
+                            portals_config[row['Name'].strip()] = {
+                                'name': row['Name'].strip(),
+                                'url': row.get('BaseURL', ''),
+                                'keyword': row.get('Keyword', '')
+                            }
+            
+            # Get portal stats from database
+            db_path = Path("database/blackforest_tenders.sqlite3")
+            portal_stats = {}
+            if db_path.exists():
+                conn = sqlite3.connect(str(db_path))
+                cursor = conn.cursor()
+                results = cursor.execute("""
+                    SELECT 
+                        portal_name,
+                        COUNT(*) as tender_count,
+                        MAX(published_date) as latest_published,
+                        MAX(run_id) as latest_run_id
+                    FROM tenders
+                    WHERE portal_name IS NOT NULL
+                    GROUP BY portal_name
+                """).fetchall()
+                
+                for portal, count, latest_pub, latest_run in results:
+                    portal_stats[portal] = {
+                        'tender_count': count,
+                        'latest_published': latest_pub or '',
+                        'latest_run_id': latest_run or 0
+                    }
+                conn.close()
+            
+            # Combine data
+            status_list = []
+            for portal_name, config in portals_config.items():
+                stats = portal_stats.get(portal_name, {})
+                status_list.append({
+                    'name': portal_name,
+                    'url': config.get('url', ''),
+                    'keyword': config.get('keyword', ''),
+                    'status': 'scraped' if stats else 'pending',
+                    'tender_count': stats.get('tender_count', 0),
+                    'latest_published': stats.get('latest_published', ''),
+                    'latest_run_id': stats.get('latest_run_id', 0)
+                })
+            
+            self.portal_status_list = status_list
+        except Exception as e:
+            logger.error(f"Error loading portal status: {e}")
+            self.portal_status_list = []
+
+    def refresh_portal_status(self):
+        """Refresh portal status from database"""
+        self._load_portal_status()
+
+    def set_portal_sort(self, value: str):
+        """Set portal sorting option"""
+        self.portal_sort_by = value
+
+    def set_portal_filter(self, value: str):
+        """Set portal filter option"""
+        self.portal_filter = value
+
+    def set_portal_search(self, value: str):
+        """Set portal search query"""
+        self.portal_search_query = value.lower()
+
+    def toggle_portal_dashboard(self):
+        """Toggle portal dashboard visibility"""
+        self.show_portal_dashboard = not self.show_portal_dashboard
+
+    async def scrape_single_portal(self, portal_name: str):
+        """Start scraping a single portal"""
+        if self.is_scraping:
+            self.add_log("❌ Scraping already in progress. Please wait for completion.")
+            return
+        
+        self.selected_portals = [portal_name]
+        self.add_log(f"🚀 Starting scraping for: {portal_name}")
+        async for _ in self.start_scraping():
+            yield
+
+    @rx.var
+    def filtered_sorted_portals(self) -> List[Dict]:
+        """Get filtered and sorted portal list"""
+        portals = self.portal_status_list
+        
+        # Apply filter
+        if self.portal_filter == "scraped":
+            portals = [p for p in portals if p['status'] == 'scraped']
+        elif self.portal_filter == "pending":
+            portals = [p for p in portals if p['status'] == 'pending']
+        
+        # Apply search
+        if self.portal_search_query:
+            portals = [p for p in portals if 
+                      self.portal_search_query in p['name'].lower() or
+                      self.portal_search_query in p['keyword'].lower()]
+        
+        # Apply sorting
+        if self.portal_sort_by == "name":
+            portals = sorted(portals, key=lambda p: p['name'].lower())
+        elif self.portal_sort_by == "tenders":
+            portals = sorted(portals, key=lambda p: p['tender_count'], reverse=True)
+        elif self.portal_sort_by == "date":
+            portals = sorted(portals, key=lambda p: p['latest_published'] or '', reverse=True)
+        else:  # status
+            # Sort by status (pending first), then by name
+            portals = sorted(portals, key=lambda p: (p['status'] != 'pending', p['name'].lower()))
+        
+        return portals
+
+    @rx.var
+    def portal_stats_summary(self) -> Dict:
+        """Get summary statistics for portals"""
+        total = len(self.portal_status_list)
+        scraped = sum(1 for p in self.portal_status_list if p['status'] == 'scraped')
+        pending = total - scraped
+        total_tenders = sum(p['tender_count'] for p in self.portal_status_list)
+        
+        return {
+            'total': total,
+            'scraped': scraped,
+            'pending': pending,
+            'total_tenders': total_tenders
+        }
 
     def _checkpoint_file_path(self) -> Path:
         project_root = Path(__file__).parent.parent.parent
@@ -147,6 +408,14 @@ class ScrapingControlState(rx.State):
                 f"Checkpoint: {len(completed)}/{len(all_portals)} portals completed, "
                 f"{remaining_count} remaining"
             )
+            
+            # Log checkpoint save with department counts
+            total_depts_saved = sum(
+                len(portal_data.get("processed_departments", []))
+                for portal_data in self.portal_progress.values()
+            )
+            if total_depts_saved > 0:
+                self.add_log(f"💾 Checkpoint saved: {total_depts_saved} completed department(s) across {len(self.portal_progress)} portal(s)")
         except Exception as e:
             self.add_log(f"WARNING: could not save checkpoint: {str(e)}")
 
@@ -334,6 +603,22 @@ class ScrapingControlState(rx.State):
         except Exception:
             self.worker_count = 2
 
+    def set_js_batch_threshold(self, value: str):
+        """Set the threshold for triggering batched JS extraction"""
+        try:
+            threshold = int(value)
+            self.js_batch_threshold = max(100, min(10000, threshold))
+        except Exception:
+            self.js_batch_threshold = 300
+
+    def set_js_batch_size(self, value: str):
+        """Set the batch size for JS extraction"""
+        try:
+            size = int(value)
+            self.js_batch_size = max(500, min(5000, size))
+        except Exception:
+            self.js_batch_size = 2000
+
     def _set_worker_name(self, index: int, value: str):
         clean = value.strip() if value else ""
         default_name = f"Worker {index + 1}"
@@ -384,6 +669,7 @@ class ScrapingControlState(rx.State):
 
         self.is_scraping = True
         self.scraping_start_time = datetime.now().isoformat()
+        self.elapsed_seconds = 0  # Reset elapsed time counter
 
         if not self.resume_mode:
             self.total_tenders_found = 0
@@ -468,6 +754,11 @@ class ScrapingControlState(rx.State):
                     for portal, entry in loaded_progress.items()
                     if str(portal).strip()
                 }
+                # Log department resume info for each portal
+                for portal_name, portal_data in self.portal_progress.items():
+                    dept_count = len(portal_data.get("processed_departments", []))
+                    if dept_count > 0:
+                        self.add_log(f"  ✓ Portal '{portal_name}': Will skip {dept_count} already-completed department(s)")
             else:
                 self.portal_progress = {}
 
@@ -497,6 +788,8 @@ class ScrapingControlState(rx.State):
                 worker_count=self.worker_count,
                 project_root=str(project_root),
                 portal_resume_data=self.portal_progress,
+                js_batch_threshold=self.js_batch_threshold,
+                js_batch_size=self.js_batch_size,
             )
 
             self.add_log("Initializing worker processes...")
@@ -554,6 +847,15 @@ class ScrapingControlState(rx.State):
     def _update_progress_sync(self, update_data: Dict):
         """Update progress from worker callback."""
         try:
+            # Update elapsed time if scraping is active
+            if self.is_scraping and self.scraping_start_time:
+                try:
+                    start_dt = datetime.fromisoformat(self.scraping_start_time)
+                    elapsed_td = datetime.now() - start_dt
+                    self.elapsed_seconds = int(elapsed_td.total_seconds())
+                except Exception:
+                    pass  # Keep previous elapsed_seconds value on parse error
+            
             update_type = update_data.get("type", "log")
 
             if update_type == "log":
@@ -578,6 +880,7 @@ class ScrapingControlState(rx.State):
                         tender_percent=update_data.get("tender_percent", old_worker.tender_percent),
                         pending_depts=update_data.get("pending_depts", old_worker.pending_depts),
                         progress_percent=update_data.get("progress_percent", old_worker.progress_percent),
+                        skipped_existing=update_data.get("skipped_existing", old_worker.skipped_existing),
                         last_update=datetime.now().isoformat(),
                     )
 
@@ -664,6 +967,217 @@ class ScrapingControlState(rx.State):
         self.log_messages = []
 
 
+def portal_status_dashboard() -> rx.Component:
+    """Visual portal status dashboard with sorting, filtering, and quick actions"""
+    return rx.card(
+        rx.vstack(
+            # Header with stats
+            rx.hstack(
+                rx.heading("📊 Portal Status Dashboard", size="5", weight="bold"),
+                rx.spacer(),
+                rx.tooltip(
+                    rx.icon_button(
+                        rx.icon("refresh-cw", size=18),
+                        on_click=ScrapingControlState.refresh_portal_status,
+                        variant="soft",
+                        color_scheme="blue",
+                        size="2",
+                    ),
+                    content="Refresh portal status",
+                ),
+                rx.tooltip(
+                    rx.icon_button(
+                        rx.icon(rx.cond(ScrapingControlState.show_portal_dashboard, "eye-off", "eye"), size=18),
+                        on_click=ScrapingControlState.toggle_portal_dashboard,
+                        variant="soft",
+                        color_scheme="gray",
+                        size="2",
+                    ),
+                    content="Toggle dashboard",
+                ),
+                spacing="2",
+                width="100%",
+            ),
+            
+            # Summary stats
+            rx.hstack(
+                rx.box(
+                    rx.vstack(
+                        rx.text("Total Portals", size="1", color="gray.11", weight="medium"),
+                        rx.text(ScrapingControlState.portal_stats_summary["total"].to_string(), size="6", weight="bold", color="blue.11"),
+                        spacing="0",
+                    ),
+                    padding="0.75rem",
+                    border="1px solid",
+                    border_color="blue.6",
+                    border_radius="8px",
+                    background="blue.2",
+                ),
+                rx.box(
+                    rx.vstack(
+                        rx.text("Scraped", size="1", color="gray.11", weight="medium"),
+                        rx.text(ScrapingControlState.portal_stats_summary["scraped"].to_string(), size="6", weight="bold", color="green.11"),
+                        spacing="0",
+                    ),
+                    padding="0.75rem",
+                    border="1px solid",
+                    border_color="green.6",
+                    border_radius="8px",
+                    background="green.2",
+                ),
+                rx.box(
+                    rx.vstack(
+                        rx.text("Pending", size="1", color="gray.11", weight="medium"),
+                        rx.text(ScrapingControlState.portal_stats_summary["pending"].to_string(), size="6", weight="bold", color="orange.11"),
+                        spacing="0",
+                    ),
+                    padding="0.75rem",
+                    border="1px solid",
+                    border_color="orange.6",
+                    border_radius="8px",
+                    background="orange.2",
+                ),
+                rx.box(
+                    rx.vstack(
+                        rx.text("Total Tenders", size="1", color="gray.11", weight="medium"),
+                        rx.text(ScrapingControlState.portal_stats_summary["total_tenders"].to_string(), size="6", weight="bold", color="violet.11"),
+                        spacing="0",
+                    ),
+                    padding="0.75rem",
+                    border="1px solid",
+                    border_color="violet.6",
+                    border_radius="8px",
+                    background="violet.2",
+                ),
+                spacing="3",
+                width="100%",
+            ),
+            
+            # Controls: Search, Sort, Filter
+            rx.cond(
+                ScrapingControlState.show_portal_dashboard,
+                rx.vstack(
+                    rx.hstack(
+                        rx.input(
+                            placeholder="🔍 Search portals...",
+                            value=ScrapingControlState.portal_search_query,
+                            on_change=ScrapingControlState.set_portal_search,
+                            width="100%",
+                            size="2",
+                        ),
+                        rx.select(
+                            ["status", "name", "tenders", "date"],
+                            value=ScrapingControlState.portal_sort_by,
+                            on_change=ScrapingControlState.set_portal_sort,
+                            placeholder="Sort by",
+                            size="2",
+                        ),
+                        rx.select(
+                            ["all", "scraped", "pending"],
+                            value=ScrapingControlState.portal_filter,
+                            on_change=ScrapingControlState.set_portal_filter,
+                            placeholder="Filter",
+                            size="2",
+                        ),
+                        spacing="2",
+                        width="100%",
+                    ),
+                    
+                    # Portal list
+                    rx.box(
+                        rx.foreach(
+                            ScrapingControlState.filtered_sorted_portals,
+                            lambda portal: rx.box(
+                                rx.vstack(
+                                    rx.hstack(
+                                        # Status indicator
+                                        rx.badge(
+                                            rx.cond(
+                                                portal["status"] == "scraped",
+                                                "✅ Scraped",
+                                                "⏳ Pending"
+                                            ),
+                                            color_scheme=rx.cond(
+                                                portal["status"] == "scraped",
+                                                "green",
+                                                "orange"
+                                            ),
+                                            size="2",
+                                        ),
+                                        # Portal name
+                                        rx.text(portal["name"], size="3", weight="bold"),
+                                        rx.spacer(),
+                                        # Tender count - always show
+                                        rx.badge(f"{portal['tender_count']} tenders", color_scheme="blue", size="2"),
+                                        # Action button
+                                        rx.tooltip(
+                                            rx.icon_button(
+                                                rx.icon("play", size=16),
+                                                on_click=lambda: ScrapingControlState.scrape_single_portal(portal["name"]),
+                                                variant="soft",
+                                                color_scheme=rx.cond(
+                                                    portal["status"] == "pending",
+                                                    "green",
+                                                    "blue"
+                                                ),
+                                                size="2",
+                                                disabled=ScrapingControlState.is_scraping,
+                                            ),
+                                            content=rx.cond(
+                                                portal["status"] == "pending",
+                                                "Start scraping",
+                                                "Scrape again"
+                                            ),
+                                        ),
+                                        spacing="2",
+                                        width="100%",
+                                        align="center",
+                                    ),
+                                    rx.hstack(
+                                        rx.text(portal["keyword"], size="1", color="gray.10"),
+                                        rx.cond(
+                                            portal["latest_published"] != "",
+                                            rx.text(f"📅 {portal['latest_published']}", size="1", color="gray.10"),
+                                        ),
+                                        spacing="2",
+                                    ),
+                                    spacing="1",
+                                    width="100%",
+                                ),
+                                padding="0.75rem",
+                                border="1px solid",
+                                border_color=rx.cond(
+                                    portal["status"] == "scraped",
+                                    "green.5",
+                                    "orange.5"
+                                ),
+                                border_radius="8px",
+                                background=rx.cond(
+                                    portal["status"] == "scraped",
+                                    "green.1",
+                                    "orange.1"
+                                ),
+                                margin_bottom="0.5rem",
+                                _hover={"background": rx.cond(portal["status"] == "scraped", "green.2", "orange.2")},
+                            ),
+                        ),
+                        max_height="500px",
+                        overflow_y="auto",
+                        width="100%",
+                        padding="0.5rem",
+                    ),
+                    spacing="3",
+                    width="100%",
+                ),
+            ),
+            
+            spacing="3",
+            width="100%",
+        ),
+        size="2",
+    )
+
+
 def portal_selector() -> rx.Component:
     return rx.card(
         rx.vstack(
@@ -710,10 +1224,45 @@ def worker_config_panel() -> rx.Component:
                 spacing="2",
                 align="center",
             ),
+            rx.divider(),
+            rx.heading("Batched JS Extraction", size="3", weight="medium"),
+            rx.hstack(
+                rx.text("Batch Threshold:", size="2", weight="medium"),
+                rx.input(
+                    value=ScrapingControlState.js_batch_threshold.to_string(),
+                    on_change=ScrapingControlState.set_js_batch_threshold,
+                    type="number",
+                    min=100,
+                    max=10000,
+                    width="120px",
+                    size="2",
+                ),
+                rx.text("rows", size="2", color="gray"),
+                spacing="2",
+                align="center",
+            ),
+            rx.text("Departments with more rows than this will use batched extraction", size="1", color="gray"),
+            rx.hstack(
+                rx.text("Batch Size:", size="2", weight="medium"),
+                rx.input(
+                    value=ScrapingControlState.js_batch_size.to_string(),
+                    on_change=ScrapingControlState.set_js_batch_size,
+                    type="number",
+                    min=500,
+                    max=5000,
+                    width="120px",
+                    size="2",
+                ),
+                rx.text("rows per batch", size="2", color="gray"),
+                spacing="2",
+                align="center",
+            ),
+            rx.text("Number of rows to extract per JavaScript batch", size="1", color="gray"),
+            rx.divider(),
             rx.callout(
                 rx.text(
                     "Process-based workers avoid UI freeze and provide better throughput. "
-                    "Set names and defaults in Scraping Settings.",
+                    "Batched extraction prevents browser timeouts on large departments (10,000+ tenders).",
                     size="2",
                 ),
                 color_scheme="blue",
@@ -732,42 +1281,54 @@ def control_buttons() -> rx.Component:
         rx.vstack(
             rx.heading("Controls", size="4", weight="bold"),
             rx.hstack(
-                rx.button(
-                    rx.icon("play", size=16),
-                    " Start Scraping",
-                    on_click=ScrapingControlState.start_scraping,
-                    disabled=ScrapingControlState.is_scraping,
-                    color_scheme="green",
-                    size="3",
-                    variant="solid",
+                rx.tooltip(
+                    rx.button(
+                        rx.icon("play", size=16),
+                        " Start Scraping",
+                        on_click=ScrapingControlState.start_scraping,
+                        disabled=ScrapingControlState.is_scraping,
+                        color_scheme="green",
+                        size="3",
+                        variant="solid",
+                    ),
+                    content="Start scraping selected portals with configured workers",
                 ),
-                rx.button(
-                    rx.icon("square", size=16),
-                    " Stop",
-                    on_click=ScrapingControlState.stop_scraping,
-                    disabled=~ScrapingControlState.is_scraping,
-                    color_scheme="red",
-                    size="3",
-                    variant="soft",
+                rx.tooltip(
+                    rx.button(
+                        rx.icon("square", size=16),
+                        " Stop",
+                        on_click=ScrapingControlState.stop_scraping,
+                        disabled=~ScrapingControlState.is_scraping,
+                        color_scheme="red",
+                        size="3",
+                        variant="soft",
+                    ),
+                    content="Stop all active scraping workers",
                 ),
                 spacing="2",
             ),
             rx.hstack(
-                rx.button(
-                    rx.icon("rotate-ccw", size=14),
-                    " Resume Checkpoint",
-                    on_click=ScrapingControlState.resume_from_checkpoint,
-                    disabled=ScrapingControlState.is_scraping | (~ScrapingControlState.has_checkpoint),
-                    color_scheme="blue",
-                    variant="soft",
-                    size="2",
+                rx.tooltip(
+                    rx.button(
+                        rx.icon("rotate-ccw", size=14),
+                        " Resume Checkpoint",
+                        on_click=ScrapingControlState.resume_from_checkpoint,
+                        disabled=ScrapingControlState.is_scraping | (~ScrapingControlState.has_checkpoint),
+                        color_scheme="blue",
+                        variant="soft",
+                        size="2",
+                    ),
+                    content="Resume scraping from last saved checkpoint",
                 ),
-                rx.button(
-                    "Clear Checkpoint",
-                    on_click=ScrapingControlState.clear_checkpoint,
-                    disabled=~ScrapingControlState.has_checkpoint,
-                    variant="outline",
-                    size="2",
+                rx.tooltip(
+                    rx.button(
+                        "Clear Checkpoint",
+                        on_click=ScrapingControlState.clear_checkpoint,
+                        disabled=~ScrapingControlState.has_checkpoint,
+                        variant="outline",
+                        size="2",
+                    ),
+                    content="Clear saved checkpoint data",
                 ),
                 spacing="2",
                 wrap="wrap",
@@ -801,15 +1362,76 @@ def control_buttons() -> rx.Component:
 def progress_stats() -> rx.Component:
     return rx.card(
         rx.vstack(
-            rx.heading("Global Progress", size="4", weight="bold"),
+            rx.heading("Global Progress & Performance", size="4", weight="bold"),
             rx.grid(
-                rx.box(rx.text("Tenders Found", size="1", color="gray"), rx.heading(ScrapingControlState.total_tenders_found, size="5", color="blue")),
-                rx.box(rx.text("Departments", size="1", color="gray"), rx.heading(ScrapingControlState.total_departments_processed, size="5", color="purple")),
-                rx.box(rx.text("Portals Done", size="1", color="gray"), rx.heading(ScrapingControlState.total_portals_completed, size="5", color="green")),
-                rx.box(rx.text("Active Workers", size="1", color="gray"), rx.heading(ScrapingControlState.active_workers, size="5", color="orange")),
-                rx.box(rx.text("Skipped Existing", size="1", color="gray"), rx.heading(ScrapingControlState.total_skipped_existing, size="5", color="gray")),
-                rx.box(rx.text("Date Reprocessed", size="1", color="gray"), rx.heading(ScrapingControlState.total_closing_date_reprocessed, size="5", color="indigo")),
+                rx.tooltip(
+                    rx.box(rx.text("Tenders Found", size="1", color="gray"), rx.heading(ScrapingControlState.total_tenders_found, size="5", color="blue")),
+                    content="Total new tenders discovered",
+                ),
+                rx.tooltip(
+                    rx.box(rx.text("Departments", size="1", color="gray"), rx.heading(ScrapingControlState.total_departments_processed, size="5", color="purple")),
+                    content="Departments processed",
+                ),
+                rx.tooltip(
+                    rx.box(rx.text("Portals Done", size="1", color="gray"), rx.heading(ScrapingControlState.total_portals_completed, size="5", color="green")),
+                    content="Portals completed",
+                ),
+                rx.tooltip(
+                    rx.box(rx.text("Active Workers", size="1", color="gray"), rx.heading(ScrapingControlState.active_workers, size="5", color="orange")),
+                    content="Currently running workers",
+                ),
+                rx.tooltip(
+                    rx.box(rx.text("Skipped (Existing)", size="1", color="gray"), rx.heading(ScrapingControlState.total_skipped_existing, size="5", color="gray")),
+                    content="Tenders already in database",
+                ),
+                rx.tooltip(
+                    rx.box(rx.text("Extended Deadlines", size="1", color="gray"), rx.heading(ScrapingControlState.total_closing_date_reprocessed, size="5", color="indigo")),
+                    content="Tenders with changed closing dates",
+                ),
                 columns="6",
+                spacing="4",
+                width="100%",
+            ),
+            rx.divider(),
+            # Speed metrics row
+            rx.grid(
+                rx.tooltip(
+                    rx.box(
+                        rx.hstack(
+                            rx.icon("clock", size=18, color="blue.9"),
+                            rx.text("Elapsed Time", size="1", color="gray"),
+                            spacing="1",
+                            align="center",
+                        ),
+                        rx.heading(ScrapingControlState.elapsed_time_formatted, size="5", color="blue.9", font_family="monospace"),
+                    ),
+                    content="Time since scraping started (HH:MM:SS)",
+                ),
+                rx.tooltip(
+                    rx.box(
+                        rx.hstack(
+                            rx.icon("zap", size=18, color="green.9"),
+                            rx.text("Tenders/min", size="1", color="gray"),
+                            spacing="1",
+                            align="center",
+                        ),
+                        rx.heading(ScrapingControlState.tenders_per_minute, size="5", color="green.9", font_family="monospace"),
+                    ),
+                    content="Tenders processed per minute",
+                ),
+                rx.tooltip(
+                    rx.box(
+                        rx.hstack(
+                            rx.icon("trending-up", size=18, color="purple.9"),
+                            rx.text("Depts/min", size="1", color="gray"),
+                            spacing="1",
+                            align="center",
+                        ),
+                        rx.heading(ScrapingControlState.departments_per_minute, size="5", color="purple.9", font_family="monospace"),
+                    ),
+                    content="Departments processed per minute",
+                ),
+                columns="3",
                 spacing="4",
                 width="100%",
             ),
@@ -875,6 +1497,47 @@ def worker_status_cards() -> rx.Component:
                             ),
                             rx.spacer(),
                             rx.badge(f"Tender {worker.tenders_found}/{worker.expected_tenders}", color_scheme="cyan", size="2"),
+                            rx.cond(
+                                worker.skipped_existing > 0,
+                                rx.tooltip(
+                                    rx.badge(f"⏭️ {worker.skipped_existing} skipped", color_scheme="gray", size="2"),
+                                    content="Duplicates already in database",
+                                ),
+                            ),
+                            # Worker control buttons
+                            rx.tooltip(
+                                rx.icon_button(
+                                    rx.icon("play", size=14),
+                                    on_click=ScrapingControlState.resume_worker(worker.worker_id),
+                                    variant="soft",
+                                    color_scheme="green",
+                                    size="1",
+                                    disabled=worker.status == "running",
+                                ),
+                                content="Resume worker",
+                            ),
+                            rx.tooltip(
+                                rx.icon_button(
+                                    rx.icon("pause", size=14),
+                                    on_click=ScrapingControlState.pause_worker(worker.worker_id),
+                                    variant="soft",
+                                    color_scheme="orange",
+                                    size="1",
+                                    disabled=worker.status != "running",
+                                ),
+                                content="Pause worker",
+                            ),
+                            rx.tooltip(
+                                rx.icon_button(
+                                    rx.icon("square", size=14),
+                                    on_click=ScrapingControlState.stop_worker(worker.worker_id),
+                                    variant="soft",
+                                    color_scheme="red",
+                                    size="1",
+                                    disabled=worker.status == "completed",
+                                ),
+                                content="Stop worker",
+                            ),
                             spacing="2",
                             width="100%",
                         ),
@@ -1000,7 +1663,32 @@ def scraping_settings_page() -> rx.Component:
                     rx.input(value=ScrapingControlState.worker_name_2, on_change=ScrapingControlState.set_worker_name_2, placeholder="Worker 3", width="100%"),
                     rx.text("Worker 4 Name", size="2", weight="medium"),
                     rx.input(value=ScrapingControlState.worker_name_3, on_change=ScrapingControlState.set_worker_name_3, placeholder="Worker 4", width="100%"),
-                    rx.button("Reset Names", on_click=ScrapingControlState.reset_worker_names, variant="outline", size="2"),
+                    rx.hstack(
+                        rx.button("Reset Names", on_click=ScrapingControlState.reset_worker_names, variant="outline", color_scheme="gray", size="2"),
+                        rx.spacer(),
+                        rx.cond(
+                            ScrapingControlState.settings_saved,
+                            rx.button(
+                                rx.icon("check", size=18),
+                                " Saved!",
+                                color_scheme="green",
+                                variant="soft",
+                                size="2",
+                                disabled=True,
+                            ),
+                            rx.tooltip(
+                                rx.button(
+                                    rx.icon("save", size=18),
+                                    " Save Settings",
+                                    on_click=ScrapingControlState.save_worker_settings,
+                                    color_scheme="blue",
+                                    size="2",
+                                ),
+                                content="Save worker count and names",
+                            ),
+                        ),
+                        width="100%",
+                    ),
                     spacing="2",
                     align="start",
                     width="100%",
@@ -1113,6 +1801,10 @@ def scraping_control_page() -> rx.Component:
                 size="1",
                 margin_bottom="1rem",
             ),
+            
+            # Portal Status Dashboard - NEW!
+            portal_status_dashboard(),
+            
             rx.grid(
                 rx.vstack(portal_selector(), worker_config_panel(), control_buttons(), spacing="3"),
                 rx.vstack(progress_stats(), worker_status_cards(), spacing="3"),

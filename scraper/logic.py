@@ -610,38 +610,104 @@ def _find_and_click_dept_link(driver, dept_info, log_callback):
     return False
 
 
-def _js_extract_table_rows(driver):
-    """Batch-extract all table rows via a single JS call.
-    Returns list of {c: [cell_texts...], h: href_or_None} dicts, or None on any failure.
-    Automatically skips <th>-only header rows (querySelectorAll('td') returns empty for them).
+def _js_extract_table_rows(driver, start_row=0, end_row=None):
+    """Batch-extract table rows via a single JS call.
+    
+    Args:
+        driver: Selenium WebDriver
+        start_row: Starting row index (0-based, inclusive)
+        end_row: Ending row index (0-based, exclusive). None = extract all rows.
+    
+    Returns:
+        list of {c: [cell_texts...], h: href_or_None} dicts, or None on any failure.
+        Automatically skips <th>-only header rows (querySelectorAll('td') returns empty for them).
     """
     try:
         result = driver.execute_script("""
-            (function() {
+            (function(startRow, endRow) {
                 var table = document.getElementById('table');
                 if (!table) return null;
                 var tbody = table.querySelector('tbody') || table;
                 var trs = Array.from(tbody.querySelectorAll('tr'));
+                
+                // Handle row slicing
+                if (endRow === null || endRow === undefined) {
+                    endRow = trs.length;
+                }
+                var slicedRows = trs.slice(startRow, endRow);
+                
                 var out = [];
-                for (var i = 0; i < trs.length; i++) {
-                    var tds = Array.from(trs[i].querySelectorAll('td'));
+                for (var i = 0; i < slicedRows.length; i++) {
+                    var tds = Array.from(slicedRows[i].querySelectorAll('td'));
                     if (tds.length === 0) continue;  // skip header <th> rows
                     var texts = tds.map(function(td) {
                         return (td.innerText || td.textContent || '').replace(/\\s+/g, ' ').trim();
                     });
                     var href = null;
-                    var link = trs[i].querySelector('td a');
+                    var link = slicedRows[i].querySelector('td a');
                     if (link) href = link.href || link.getAttribute('href') || null;
                     out.push({c: texts, h: href});
                 }
                 return out;
-            })()
-        """)
+            })(arguments[0], arguments[1])
+        """, start_row, end_row)
         if isinstance(result, list):
             return result
         return None
     except Exception:
         return None
+
+
+def _js_extract_table_rows_batched(driver, total_rows, batch_size=2000, log_callback=None):
+    """Extract large tables in batches to prevent browser timeout/memory issues.
+    
+    For departments with 3000+ rows (like West Bengal with 13,000+ rows),
+    extracting all rows in one JS call causes browser hangs/timeouts.
+    This function batches extraction in chunks of 2000 rows.
+    
+    Args:
+        driver: Selenium WebDriver
+        total_rows: Total number of rows to extract
+        batch_size: Rows per batch (default: 2000)
+        log_callback: Optional logging function
+    
+    Returns:
+        Combined list of {c: [cell_texts...], h: href_or_None} dicts, or None on failure.
+    """
+    if total_rows <= batch_size:
+        # Small table - extract all at once
+        return _js_extract_table_rows(driver)
+    
+    # Large table - extract in batches
+    if log_callback:
+        log_callback(f"    [JS] Large table ({total_rows} rows) - extracting in batches of {batch_size}...")
+    
+    all_rows = []
+    num_batches = (total_rows + batch_size - 1) // batch_size  # Ceiling division
+    
+    for batch_num in range(num_batches):
+        start_row = batch_num * batch_size
+        end_row = min(start_row + batch_size, total_rows)
+        
+        if log_callback:
+            log_callback(f"    [JS] Batch {batch_num + 1}/{num_batches}: rows {start_row}-{end_row-1}...")
+        
+        batch_rows = _js_extract_table_rows(driver, start_row, end_row)
+        
+        if batch_rows is None:
+            if log_callback:
+                log_callback(f"    [JS] Batch {batch_num + 1} failed - falling back to element mode")
+            return None
+        
+        all_rows.extend(batch_rows)
+        
+        if log_callback and len(all_rows) % 2000 == 0:
+            log_callback(f"    [JS] Extracted {len(all_rows)}/{total_rows} rows so far...")
+    
+    if log_callback:
+        log_callback(f"    [JS] Batched extraction complete: {len(all_rows)} rows extracted")
+    
+    return all_rows
 
 
 def _bulk_filter_new_tenders(
@@ -757,6 +823,8 @@ def _scrape_tender_details(
     existing_tender_snapshot=None,
     portal_skill=PORTAL_SKILL_NIC,
     stop_event=None,
+    js_batch_threshold=300,
+    js_batch_size=2000,
 ):
     """ Scrapes tender details from the department's tender list page with enhanced retry logic for large tables."""
     tender_data = []
@@ -853,15 +921,27 @@ def _scrape_tender_details(
 
             # ================================================================
             # JS FAST PATH — batch-extract all row data in ONE browser call.
+            # For large departments (configurable threshold), extract in batches
+            # to prevent browser timeout/memory issues.
             # Falls back to element-by-element mode automatically on any failure.
             # ================================================================
-            _js_rows = _js_extract_table_rows(driver)
+            if total_rows > js_batch_threshold:
+                # Large department - use batched extraction
+                log_callback(f"    [JS] Large department detected ({total_rows} rows > {js_batch_threshold} threshold) - using batched extraction")
+                _js_rows = _js_extract_table_rows_batched(driver, total_rows, batch_size=js_batch_size, log_callback=log_callback)
+            else:
+                # Normal department - extract all at once
+                _js_rows = _js_extract_table_rows(driver)
+            
             _use_js = False
             if _js_rows is not None:
                 if abs(len(_js_rows) - total_rows) <= 2:   # ≤2 tolerance for edge header rows
                     _use_js = True
                     if total_rows >= 200:
-                        log_callback(f"    [JS] Fast mode: {len(_js_rows)} rows batch-extracted ({total_rows} DOM rows)")
+                        if total_rows > js_batch_threshold:
+                            log_callback(f"    [JS] Batched mode successful: {len(_js_rows)} rows extracted")
+                        else:
+                            log_callback(f"    [JS] Fast mode: {len(_js_rows)} rows batch-extracted ({total_rows} DOM rows)")
                 else:
                     log_callback(
                         f"    [JS] Row count mismatch (JS={len(_js_rows)}, DOM={total_rows}) "
@@ -1529,6 +1609,10 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
     except Exception:
         export_interval_days = 2
     force_excel_export = bool(kwargs.get("force_excel_export", False))
+    
+    # --- Batched JS Extraction Settings ---
+    js_batch_threshold = int(kwargs.get("js_batch_threshold", 300))  # Default: 300 rows
+    js_batch_size = int(kwargs.get("js_batch_size", 2000))  # Default: 2000 rows per batch
 
     # --- Checkpoint setup (resume on kill/crash) ---
     _portal_slug = re.sub(r'[^\w]+', '_', portal_name.lower()).strip('_') or 'portal'
@@ -2052,7 +2136,9 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
                 existing_tender_ids_normalized=existing_tender_ids_normalized,
                 existing_tender_snapshot=existing_tender_snapshot,
                 portal_skill=portal_skill,
-                stop_event=stop_event
+                stop_event=stop_event,
+                js_batch_threshold=js_batch_threshold,
+                js_batch_size=js_batch_size
             )
             scrape_time = time.time() - scrape_start_time
             log_callback(f"[{worker_label}] ⏱️ Table scraping time: {scrape_time:.2f}s")
@@ -2799,7 +2885,9 @@ def process_department(dept_info, base_url_config, download_dir, driver,
             base_url=base_url_config['BaseURL'],
             log_callback=log_callback,
             portal_skill=portal_skill,
-            stop_event=stop_event
+            stop_event=stop_event,
+            js_batch_threshold=kwargs.get("js_batch_threshold", 300),
+            js_batch_size=kwargs.get("js_batch_size", 2000)
         )
 
         if not tender_data:

@@ -5,16 +5,98 @@ from __future__ import annotations
 
 import reflex as rx
 
-from tender_dashboard_reflex.state import PortalManagementState, PortalRow
+from tender_dashboard_reflex.state import PortalManagementState, PortalRow, DashboardState
 
 
-def portal_stats_card(title: str, value: rx.Var | str, color: str, icon: str) -> rx.Component:
-    """Portal statistics card."""
+def public_export_interface() -> rx.Component:
+    """Public export interface for website data - moved from dashboard."""
+    return rx.box(
+        rx.vstack(
+            rx.hstack(
+                rx.heading("📤 Public Website Export", size="5", color="gray.12"),
+                rx.spacer(),
+                rx.tooltip(
+                    rx.icon("info", size=18, color="violet.9"),
+                    content="Export all live tenders + expired tenders for a specific portal (for public website deployment)",
+                ),
+                width="100%",
+                align="center",
+            ),
+            rx.text("Export all live tenders + expired tenders from a specific portal for public website", size="2", color="gray.10"),
+            rx.divider(),
+            rx.vstack(
+                rx.text("Select Portal", size="2", weight="medium", color="gray.11"),
+                rx.select(
+                    DashboardState.portal_options,
+                    value=DashboardState.public_export_portal,
+                    on_change=DashboardState.set_public_export_portal,
+                    width="100%",
+                    size="2",
+                ),
+                align="start",
+                spacing="1",
+                width="100%",
+            ),
+            rx.vstack(
+                rx.text("Include Expired Days", size="2", weight="medium", color="gray.11"),
+                rx.hstack(
+                    rx.text("Include tenders expired within last", size="2"),
+                    rx.input(
+                        value=str(DashboardState.public_export_expired_days),
+                        on_change=DashboardState.set_public_export_expired_days,
+                        type="number",
+                        width="80px",
+                        size="2",
+                    ),
+                    rx.text("days", size="2"),
+                    align="center",
+                    spacing="2",
+                ),
+                align="start",
+                spacing="1",
+                width="100%",
+            ),
+            rx.button(
+                rx.icon("globe"),
+                "Generate Public Export",
+                on_click=DashboardState.public_export_to_excel,
+                color_scheme="violet",
+                size="3",
+                width="100%",
+                loading=DashboardState.public_exporting,
+            ),
+            align="start",
+            spacing="3",
+            width="100%",
+        ),
+        padding="1.2rem",
+        border_radius="12px",
+        background="linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%)",
+        border="2px solid",
+        border_color="violet.5",
+        box_shadow="lg",
+    )
+
+
+def portal_stats_card(title: str, value: rx.Var | str, color: str, icon: str, tooltip: str = "") -> rx.Component:
+    """Portal statistics card with optional tooltip."""
     return rx.box(
         rx.hstack(
             rx.icon(icon, size=28, color=color),
             rx.vstack(
-                rx.text(title, size="2", color="gray.10", weight="medium"),
+                rx.hstack(
+                    rx.text(title, size="2", color="gray.10", weight="medium"),
+                    rx.cond(
+                        tooltip != "",
+                        rx.tooltip(
+                            rx.icon("info", size=14, color="gray.9"),
+                            content=tooltip,
+                        ),
+                        rx.box(),
+                    ),
+                    spacing="1",
+                    align="center",
+                ),
                 rx.heading(value, size="5", color="gray.12", weight="bold"),
                 align="start",
                 spacing="0",
@@ -28,6 +110,7 @@ def portal_stats_card(title: str, value: rx.Var | str, color: str, icon: str) ->
         border_color="gray.6",
         background="white",
         width="100%",
+        _hover={"box_shadow": "lg", "border_color": color, "transition": "all 0.2s"},
     )
 
 
@@ -365,30 +448,39 @@ def portal_management_page() -> rx.Component:
                     "Total Portals",
                     PortalManagementState.total_portals,
                     "blue.9",
-                    "globe"
+                    "globe",
+                    "Number of unique portals configured in the system"
                 ),
                 portal_stats_card(
                     "Total Tenders",
                     PortalManagementState.total_all_tenders,
                     "violet.9",
-                    "file-text"
+                    "file-text",
+                    "All tenders in database (live + expired)"
                 ),
                 portal_stats_card(
                     "Live Tenders",
                     PortalManagementState.total_live_tenders,
                     "green.9",
-                    "check"
+                    "check",
+                    "Currently active tenders (closing date in future)"
                 ),
                 portal_stats_card(
                     "Expired Tenders",
                     PortalManagementState.total_expired_tenders,
                     "gray.9",
-                    "x"
+                    "x",
+                    "Tenders past their closing date"
                 ),
                 columns="4",
                 spacing="3",
                 width="100%",
             ),
+            
+            rx.divider(),
+            
+            # Public export interface for website
+            public_export_interface(),
             
             rx.divider(),
             

@@ -73,6 +73,11 @@ ADAPTIVE_WAIT_MIN = 0.3  # Minimum wait time (fast portals)
 ADAPTIVE_WAIT_MAX = 2.0  # Maximum wait time (slow portals)
 ADAPTIVE_WAIT_SAMPLES = 5  # Number of samples to average
 
+# --- Batched JS Extraction Settings ---
+# For large departments, extract table rows in batches to prevent browser timeout
+JS_BATCH_THRESHOLD = 300  # Trigger batched extraction if department has more than this many rows (default: 300 for testing, production: 3000)
+JS_BATCH_SIZE = 2000  # Number of rows to extract per batch (default: 2000)
+
 
 class AdaptiveWaitManager:
     """

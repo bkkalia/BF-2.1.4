@@ -8,35 +8,43 @@ from dashboard_app.portal_management import portal_management_page
 from dashboard_app.data_visualization import data_visualization_page
 from dashboard_app.scraping_control import scraping_control_page, scraping_settings_page
 from dashboard_app.excel_import import excel_import_page
+from dashboard_app.data_integrity import data_integrity_page
 
 
-def stat_card(title: str, value, accent: str, on_click=None) -> rx.Component:
-    """KPI card with gradient background. Optionally clickable."""
-    if on_click:
-        return rx.box(
-            rx.text(title, size="2", color="white", weight="medium"),
+def stat_card(title: str, value, accent: str, on_click=None, tooltip: str = "") -> rx.Component:
+    """KPI card with gradient background, tooltips, and improved styling."""
+    card_content = rx.box(
+        rx.vstack(
+            rx.hstack(
+                rx.text(title, size="2", color="white", weight="medium", opacity="0.95"),
+                rx.cond(
+                    tooltip != "",
+                    rx.tooltip(
+                        rx.icon("info", size=14, color="white", opacity="0.8"),
+                        content=tooltip,
+                    ),
+                    rx.box(),
+                ),
+                width="100%",
+                justify="between",
+                align="center",
+            ),
             rx.heading(value, size="6", color="white", weight="bold"),
-            on_click=on_click,
-            cursor="pointer",
-            _hover={"transform": "scale(1.02)", "box_shadow": "xl", "transition": "all 0.2s"},
-            padding="1rem",
-            border_radius="12px",
-            background=accent,
-            box_shadow="lg",
+            spacing="1",
+            align="start",
             width="100%",
-            min_height="85px",
-        )
-    else:
-        return rx.box(
-            rx.text(title, size="2", color="white", weight="medium"),
-            rx.heading(value, size="6", color="white", weight="bold"),
-            padding="1rem",
-            border_radius="12px",
-            background=accent,
-            box_shadow="lg",
-            width="100%",
-            min_height="85px",
-        )
+        ),
+        padding="1rem",
+        border_radius="12px",
+        background=accent,
+        box_shadow="lg",
+        width="100%",
+        min_height="95px",
+        cursor="pointer" if on_click else "default",
+        on_click=on_click,
+        _hover={"transform": "scale(1.02)" if on_click else "scale(1.01)", "box_shadow": "xl", "transition": "all 0.2s"},
+    )
+    return card_content
 
 
 def google_search_bar() -> rx.Component:
@@ -599,6 +607,16 @@ def index() -> rx.Component:
                     ),
                     href="/import",
                 ),
+                rx.link(
+                    rx.button(
+                        rx.icon("shield-check"),
+                        "Data Integrity",
+                        variant="soft",
+                        size="2",
+                        color_scheme="violet",
+                    ),
+                    href="/integrity",
+                ),
                 spacing="2",
                 padding="0.5rem 0",
             ),
@@ -632,28 +650,25 @@ def index() -> rx.Component:
             # Error message
             rx.cond(DashboardState.error_message != "", rx.callout(DashboardState.error_message, color_scheme="red", size="2")),
             
-            # Google-style search bar
-            google_search_bar(),
-            
-            # KPI cards
+            # KPI cards with tooltips
             rx.grid(
-                stat_card("Live", DashboardState.live_tenders, "linear-gradient(135deg, #16a34a 0%, #22c55e 100%)"),
-                stat_card("Expired", DashboardState.expired_tenders, "linear-gradient(135deg, #6b7280 0%, #9ca3af 100%)"),
-                stat_card("Total", DashboardState.total_tenders, "linear-gradient(135deg, #2563eb 0%, #3b82f6 100%)"),
-                stat_card("Filtered", DashboardState.filtered_results, "linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%)"),
-                stat_card("Match %", DashboardState.match_percent, "linear-gradient(135deg, #0d9488 0%, #14b8a6 100%)"),
-                stat_card("Due Today", DashboardState.due_today, "linear-gradient(135deg, #dc2626 0%, #ef4444 100%)", on_click=DashboardState.filter_by_due_today),
-                stat_card("Due 3d", DashboardState.due_3_days, "linear-gradient(135deg, #ea580c 0%, #f97316 100%)", on_click=DashboardState.filter_by_due_3_days),
-                stat_card("Due 7d", DashboardState.due_7_days, "linear-gradient(135deg, #9333ea 0%, #a855f7 100%)", on_click=DashboardState.filter_by_due_7_days),
-                stat_card("Depts", DashboardState.departments, "linear-gradient(135deg, #c026d3 0%, #d946ef 100%)", on_click=DashboardState.clear_date_filters),
-                stat_card("Portals", DashboardState.data_sources, "linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%)"),
+                stat_card("Live", DashboardState.live_tenders, "linear-gradient(135deg, #16a34a 0%, #22c55e 100%)", tooltip="Currently active tenders (not yet closed)"),
+                stat_card("Expired", DashboardState.expired_tenders, "linear-gradient(135deg, #6b7280 0%, #9ca3af 100%)", tooltip="Tenders past closing date"),
+                stat_card("Total", DashboardState.total_tenders, "linear-gradient(135deg, #2563eb 0%, #3b82f6 100%)", tooltip="All tenders in database"),
+                stat_card("Filtered", DashboardState.filtered_results, "linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%)", tooltip="Results matching current filters"),
+                stat_card("Match %", DashboardState.match_percent, "linear-gradient(135deg, #0d9488 0%, #14b8a6 100%)", tooltip="Percentage of total matching filters"),
+                stat_card("Due Today", DashboardState.due_today, "linear-gradient(135deg, #dc2626 0%, #ef4444 100%)", on_click=DashboardState.filter_by_due_today, tooltip="Click to filter tenders closing today"),
+                stat_card("Due 3d", DashboardState.due_3_days, "linear-gradient(135deg, #ea580c 0%, #f97316 100%)", on_click=DashboardState.filter_by_due_3_days, tooltip="Click to filter tenders closing in next 3 days"),
+                stat_card("Due 7d", DashboardState.due_7_days, "linear-gradient(135deg, #9333ea 0%, #a855f7 100%)", on_click=DashboardState.filter_by_due_7_days, tooltip="Click to filter tenders closing in next 7 days"),
+                stat_card("Depts", DashboardState.departments, "linear-gradient(135deg, #c026d3 0%, #d946ef 100%)", on_click=DashboardState.clear_date_filters, tooltip="Click to clear date filters and see all departments"),
+                stat_card("Portals", DashboardState.data_sources, "linear-gradient(135deg, #7c3aed 0%, #8b5cf6 100%)", tooltip="Number of unique portals in results"),
                 columns="5", spacing="2", width="100%",
             ),
             
             rx.divider(),
             
-            # Public export interface for website
-            public_export_interface(),
+            # Google-style search bar (moved below KPI cards)
+            google_search_bar(),
             
             rx.divider(),
             
@@ -689,3 +704,4 @@ app.add_page(data_visualization_page, route="/data", title="Data Visualization")
 app.add_page(scraping_control_page, route="/scraping", title="Scraping Control")
 app.add_page(scraping_settings_page, route="/scraping-settings", title="Scraping Settings")
 app.add_page(excel_import_page, route="/import", title="Import Data")
+app.add_page(data_integrity_page, route="/integrity", title="Data Integrity")
