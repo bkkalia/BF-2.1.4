@@ -29,7 +29,7 @@ except ImportError:
 ByType = By
 
 # --- Application ---
-APP_VERSION = "2.3.4"
+APP_VERSION = "2.3.6"
 APP_AUTHOR = "Cloud84, Una, HP, India (Refactored)"
 DEFAULT_APP_NAME = "Cloud84 Black Forest Project - Tender Search Utility"
 

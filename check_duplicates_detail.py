@@ -10,7 +10,7 @@ import sys
 if sys.platform == 'win32':
     try:
         # Try to reconfigure stdout for UTF-8
-        sys.stdout.reconfigure(encoding='utf-8')
+        sys.stdout.reconfigure(encoding='utf-8')  # type: ignore[union-attr]
     except (AttributeError, OSError):
         # Fallback for older Python or non-reconfigurable streams
         try:

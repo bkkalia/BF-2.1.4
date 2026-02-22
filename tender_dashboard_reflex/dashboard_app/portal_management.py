@@ -517,10 +517,10 @@ def portal_management_page() -> rx.Component:
                         rx.text("Sort By:", size="2", weight="medium"),
                         rx.select(
                             [
-                                ("portal_name", "Portal Name"),
-                                ("total_tenders", "Total Tenders"),
-                                ("live_tenders", "Live Tenders"),
-                                ("last_updated", "Last Updated"),
+                                "portal_name",
+                                "total_tenders",
+                                "live_tenders",
+                                "last_updated",
                             ],
                             value=PortalManagementState.sort_by,
                             on_change=PortalManagementState.set_sort_by,
@@ -702,7 +702,7 @@ def portal_management_page() -> rx.Component:
                         ),
                         rx.text(PortalManagementState.toast_message, size="2", weight="medium", color="white"),
                         rx.cond(
-                            PortalManagementState.last_export_path != "" and PortalManagementState.toast_type == "success",
+                            (PortalManagementState.last_export_path != "") & (PortalManagementState.toast_type == "success"),
                             rx.button(
                                 rx.icon("folder"),
                                 "Open Folder",

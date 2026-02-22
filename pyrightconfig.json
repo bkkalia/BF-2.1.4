@@ -1,0 +1,14 @@
+{
+  "include": [
+    "tender_dashboard_reflex"
+  ],
+  "exclude": [
+    "**/node_modules",
+    "**/__pycache__",
+    "**/.venv",
+    "**/build",
+    "**/dist"
+  ],
+  "typeCheckingMode": "basic",
+  "reportArgumentType": "none"
+}

@@ -9,7 +9,7 @@ from pathlib import Path
 
 import reflex as rx
 
-from tender_dashboard_reflex import db
+from . import db
 
 
 def _extract_real_tender_id(raw_id: str, title_ref: str) -> str:
@@ -322,7 +322,7 @@ class DashboardState(rx.State):
         if value is None:
             return "-"
         try:
-            amount = float(value)
+            amount = float(str(value))
             if amount >= 1e7:
                 return f"₹{amount / 1e7:.2f} Cr"
             if amount >= 1e5:
@@ -1069,6 +1069,19 @@ class PortalManagementState(rx.State):
             filepath = export_dir / filename
 
             # Create ExcelWriter and write each portal to its own sheet
+            column_order = [
+                "Department Name",
+                "S.No",
+                "e-Published Date",
+                "Closing Date",
+                "Opening Date",
+                "Organisation Chain",
+                "Title and Ref.No./Tender ID",
+                "Tender ID (Extracted)",
+                "Direct URL",
+                "Status URL",
+            ]
+
             with pd.ExcelWriter(filepath, engine="openpyxl") as writer:
                 combined_rows = []
 
@@ -1170,6 +1183,19 @@ class PortalManagementState(rx.State):
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
             filename = f"portals_all_tenders_{timestamp}.xlsx"
             filepath = export_dir / filename
+
+            column_order = [
+                "Department Name",
+                "S.No",
+                "e-Published Date",
+                "Closing Date",
+                "Opening Date",
+                "Organisation Chain",
+                "Title and Ref.No./Tender ID",
+                "Tender ID (Extracted)",
+                "Direct URL",
+                "Status URL",
+            ]
 
             with pd.ExcelWriter(filepath, engine="openpyxl") as writer:
                 combined_rows = []
@@ -1376,10 +1402,6 @@ class PortalManagementState(rx.State):
     
     def navigate_to_dashboard_with_portal(self, portal_slug: str):
         """Navigate to main dashboard with portal pre-selected."""
-        # Set the portal filter in DashboardState
-        dashboard_state = self.get_state(DashboardState)
-        dashboard_state.portal_filter = portal_slug
-        # Navigate will be handled by rx.link in UI
         return rx.redirect("/")
 
 
@@ -1446,17 +1468,17 @@ class DataVisualizationState(rx.State):
                 DataRow(
                     row_num=offset + idx + 1,
                     portal_name=row.get("portal_name", ""),
-                    tender_id=row.get("tender_id", ""),
-                    title=row.get("title", ""),
-                    department=row.get("department", ""),
+                    tender_id_extracted=row.get("tender_id_extracted", ""),
+                    title_ref=row.get("title_ref", ""),
+                    department_name=row.get("department_name", ""),
                     published_date=row.get("published_date", ""),
                     closing_date=row.get("closing_date", ""),
-                    cost=row.get("cost", ""),
-                    status=row.get("status", ""),
-                    state=row.get("state", ""),
+                    estimated_cost=row.get("estimated_cost", ""),
+                    tender_status=row.get("tender_status", ""),
+                    state_name=row.get("state_name", ""),
                     district=row.get("district", ""),
                     city=row.get("city", ""),
-                    tender_url=row.get("tender_url", ""),
+                    direct_url=row.get("direct_url", ""),
                 )
                 for idx, row in enumerate(rows_data)
             ]
@@ -1677,12 +1699,13 @@ class ExcelImportState(rx.State):
                 return
             
             upload = files[0]
-            self.file_name = upload.filename
+            upload_filename = upload.filename or "upload"
+            self.file_name = upload_filename
             
             # Save file temporarily
             upload_dir = Path("temp_uploads")
             upload_dir.mkdir(exist_ok=True)
-            upload_path = upload_dir / upload.filename
+            upload_path = upload_dir / upload_filename
             
             # Read file content
             file_content = await upload.read()
@@ -1692,7 +1715,7 @@ class ExcelImportState(rx.State):
             self.file_size_text = self._format_file_size(len(file_content))
             
             # Read Excel/CSV based on extension
-            if upload.filename.endswith('.csv'):
+            if upload_filename.endswith('.csv'):
                 df = pd.read_csv(upload_path)
             else:
                 df = pd.read_excel(upload_path)
@@ -1705,7 +1728,7 @@ class ExcelImportState(rx.State):
             self._smart_match_columns(df)
             
             # Auto-detect portal name from filename
-            self._auto_detect_portal_name(upload.filename)
+            self._auto_detect_portal_name(upload_filename)
             
             self.file_uploaded = True
             
@@ -1718,11 +1741,12 @@ class ExcelImportState(rx.State):
     
     def _format_file_size(self, size_bytes: int) -> str:
         """Format file size in human-readable format."""
+        size: float = float(size_bytes)
         for unit in ['B', 'KB', 'MB', 'GB']:
-            if size_bytes < 1024.0:
-                return f"{size_bytes:.1f} {unit}"
-            size_bytes /= 1024.0
-        return f"{size_bytes:.1f} TB"
+            if size < 1024.0:
+                return f"{size:.1f} {unit}"
+            size /= 1024.0
+        return f"{size:.1f} TB"
     
     def _smart_match_columns(self, df):
         """Smart column matching algorithm."""
@@ -1767,7 +1791,7 @@ class ExcelImportState(rx.State):
         self.auto_matched_columns = matched_count
         self.all_required_mapped = (matched_count == self.total_required_columns)
     
-    def _find_matching_column(self, excel_cols: list[str], db_col: str, keywords: list[str]) -> str:
+    def _find_matching_column(self, excel_cols: list[str], db_col: str, keywords: list[str]) -> str:  # type: ignore[return]
         """Find matching Excel column using smart matching."""
         import re
         
@@ -1811,7 +1835,7 @@ class ExcelImportState(rx.State):
                 best_match = excel_col
         
         if best_score > 0:
-            return best_match
+            return best_match or ""
         
         return ""
     
@@ -1903,10 +1927,9 @@ class ExcelImportState(rx.State):
             store = TenderDataStore(str(db_path))
             
             # Get or create run_id
-            run_id = store.get_or_create_run(
+            run_id = store.start_run(
                 portal_name=self.portal_name or "imported",
                 base_url=self.base_url or "",
-                scraper_type="excel_import"
             )
             
             # Convert DataFrame to tender list
@@ -1915,11 +1938,12 @@ class ExcelImportState(rx.State):
             total_rows = len(df)
             
             for idx, row in df.iterrows():
-                self.import_processed = idx + 1
-                self.import_progress = int((idx + 1) / total_rows * 90)  # Reserve 10% for DB write
-                self.import_status = f"Processing row {idx + 1}/{total_rows}..."
+                row_num = int(idx) + 1  # type: ignore[arg-type]
+                self.import_processed = row_num
+                self.import_progress = int(row_num / total_rows * 90)  # Reserve 10% for DB write
+                self.import_status = f"Processing row {row_num}/{total_rows}..."
                 
-                if idx % 10 == 0:  # Update UI every 10 rows
+                if row_num % 10 == 0:  # Update UI every 10 rows
                     yield
                 
                 try:
@@ -1939,14 +1963,14 @@ class ExcelImportState(rx.State):
                     if self.validate_data:
                         if not tender.get("tender_id_extracted"):
                             self.import_errors += 1
-                            self.error_messages.append(f"Row {idx + 1}: Missing tender ID")
+                            self.error_messages.append(f"Row {row_num}: Missing tender ID")
                             continue
                     
                     tenders.append(tender)
                     
                 except Exception as ex:
                     self.import_errors += 1
-                    self.error_messages.append(f"Row {idx + 1}: {str(ex)}")
+                    self.error_messages.append(f"Row {row_num}: {str(ex)}")
             
             # Import to database
             self.import_status = "Importing to database..."
@@ -1955,8 +1979,8 @@ class ExcelImportState(rx.State):
             
             result = store.replace_run_tenders(run_id, tenders)
             
-            self.import_success = result.get("imported", 0)
-            self.import_skipped = result.get("skipped", 0) if self.skip_duplicates else 0
+            self.import_success = int(result)
+            self.import_skipped = 0
             
             # Calculate duration
             end_time = datetime.now()

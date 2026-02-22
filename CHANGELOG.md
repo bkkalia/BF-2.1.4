@@ -9,6 +9,28 @@ Run the helper tool (from project root) to infer and update version dates:
 The tool makes a backup of CHANGELOG.md (CHANGELOG.md.bak.TIMESTAMP) before editing.
 -->
 
+## Version 2.3.6 (Feb 22, 2026) - Reflex Dashboard Runtime & Type Fixes
+
+### 🐛 Bug Fixes
+- **Reflex SelectItem crash** — `rx.select` Sort By options were tuples; changed to plain `list[str]` to match Reflex API
+- **Reflex Var boolean crash** — replaced Python `and`/`or` with Reflex `&`/`|` in reactive Var conditions inside `portal_management.py`
+- **`state.py` import fix** — corrected `from tender_dashboard_reflex import db` to relative `from . import db`
+
+### 🔧 Type / Static Analysis Fixes
+- **`state.py`** — resolved 14 pyright errors:
+  - `float(value)` → `float(str(value))` for safe numeric conversion
+  - Hoisted `column_order` list above `with pd.ExcelWriter(...)` blocks to eliminate possibly-unbound warnings
+  - Simplified `navigate_to_dashboard_with_portal` (removed non-existent `portal_filter` attr and `get_state()` call)
+  - Fixed `DataRow` constructor field names to match model (`tender_id_extracted`, `title_ref`, `department_name`, `estimated_cost`, `tender_status`, `state_name`, `direct_url`)
+  - Guarded `upload.filename` nullable with `or "upload"` fallback
+  - Introduced `size: float` variable to fix float/int assignment in file-size formatting loop
+  - `_find_matching_column` return narrowed from `str | None` to `str` via `or ""`
+  - Replaced non-existent `store.get_or_create_run()` with correct `store.start_run(portal_name, base_url)`
+  - Fixed `result.get(...)` on int return value from `replace_run_tenders()`
+  - Cast `idx` from `df.iterrows()` via `int(idx)` before arithmetic (Hashable → int)
+- **`check_duplicates_detail.py`** — added `# type: ignore[union-attr]` on `sys.stdout.reconfigure`
+- **`pyrightconfig.json`** (NEW) — suppresses Reflex EventHandler false-positive `reportArgumentType` warnings in `data_visualization.py`
+
 ## Version 2.3.5 (Feb 21, 2026) - GUI Controls for Batched Extraction + Data Integrity Analysis
 
 ### ✨ New Features
