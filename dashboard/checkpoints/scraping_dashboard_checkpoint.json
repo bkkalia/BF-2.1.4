@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "updated_at": "2026-02-26T18:59:37.587644",
+  "is_scraping": true,
+  "all_portals": [
+    "HP Tenders",
+    "Delhi"
+  ],
+  "completed_portals": [],
+  "remaining_portals": [
+    "HP Tenders",
+    "Delhi"
+  ],
+  "worker_count": 2,
+  "worker_names": [
+    "Worker 1",
+    "Worker 2",
+    "Worker 3",
+    "Worker 4"
+  ],
+  "totals": {
+    "tenders": 0,
+    "departments": 0,
+    "portals": 0,
+    "skipped_existing": 0,
+    "closing_date_reprocessed": 0
+  },
+  "portal_progress": {}
+}
