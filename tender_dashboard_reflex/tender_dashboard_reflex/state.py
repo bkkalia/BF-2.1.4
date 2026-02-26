@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import asyncio
+import time
 from datetime import datetime
 from pydantic import BaseModel
 from typing import Any
@@ -12,23 +14,55 @@ import reflex as rx
 from . import db
 
 
+def _normalize_tender_id(value: str) -> str:
+    """Normalise a tender ID string (uppercase, collapse separators)."""
+    text = str(value or "").strip()
+    if not text:
+        return ""
+    text = re.sub(r'(?i)^\s*(tender\s*id|tenderid|id)\s*[:#\-]?\s*', '', text)
+    if text.startswith('[') and text.endswith(']') and len(text) > 2:
+        text = text[1:-1]
+    text = text.upper().strip()
+    text = re.sub(r'[\s\-\./]+', '_', text)
+    text = re.sub(r'_+', '_', text).strip('_')
+    return text
+
+
 def _extract_real_tender_id(raw_id: str, title_ref: str) -> str:
-    """Extract the real tender ID (e.g. 2026_PWD_128301_1) from title_ref
-    when raw_id is just a portal serial number like '1', '138'."""
+    """Extract the real tender ID (e.g. 2026_PWD_128301_1 or 2026_DoA_128403_1)
+    from raw_id or title_ref.  Mirrors scraper logic.extract_tender_id_from_title."""
     # Already a proper ID (has underscores and year prefix like 2026_)
     if "_" in raw_id and len(raw_id) > 8:
         return raw_id
-    # Extract last [YEAR_PORTAL_NUMBER_VERSION] pattern embedded in title_ref
-    matches = re.findall(r"\[(\d{4}_[A-Z0-9]+_\d+_\d+)\]", title_ref or "")
-    if matches:
-        return matches[-1]
+
+    text = str(title_ref or "").strip()
+    if not text:
+        return raw_id
+
+    # Strategy 1: bracketed NIC token, case-insensitive  e.g. [2026_DoA_128403_1]
+    nic_match = re.search(r'\[(\d{4}_[A-Z0-9_]+(?:_\d+)?)\]', text, flags=re.IGNORECASE)
+    if nic_match:
+        return _normalize_tender_id(nic_match.group(1))
+
+    # Strategy 2: any bracket token that looks like a valid ID
+    bracket_tokens = re.findall(r'\[([^\]]+)\]', text)
+    for token in reversed(bracket_tokens):
+        candidate = _normalize_tender_id(token)
+        if candidate and re.fullmatch(r'[A-Z0-9_]{5,}', candidate):
+            return candidate
+
+    # Strategy 3: unbracketed YEAR_DEPT_NUM_VER anywhere in title
+    fallback = re.search(r'(\d{4}_[A-Z0-9_]+(?:_\d+)?)', text, flags=re.IGNORECASE)
+    if fallback:
+        return _normalize_tender_id(fallback.group(1))
+
     return raw_id
 
 
 def _clean_title_ref(title_ref: str) -> str:
     """Remove tender ID stamp from end of title and strip outer brackets."""
-    # Remove [2026_PORTAL_NUMBER_VERSION] from the end
-    cleaned = re.sub(r"\s*\[\d{4}_[A-Z0-9]+_\d+_\d+\]\s*$", "", title_ref).strip()
+    # Remove [2026_PORTAL_NUMBER_VERSION] from the end (case-insensitive for mixed-case dept codes)
+    cleaned = re.sub(r"\s*\[\d{4}_[A-Z0-9_]+\]\s*$", "", title_ref, flags=re.IGNORECASE).strip()
     # Strip leading/trailing outer bracket pair if the whole title is wrapped: [title text]
     if cleaned.startswith("[") and cleaned.endswith("]"):
         cleaned = cleaned[1:-1].strip()
@@ -111,7 +145,8 @@ class DashboardState(rx.State):
     department_filter: str = ""
     department_logic: str = "OR"
     search_logic: str = "OR"
-    lifecycle_filter: str = "Live"  # All, Live, Expired
+    lifecycle_filter: str = "Live"  # All, Live, Live+Recent, Expired
+    recent_days: int = 30            # window for "Live + Recent" mode
     selected_sort: str = "published_at"
     selected_sort_order: str = "desc"
     selected_filter_position: str = "left"
@@ -135,14 +170,18 @@ class DashboardState(rx.State):
     data_sources: int = 0
 
     current_time: str = ""
+    query_time_ms: str = ""         # e.g. "42 ms" — shown in UI
+    search_debounce_id: int = 0
+    dept_debounce_id: int = 0
 
     rows: list[TenderRow] = []
     recommendations: list[Recommendation] = []
 
     def _filters(self) -> db.TenderFilters:
-        # Map lifecycle_filter to show_live_only
+        # Map lifecycle_filter to show_live_only / show_expired_only / show_live_recent
         show_live_only = self.lifecycle_filter == "Live"
         show_expired_only = self.lifecycle_filter == "Expired"
+        show_live_recent = self.lifecycle_filter == "Live + Recent"
         
         return db.TenderFilters(
             portal=self.selected_portal,
@@ -163,6 +202,8 @@ class DashboardState(rx.State):
             department_logic=self.department_logic,
             show_live_only=show_live_only,
             show_expired_only=show_expired_only,
+            show_live_recent=show_live_recent,
+            recent_days=self.recent_days,
         )
 
     def load_initial_data(self):
@@ -232,12 +273,53 @@ class DashboardState(rx.State):
     def set_search_query(self, value: str):
         self.search_query = value
 
+    def set_search_and_apply(self, value: str):
+        """Live-search handler: updates query and triggers debounced search."""
+        self.search_query = value
+        self.search_debounce_id += 1
+        return DashboardState.debounced_search
+
+    def clear_search(self):
+        """Clear the search box and immediately re-run filters."""
+        self.search_query = ""
+        self.apply_filters()
+
+    def clear_dept(self):
+        """Clear the department filter and immediately re-run filters."""
+        self.department_filter = ""
+        self.apply_filters()
+
+    @rx.event(background=True)
+    async def debounced_search(self):
+        """Wait 550 ms then run apply_filters — cancelled if user keeps typing."""
+        async with self:
+            my_id = self.search_debounce_id
+        await asyncio.sleep(0.55)
+        async with self:
+            if self.search_debounce_id == my_id:
+                self.apply_filters()
+
     def set_search_logic(self, value: str):
         self.search_logic = value
         self.apply_filters()
 
     def set_department_filter(self, value: str):
         self.department_filter = value
+
+    def set_dept_and_apply(self, value: str):
+        """Live dept-filter handler with debounce."""
+        self.department_filter = value
+        self.dept_debounce_id += 1
+        return DashboardState.debounced_dept
+
+    @rx.event(background=True)
+    async def debounced_dept(self):
+        async with self:
+            my_id = self.dept_debounce_id
+        await asyncio.sleep(0.55)
+        async with self:
+            if self.dept_debounce_id == my_id:
+                self.apply_filters()
 
     def set_department_logic(self, value: str):
         self.department_logic = value
@@ -264,6 +346,7 @@ class DashboardState(rx.State):
         self.city_options = ["All", *db.get_city_options(self.selected_state, self.selected_district)]
 
     def refresh_data(self):
+        _t0 = time.perf_counter()
         filters = self._filters()
 
         summary = db.get_summary(filters)
@@ -284,6 +367,7 @@ class DashboardState(rx.State):
             page_size=self.page_size,
             sort_by=self.selected_sort,
             sort_order=self.selected_sort_order,
+            prefetched_count=int(summary["filtered_results"]),
         )
         self.total_count = total_count
         self.total_pages = (total_count + self.page_size - 1) // self.page_size
@@ -316,6 +400,8 @@ class DashboardState(rx.State):
             for entry in db.get_recommendations(filters)
         ]
         self.current_time = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
+        _elapsed = (time.perf_counter() - _t0) * 1000
+        self.query_time_ms = f"{_elapsed:.0f} ms"
         self.loading = False
 
     def _fmt_money(self, value: object) -> str:
@@ -378,6 +464,7 @@ class DashboardState(rx.State):
         self.search_logic = "OR"
         self.department_logic = "OR"
         self.lifecycle_filter = "Live"
+        self.recent_days = 30
         self.selected_sort = "published_at"
         self.selected_sort_order = "desc"
         self.page = 1
@@ -732,8 +819,17 @@ class PortalManagementState(rx.State):
     # Filters/settings
     days_filter: int = 0  # Filter portals by last updated (0 = all)
     sort_by: str = "portal_name"  # portal_name, total_tenders, live_tenders, last_updated
+    sort_by_label: str = "Portal Name"  # Human-readable label matching sort_by
     sort_order: str = "asc"
     category_filter: str = "All"  # All, Central, State, PSU
+
+    # Mapping of display label -> internal sort field
+    _SORT_LABEL_TO_FIELD: dict = {
+        "Portal Name": "portal_name",
+        "Total Tenders": "total_tenders",
+        "Live Tenders": "live_tenders",
+        "Last Updated": "last_updated",
+    }
     
     # Export history
     show_export_history: bool = False
@@ -824,25 +920,29 @@ class PortalManagementState(rx.State):
     def set_days_filter(self, value: str):
         """Set days filter for portals."""
         try:
-            self.days_filter = int(value)
-            self.load_portal_statistics()
+            self.days_filter = int(value.split()[0]) if value else 0  # Handle "0 (All)" format
+            yield PortalManagementState.load_portal_statistics
         except ValueError:
             self.days_filter = 0
+            yield
     
-    def set_sort_by(self, value: str):
-        """Set sort column."""
-        self.sort_by = value
+    def set_sort_by(self, label: str):
+        """Set sort column from display label."""
+        self.sort_by_label = label
+        self.sort_by = self._SORT_LABEL_TO_FIELD.get(label, "portal_name")
         self._apply_sort()
-    
+        yield
+
     def set_sort_order(self, value: str):
         """Set sort order."""
         self.sort_order = value
         self._apply_sort()
+        yield
     
     def toggle_export_dialog(self):
         """Toggle export settings dialog."""
         self.show_export_dialog = not self.show_export_dialog
-    
+
     def set_export_days_filter(self, value: str):
         """Set export days filter."""
         try:
@@ -920,6 +1020,7 @@ class PortalManagementState(rx.State):
             self.sort_order = "desc" if self.sort_order == "asc" else "asc"
             # Apply sorting immediately
             self._apply_sort()
+            yield
         except Exception:
             pass
     
@@ -948,6 +1049,13 @@ class PortalManagementState(rx.State):
     def deselect_all_portals(self):
         """Deselect all portals."""
         self.export_selected_portals = []
+
+    def toggle_select_all(self, _checked: bool):
+        """Toggle between select-all and deselect-all."""
+        if len(self.export_selected_portals) == len(self.portal_rows) and self.portal_rows:
+            self.export_selected_portals = []
+        else:
+            self.export_selected_portals = [p.portal_slug for p in self.portal_rows]
     
     async def export_selected_portals_to_excel(self):
         """Export selected portals to individual Excel files."""
@@ -1279,7 +1387,7 @@ class PortalManagementState(rx.State):
     def set_category_filter(self, value: str):
         """Set category filter and reload data."""
         self.category_filter = value
-        self.load_portal_statistics()
+        yield PortalManagementState.load_portal_statistics
     
     async def export_category_portals(self, category: str):
         """Export all portals in a category."""
@@ -1417,7 +1525,7 @@ class DataVisualizationState(rx.State):
     
     # Filters
     selected_portal: str = "All"
-    lifecycle_filter: str = "All"  # All, Live, Expired
+    lifecycle_filter: str = "All"  # All, Live, Live + Recent, Expired
     portal_options: list[str] = ["All"]
     
     # Database statistics (for schema tab)
@@ -1454,6 +1562,8 @@ class DataVisualizationState(rx.State):
                 portal=self.selected_portal,
                 show_live_only=self.lifecycle_filter == "Live",
                 show_expired_only=self.lifecycle_filter == "Expired",
+                show_live_recent=self.lifecycle_filter == "Live + Recent",
+                recent_days=30,
             )
             
             # Get total count
@@ -1567,13 +1677,16 @@ class ExcelImportState(rx.State):
     excel_columns: list[str] = []
     column_mappings: list[ColumnMapping] = []
     auto_matched_columns: int = 0
-    total_required_columns: int = 10
+    total_required_columns: int = 7  # number of required cols in _db_columns_config
     all_required_mapped: bool = False
     
     # Import settings
     portal_name: str = ""
     base_url: str = ""
     skip_duplicates: bool = True
+    # "live"  = check only against tenders whose closing date is in the future (default)
+    # "all"   = check against every tender ever stored for this portal
+    duplicate_scope: str = "live"
     validate_data: bool = True
     
     # Import progress
@@ -1618,7 +1731,12 @@ class ExcelImportState(rx.State):
     def toggle_skip_duplicates(self, value: bool):
         """Toggle skip duplicates."""
         self.skip_duplicates = value
-    
+
+    def set_duplicate_scope(self, value: str):
+        """Set duplicate scope: 'live' or 'all'."""
+        if value in ("live", "all"):
+            self.duplicate_scope = value
+
     def toggle_validate_data(self, value: bool):
         """Toggle validate data."""
         self.validate_data = value
@@ -1684,54 +1802,56 @@ class ExcelImportState(rx.State):
     
     async def handle_upload(self, files: list[rx.UploadFile]):
         """Handle file upload and auto-detect columns."""
+        import asyncio
+        import tempfile
+        import pandas as pd
+        from pathlib import Path
+
         self.uploading = True
+        self.error_messages = []
         yield
-        
+
         try:
-            import pandas as pd
-            from pathlib import Path
-            import os
-            
             if not files or len(files) == 0:
                 self.error_messages = ["No file uploaded"]
                 self.uploading = False
                 yield
                 return
-            
+
             upload = files[0]
             upload_filename = upload.filename or "upload"
             self.file_name = upload_filename
-            
-            # Save file temporarily
-            upload_dir = Path("temp_uploads")
-            upload_dir.mkdir(exist_ok=True)
-            upload_path = upload_dir / upload_filename
-            
-            # Read file content
+
+            # Read file content into memory
             file_content = await upload.read()
-            upload_path.write_bytes(file_content)
-            
-            self.file_path = str(upload_path)
             self.file_size_text = self._format_file_size(len(file_content))
-            
-            # Read Excel/CSV based on extension
-            if upload_filename.endswith('.csv'):
-                df = pd.read_csv(upload_path)
+
+            # Save to system temp dir (OUTSIDE project dir to avoid hot-reload trigger)
+            tmp_dir = Path(tempfile.gettempdir()) / "reflex_uploads"
+            tmp_dir.mkdir(exist_ok=True)
+            upload_path = tmp_dir / upload_filename
+            await asyncio.to_thread(upload_path.write_bytes, file_content)
+            self.file_path = str(upload_path)
+
+            # Parse Excel/CSV from in-memory bytes (faster, no disk dependency)
+            import io as _io
+            if upload_filename.lower().endswith('.csv'):
+                df = await asyncio.to_thread(pd.read_csv, _io.BytesIO(file_content))
             else:
-                df = pd.read_excel(upload_path)
-            
+                df = await asyncio.to_thread(pd.read_excel, _io.BytesIO(file_content))
+
             self.file_rows = len(df)
             self.file_columns = len(df.columns)
             self.excel_columns = list(df.columns)
-            
+
             # Auto-detect and match columns
             self._smart_match_columns(df)
-            
+
             # Auto-detect portal name from filename
             self._auto_detect_portal_name(upload_filename)
-            
+
             self.file_uploaded = True
-            
+
         except Exception as ex:
             self.error_messages = [f"Error uploading file: {str(ex)}"]
             self.file_uploaded = False
@@ -1789,7 +1909,9 @@ class ExcelImportState(rx.State):
         
         self.column_mappings = mappings
         self.auto_matched_columns = matched_count
-        self.all_required_mapped = (matched_count == self.total_required_columns)
+        total_required = sum(1 for c in self._db_columns_config.values() if c["required"])
+        self.total_required_columns = total_required
+        self.all_required_mapped = (matched_count == total_required)
     
     def _find_matching_column(self, excel_cols: list[str], db_col: str, keywords: list[str]) -> str:  # type: ignore[return]
         """Find matching Excel column using smart matching."""
@@ -1846,24 +1968,21 @@ class ExcelImportState(rx.State):
         # Remove extension
         name = filename.rsplit('.', 1)[0]
         
-        # Common portal patterns
+        # Common portal patterns — portal names MUST match the scraper's portal name exactly
+        # (from base_urls.csv) so that deduplication and skip-logic work correctly.
         patterns = {
-            r'hptenders': 'hptenders.gov.in',
-            r'eprocure': 'eprocure',
-            r'etenders': 'etenders',
-            r'cppp': 'eprocure.gov.in',
-            r'ddtenders': 'ddtenders.gov.in',
-            r'tender': 'custom',
+            r'hptenders': ('HP Tenders', 'https://hptenders.gov.in/nicgep/app'),
+            r'cppp|eprocure\.gov': ('eprocure.gov.in', 'https://eprocure.gov.in'),
+            r'eprocure': ('eprocure', 'https://eprocure.gov.in'),
+            r'etenders': ('etenders', ''),
+            r'ddtenders': ('ddtenders.gov.in', 'https://ddtenders.gov.in'),
+            r'tender': ('custom', ''),
         }
         
-        for pattern, portal in patterns.items():
+        for pattern, (portal, url) in patterns.items():
             if re.search(pattern, name.lower()):
                 self.portal_name = portal
-                # Set base URL based on portal
-                if 'hptenders' in name.lower():
-                    self.base_url = 'https://hptenders.gov.in'
-                elif 'cppp' in name.lower() or 'eprocure.gov' in name.lower():
-                    self.base_url = 'https://eprocure.gov.in'
+                self.base_url = url
                 return
         
         # Default
@@ -1881,7 +2000,8 @@ class ExcelImportState(rx.State):
         # Recalculate match status
         matched = sum(1 for m in self.column_mappings if m.is_mapped and m.is_required)
         self.auto_matched_columns = matched
-        self.all_required_mapped = (matched == self.total_required_columns)
+        total_required = sum(1 for c in self._db_columns_config.values() if c["required"])
+        self.all_required_mapped = (matched == total_required)
     
     async def start_import(self):
         """Start importing data to database."""
@@ -1931,7 +2051,39 @@ class ExcelImportState(rx.State):
                 portal_name=self.portal_name or "imported",
                 base_url=self.base_url or "",
             )
-            
+
+            # Load existing tender IDs for this portal (for duplicate detection).
+            # Scope "live"  → only tenders whose closing date is still in the future (default).
+            # Scope "all"   → every tender ever stored for this portal (catches re-imports of old data).
+            existing_ids_normalized: set[str] = set()
+            if self.skip_duplicates:
+                scope_label = self.duplicate_scope or "live"
+                if scope_label == "live":
+                    # Reuse the same helper the scraper uses (live tenders only)
+                    live_ids = store.get_existing_tender_ids_for_portal(self.portal_name or "imported")
+                    existing_ids_normalized = {
+                        store._normalize_tender_id_text(tid) for tid in live_ids
+                    }
+                else:
+                    # "all" — every historical record regardless of closing date
+                    portal_key = (self.portal_name or "imported").strip().lower()
+                    with store._connect() as _conn:
+                        _rows = _conn.execute(
+                            """
+                            SELECT DISTINCT TRIM(COALESCE(tender_id_extracted,'')) AS tid
+                            FROM tenders
+                            WHERE LOWER(TRIM(COALESCE(portal_name,''))) = ?
+                              AND TRIM(COALESCE(tender_id_extracted,'')) != ''
+                            """,
+                            (portal_key,),
+                        ).fetchall()
+                    existing_ids_normalized = {
+                        store._normalize_tender_id_text(r["tid"]) for r in _rows
+                    }
+                scope_desc = "live tenders" if scope_label == "live" else "all historical tenders"
+                self.import_status = f"Loaded {len(existing_ids_normalized)} existing IDs ({scope_desc}) for duplicate check..."
+                yield
+
             # Convert DataFrame to tender list
             tenders = []
             start_time = datetime.now()
@@ -1959,6 +2111,21 @@ class ExcelImportState(rx.State):
                             value = str(value).strip()
                         tender[db_col] = value
                     
+                    # Rescue tender ID from title_ref when the mapped column was empty
+                    # (same logic used during scraping)
+                    raw_id = tender.get("tender_id_extracted") or ""
+                    title_ref = tender.get("title_ref") or ""
+                    rescued = _extract_real_tender_id(raw_id, title_ref)
+                    if rescued != raw_id:
+                        tender["tender_id_extracted"] = rescued
+
+                    # Skip duplicate check
+                    if self.skip_duplicates and existing_ids_normalized:
+                        norm_id = store._normalize_tender_id_text(tender.get("tender_id_extracted") or "")
+                        if norm_id and norm_id in existing_ids_normalized:
+                            self.import_skipped += 1
+                            continue
+
                     # Validate required fields if enabled
                     if self.validate_data:
                         if not tender.get("tender_id_extracted"):
@@ -1976,11 +2143,31 @@ class ExcelImportState(rx.State):
             self.import_status = "Importing to database..."
             self.import_progress = 95
             yield
-            
-            result = store.replace_run_tenders(run_id, tenders)
+
+            # replace_run_tenders reads Excel-style keys — translate from DB-style keys
+            _DB_TO_EXCEL = {
+                "portal_name":        "Portal",
+                "tender_id_extracted":"Tender ID (Extracted)",
+                "department_name":    "Department Name",
+                "serial_no":          "S.No",
+                "published_date":     "e-Published Date",
+                "closing_date":       "Closing Date",
+                "opening_date":       "Opening Date",
+                "title_ref":          "Title and Ref.No./Tender ID",
+                "organisation_chain": "Organisation Chain",
+                "direct_url":         "Direct URL",
+                "status_url":         "Status URL",
+                "emd_amount":         "EMD Amount",
+            }
+            tenders_for_store = [
+                {_DB_TO_EXCEL.get(k, k): v for k, v in t.items()}
+                for t in tenders
+            ]
+
+            result = store.replace_run_tenders(run_id, tenders_for_store)
             
             self.import_success = int(result)
-            self.import_skipped = 0
+            # import_skipped is already counted per-row in the loop above; don't reset it
             
             # Calculate duration
             end_time = datetime.now()

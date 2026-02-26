@@ -1,54 +1,54 @@
 @echo off
+:: Set working directory to the folder containing this script
+cd /d "%~dp0"
+
 echo ==============================================
 echo    BlackForest Reflex Dashboard Launcher
 echo ==============================================
 echo.
-echo This script will start the Reflex dashboard.
-echo The dashboard will be available at:
-echo http://localhost:3000
-echo.
-echo Press any key to continue...
-pause >nul
 
+:: Start with the script's own folder as the default project root
+set PROJECT_ROOT=%~dp0
+:: Strip trailing backslash for cleaner display
+if "%PROJECT_ROOT:~-1%"=="\" set PROJECT_ROOT=%PROJECT_ROOT:~0,-1%
+
+:CHECK_ROOT
+echo Project root: %PROJECT_ROOT%
 echo.
-echo 1. Checking project directory...
-if not exist "tender_dashboard_reflex" (
-    echo Error: Cannot find tender_dashboard_reflex directory
-    echo Please run this script from the BF 2.1.4 project root
+
+:: Check for .venv
+if not exist "%PROJECT_ROOT%\.venv\Scripts\python.exe" (
+    echo [NOT FOUND] .venv\Scripts\python.exe
     echo.
-    echo Press any key to exit...
-    pause >nul
-    exit /b 1
+    set /p PROJECT_ROOT="Enter the correct project root path (e.g. C:\MyProjects\BF 2.1.4): "
+    :: Strip any trailing backslash or quotes the user may have typed
+    if "%PROJECT_ROOT:~-1%"=="\" set PROJECT_ROOT=%PROJECT_ROOT:~0,-1%
+    if "%PROJECT_ROOT:~-1%"==" " set PROJECT_ROOT=%PROJECT_ROOT:~0,-1%
+    echo.
+    goto CHECK_ROOT
 )
 
-echo 2. Activating virtual environment...
-if not exist ".venv\Scripts\activate.bat" (
-    echo Error: Cannot find virtual environment
-    echo Please ensure the .venv folder exists
+:: Check for dashboard directory
+if not exist "%PROJECT_ROOT%\tender_dashboard_reflex" (
+    echo [NOT FOUND] tender_dashboard_reflex directory
     echo.
-    echo Press any key to exit...
-    pause >nul
-    exit /b 1
+    set /p PROJECT_ROOT="Enter the correct project root path (e.g. C:\MyProjects\BF 2.1.4): "
+    if "%PROJECT_ROOT:~-1%"=="\" set PROJECT_ROOT=%PROJECT_ROOT:~0,-1%
+    if "%PROJECT_ROOT:~-1%"==" " set PROJECT_ROOT=%PROJECT_ROOT:~0,-1%
+    echo.
+    goto CHECK_ROOT
 )
 
-call .venv\Scripts\activate.bat
-
-echo 3. Navigating to dashboard directory...
-cd tender_dashboard_reflex
-
-echo 4. Starting Reflex dashboard...
+echo [OK] Found project at: %PROJECT_ROOT%
+echo [OK] URL: http://localhost:3000
 echo.
-echo The dashboard is starting. This may take a few minutes...
-echo.
-echo Once running, the dashboard will be available at:
-echo http://localhost:3000
-echo.
-echo To stop the dashboard, press Ctrl+C
+echo Starting Reflex... (first run may take a minute to compile)
+echo Press Ctrl+C to stop.
 echo.
 
-python -m reflex run
+cd /d "%PROJECT_ROOT%\tender_dashboard_reflex"
+"%PROJECT_ROOT%\.venv\Scripts\python.exe" -m reflex run
 
 echo.
 echo Dashboard stopped.
-echo Press any key to exit...
-pause >nul
+pause

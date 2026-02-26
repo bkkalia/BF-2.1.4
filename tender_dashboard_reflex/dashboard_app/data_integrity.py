@@ -9,42 +9,43 @@ from datetime import datetime
 from typing import List, Dict
 
 import reflex as rx
+from pydantic import BaseModel
 
 
-class IntegrityMetric(rx.Base):
+class IntegrityMetric(BaseModel):
     """Data class for integrity metrics."""
-    title: str
-    value: str | int
-    status: str  # "good", "warning", "error"
+    title: str = ""
+    value: str | int = ""
+    status: str = "good"  # "good", "warning", "error"
     description: str = ""
     icon: str = "info"
 
 
-class DuplicateRecord(rx.Base):
+class DuplicateRecord(BaseModel):
     """Data class for duplicate tender records."""
-    portal_name: str
-    tender_id: str
-    count: int
+    portal_name: str = ""
+    tender_id: str = ""
+    count: int = 0
 
 
-class MissingFieldRecord(rx.Base):
+class MissingFieldRecord(BaseModel):
     """Data class for missing field records."""
-    portal_name: str
-    department_name: str
-    missing_count: int
-    field_name: str
+    portal_name: str = ""
+    department_name: str = ""
+    missing_count: int = 0
+    field_name: str = ""
 
 
-class PortalIntegrity(rx.Base):
+class PortalIntegrity(BaseModel):
     """Data class for per-portal integrity metrics."""
-    portal_name: str
-    total_tenders: int
-    duplicate_groups: int
-    duplicate_rows: int
-    missing_tender_ids: int
-    missing_closing_dates: int
-    integrity_score: int
-    status: str  # "excellent", "good", "fair", "poor"
+    portal_name: str = ""
+    total_tenders: int = 0
+    duplicate_groups: int = 0
+    duplicate_rows: int = 0
+    missing_tender_ids: int = 0
+    missing_closing_dates: int = 0
+    integrity_score: int = 0
+    status: str = "good"  # "excellent", "good", "fair", "poor"
 
 
 class DataIntegrityState(rx.State):

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import sqlite3
 import csv
+import threading
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 import os
@@ -19,13 +20,13 @@ def _resolve_db_path() -> Path:
     if env_path:
         return Path(env_path).expanduser().resolve()
 
-    fixed_workspace_path = Path("D:/Dev84/BF 2.1.4/data/blackforest_tenders.sqlite3")
-    if fixed_workspace_path.exists():
-        return fixed_workspace_path
-
+    # Prefer 'database/' (where the scraper writes), fall back to legacy 'data/' location
     candidates = [
+        Path(__file__).resolve().parents[2] / "database" / "blackforest_tenders.sqlite3",
         Path(__file__).resolve().parents[2] / "data" / "blackforest_tenders.sqlite3",
+        Path.cwd() / "database" / "blackforest_tenders.sqlite3",
         Path.cwd() / "data" / "blackforest_tenders.sqlite3",
+        Path.cwd().parent / "database" / "blackforest_tenders.sqlite3",
         Path.cwd().parent / "data" / "blackforest_tenders.sqlite3",
     ]
     for candidate in candidates:
@@ -35,6 +36,162 @@ def _resolve_db_path() -> Path:
 
 
 DB_PATH = _resolve_db_path()
+
+# ---------------------------------------------------------------------------
+# Thread-local persistent connection — avoids reopening SQLite on every query.
+# SQLite context manager commits/rolls-back but does NOT close the connection,
+# so reuse is safe across multiple with-statement calls on the same thread.
+# ---------------------------------------------------------------------------
+_db_local = threading.local()
+
+
+# ---------------------------------------------------------------------------
+# SQL expression: converts NIC portal date text "DD-Mon-YYYY HH:MM AM/PM"
+# (e.g. "25-Feb-2026 03:00 PM") into an ISO-8601 date string "YYYY-MM-DD"
+# so SQLite can compare it with DATE('now', '+330 minutes') (current IST date).
+# Used in live/expired WHERE clauses and summary counts.
+# ---------------------------------------------------------------------------
+_NIC_DATE_COL = "ti.closing_date"  # default table alias used in most queries
+
+def _nic_iso_expr(col: str = "ti.closing_date") -> str:
+    """Return SQL expression yielding an ISO-8601 date from a NIC closing_date.
+    Uses the pre-computed closing_date_iso column when available (fast index path),
+    falls back to the CASE expression for compatibility."""
+    if _has_closing_iso_column:
+        # Map 'ti.closing_date' -> 'ti.closing_date_iso', 'closing_date' -> 'closing_date_iso'
+        return col.replace("closing_date", "closing_date_iso")
+    return _ISO_CASE_BODY.format(col=col)
+
+# IST offset expressed as SQLite modifier string (UTC+05:30 = +330 minutes)
+_IST_NOW_SQL = "DATE('now', '+330 minutes')"  # current date in IST
+
+# Set to True by _ensure_search_indexes once closing_date_iso column is confirmed
+_has_closing_iso_column: bool = False
+
+# Shared CASE expression body (without table alias) used in trigger + UPDATE
+_ISO_CASE_BODY = """
+  CASE WHEN LENGTH(TRIM(COALESCE({col},'')))>=11
+  THEN SUBSTR({col},8,4)||'-'||
+    CASE UPPER(SUBSTR({col},4,3))
+      WHEN 'JAN' THEN '01' WHEN 'FEB' THEN '02' WHEN 'MAR' THEN '03'
+      WHEN 'APR' THEN '04' WHEN 'MAY' THEN '05' WHEN 'JUN' THEN '06'
+      WHEN 'JUL' THEN '07' WHEN 'AUG' THEN '08' WHEN 'SEP' THEN '09'
+      WHEN 'OCT' THEN '10' WHEN 'NOV' THEN '11' WHEN 'DEC' THEN '12'
+      ELSE '00' END||'-'||SUBSTR({col},1,2)
+  ELSE NULL END"""
+
+# ---------------------------------------------------------------------------
+# Performance: ensure critical indexes exist on first use.
+# These are idempotent (IF NOT EXISTS) so safe to run every startup.
+# ---------------------------------------------------------------------------
+_indexes_ensured: bool = False
+
+
+def _ensure_search_indexes() -> None:
+    """Create missing read-performance indexes on the legacy tenders table.
+    Also adds the closing_date_iso computed column + trigger if absent.
+    Runs once per process; skips if already done or if DB is read-only."""
+    global _indexes_ensured, _has_closing_iso_column
+    if _indexes_ensured:
+        return
+    _indexes_ensured = True
+    try:
+        with _get_connection() as conn:
+            c = conn.cursor()
+            c.execute("PRAGMA journal_mode=WAL")
+
+            # 1. Core portal_name index (already created on previous run, idempotent)
+            c.execute("CREATE INDEX IF NOT EXISTS idx_tenders_portal_name ON tenders(portal_name)")
+
+            # 2. Add closing_date_iso TEXT column (ISO date, pre-converted for indexing)
+            try:
+                c.execute("ALTER TABLE tenders ADD COLUMN closing_date_iso TEXT")
+            except Exception:
+                pass  # Already exists
+
+            # 3. Bulk-populate from the CASE expression (only rows where NULL)
+            iso_expr = _ISO_CASE_BODY.format(col="closing_date")
+            c.execute(f"UPDATE tenders SET closing_date_iso = {iso_expr} WHERE closing_date_iso IS NULL")
+
+            # 4. CREATE TRIGGER: keep closing_date_iso in sync on INSERT
+            c.execute("DROP TRIGGER IF EXISTS tg_tenders_iso_ins")
+            c.execute(f"""
+                CREATE TRIGGER tg_tenders_iso_ins AFTER INSERT ON tenders
+                BEGIN
+                  UPDATE tenders SET closing_date_iso = {_ISO_CASE_BODY.format(col='NEW.closing_date')}
+                  WHERE id = NEW.id AND closing_date_iso IS NULL;
+                END
+            """)
+            # 5. CREATE TRIGGER: keep in sync on UPDATE of closing_date
+            c.execute("DROP TRIGGER IF EXISTS tg_tenders_iso_upd")
+            c.execute(f"""
+                CREATE TRIGGER tg_tenders_iso_upd AFTER UPDATE OF closing_date ON tenders
+                BEGIN
+                  UPDATE tenders SET closing_date_iso = {_ISO_CASE_BODY.format(col='NEW.closing_date')}
+                  WHERE id = NEW.id;
+                END
+            """)
+
+            # 6. Compound covering index for portal + date range (the hot path)
+            c.execute(
+                "CREATE INDEX IF NOT EXISTS idx_tenders_portal_iso "
+                "ON tenders(portal_name, closing_date_iso)"
+            )
+            # 7. Index on closing_date_iso alone for global live/expired counts
+            c.execute(
+                "CREATE INDEX IF NOT EXISTS idx_tenders_closing_iso "
+                "ON tenders(closing_date_iso)"
+            )
+            # 8. Cover index: portal + sort-by-published date (legacy schema uses published_date)
+            c.execute(
+                "CREATE INDEX IF NOT EXISTS idx_tenders_portal_published "
+                "ON tenders(portal_name, published_date)"
+            )
+            # 9. Drop the old raw-text closing_date index (wrong sort order, unused)
+            c.execute("DROP INDEX IF EXISTS idx_tenders_closing_date")
+
+            conn.commit()
+            _has_closing_iso_column = True
+    except Exception as _e:
+        pass  # Read-only DB or locked — non-fatal
+
+
+# ---------------------------------------------------------------------------
+# Summary cache: live/expired/total counts change max once per scrape run.
+# Cache them for 120 s so the 3×full-scan doesn't repeat on every keystroke.
+# ---------------------------------------------------------------------------
+import time as _time_mod
+
+_summary_global_cache: dict[str, int] = {}
+_summary_global_ts: float = 0.0
+_SUMMARY_CACHE_TTL: float = 120.0  # seconds
+
+
+def _get_global_counts() -> tuple[int, int, int]:
+    """Return (total, live, expired) with 120-second cache."""
+    global _summary_global_cache, _summary_global_ts
+    now = _time_mod.monotonic()
+    if _summary_global_cache and (now - _summary_global_ts) < _SUMMARY_CACHE_TTL:
+        return (
+            _summary_global_cache["total"],
+            _summary_global_cache["live"],
+            _summary_global_cache["expired"],
+        )
+    with _get_connection() as conn:
+        c = conn.cursor()
+        c.execute("SELECT COUNT(*) AS n FROM tenders")
+        total = int(c.fetchone()["n"])
+        _iso = _nic_iso_expr("closing_date")  # uses column if available
+        c.execute(
+            f"SELECT COUNT(*) AS n FROM tenders "
+            f"WHERE ({_iso} >= {_IST_NOW_SQL} OR {_iso} IS NULL)"
+        )
+        live = int(c.fetchone()["n"])
+        expired = total - live
+    _summary_global_cache = {"total": total, "live": live, "expired": expired}
+    _summary_global_ts = now
+    return total, live, expired
+
 
 
 def _get_portal_categories() -> dict[str, str]:
@@ -69,6 +226,36 @@ def _get_portal_categories() -> dict[str, str]:
     return categories
 
 
+def _get_portal_name_normalization() -> dict[str, str]:
+    """Build a mapping from URL-slug style portal names to canonical display names.
+    e.g. 'hptenders_gov_in' -> 'HP Tenders', 'jktenders_gov_in' -> 'JK Tenders'
+    Derived by converting each BaseURL hostname to an underscore slug and mapping
+    it to the portal's configured Name.
+    """
+    import re
+    from urllib.parse import urlparse
+    mapping: dict[str, str] = {}
+    csv_path = Path(__file__).resolve().parents[2] / "base_urls.csv"
+    if not csv_path.exists():
+        return mapping
+    try:
+        with open(csv_path, 'r', encoding='utf-8') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                name = row.get('Name', '').strip()
+                base_url = row.get('BaseURL', '').strip()
+                if not name or not base_url:
+                    continue
+                host = urlparse(base_url).hostname or ''
+                host = host.lower().replace('www.', '')
+                slug = re.sub(r'[^a-z0-9]+', '_', host).strip('_')
+                if slug:
+                    mapping[slug] = name
+    except Exception as ex:
+        print(f"Error building portal name normalization: {ex}")
+    return mapping
+
+
 @dataclass
 class TenderFilters:
     portal: str = "All"
@@ -89,16 +276,26 @@ class TenderFilters:
     department_logic: str = "OR"
     show_live_only: bool = False
     show_expired_only: bool = False
+    show_live_recent: bool = False   # Live + expired within recent_days
+    recent_days: int = 30            # How many days back "recent expired" looks
 
 
 def _get_connection() -> sqlite3.Connection:
+    conn: sqlite3.Connection | None = getattr(_db_local, "conn", None)
+    if conn is not None:
+        try:
+            conn.execute("SELECT 1")
+            return conn
+        except Exception:
+            _db_local.conn = None
     db_path_str = str(DB_PATH)
     try:
-        conn = sqlite3.connect(db_path_str)
+        conn = sqlite3.connect(db_path_str, check_same_thread=False)
     except sqlite3.OperationalError:
         uri = f"file:{Path(db_path_str).as_posix()}?mode=ro"
-        conn = sqlite3.connect(uri, uri=True)
+        conn = sqlite3.connect(uri, uri=True, check_same_thread=False)
     conn.row_factory = sqlite3.Row
+    _db_local.conn = conn
     return conn
 
 
@@ -111,6 +308,14 @@ def _table_exists(table_name: str) -> bool:
 
 def _is_v3_schema() -> bool:
     return _table_exists("portals") and _table_exists("tender_items")
+
+
+# Ensure indexes on first module load (only for legacy schema — v3 has its own)
+try:
+    if not _is_v3_schema():
+        _ensure_search_indexes()
+except Exception:
+    pass
 
 
 def _parse_portal_datetime(value: str | None) -> datetime | None:
@@ -142,12 +347,24 @@ def _build_where(filters: TenderFilters) -> tuple[str, list[Any]]:
         if use_v3:
             clauses.append("ti.is_live = 1")
         else:
-            clauses.append("LOWER(COALESCE(ti.lifecycle_status, '')) = 'active'")
+            iso = _nic_iso_expr("ti.closing_date")
+            clauses.append(f"({iso} >= {_IST_NOW_SQL} OR {iso} IS NULL)")
     elif filters.show_expired_only:
         if use_v3:
             clauses.append("ti.is_live = 0")
         else:
-            clauses.append("LOWER(COALESCE(ti.lifecycle_status, '')) != 'active'")
+            iso = _nic_iso_expr("ti.closing_date")
+            clauses.append(f"({iso} IS NOT NULL AND {iso} < {_IST_NOW_SQL})")
+    elif filters.show_live_recent:
+        if use_v3:
+            clauses.append(
+                f"(ti.is_live = 1 OR "
+                f"DATE(ti.closing_at) >= DATE({_IST_NOW_SQL}, '-{filters.recent_days} days'))"
+            )
+        else:
+            iso = _nic_iso_expr("ti.closing_date")
+            cutoff = f"DATE({_IST_NOW_SQL}, '-{filters.recent_days} days')"
+            clauses.append(f"({iso} IS NULL OR {iso} >= {cutoff})")
 
     # Portal group filter
     if filters.portal_group and filters.portal_group != "All":
@@ -342,60 +559,101 @@ def get_portal_statistics(days_filter: int = 0) -> list[dict[str, Any]]:
                 ORDER BY p.portal_name
             """
         else:
-            # Legacy schema - join with runs table to get timestamps and base_url
-            date_filter = ""
+            # Legacy schema - join with runs table to get timestamps and base_url.
+            # FIX: use COALESCE(completed_at, started_at) so in-progress/failed runs
+            #      still show a meaningful date.
+            # FIX: derive live/expired from closing_date (scraper only stores active
+            #      tenders so lifecycle_status is always 'active' and useless here).
+            days_having = ""
             if days_filter > 0:
-                date_filter = f"HAVING MAX(r.completed_at) >= datetime('now', '-{days_filter} days')"
+                days_having = f"""
+                    HAVING (SELECT MAX(COALESCE(completed_at, started_at))
+                            FROM runs WHERE portal_name = t.portal_name)
+                           >= datetime('now', '-{days_filter} days')
+                """
             
+            # Build the NIC date -> ISO CASE expression for the tenders table
+            _cd_iso = _nic_iso_expr("t.closing_date")
             query = f"""
                 SELECT 
                     t.portal_name as portal_slug,
                     t.portal_name,
-                    (SELECT base_url FROM runs WHERE portal_name = t.portal_name ORDER BY completed_at DESC LIMIT 1) as base_url,
-                    (SELECT MAX(completed_at) FROM runs WHERE portal_name = t.portal_name) as last_updated,
+                    (SELECT base_url FROM runs
+                     WHERE portal_name = t.portal_name
+                     ORDER BY COALESCE(completed_at, started_at) DESC LIMIT 1) as base_url,
+                    (SELECT MAX(COALESCE(completed_at, started_at)) FROM runs
+                     WHERE portal_name = t.portal_name) as last_updated,
                     COUNT(*) as total_tenders,
-                    SUM(CASE WHEN LOWER(COALESCE(t.lifecycle_status, '')) = 'active' THEN 1 ELSE 0 END) as live_tenders,
-                    SUM(CASE WHEN LOWER(COALESCE(t.lifecycle_status, '')) != 'active' OR t.lifecycle_status IS NULL THEN 1 ELSE 0 END) as expired_tenders
+                    SUM(CASE
+                        WHEN ({_cd_iso}) >= {_IST_NOW_SQL} THEN 1
+                        WHEN ({_cd_iso}) IS NULL THEN 1
+                        ELSE 0 END) as live_tenders,
+                    SUM(CASE
+                        WHEN ({_cd_iso}) IS NOT NULL
+                             AND ({_cd_iso}) < {_IST_NOW_SQL} THEN 1
+                        ELSE 0 END) as expired_tenders
                 FROM tenders t
                 WHERE t.portal_name IS NOT NULL AND TRIM(t.portal_name) != ''
                 GROUP BY t.portal_name
-                {date_filter}
+                {days_having}
                 ORDER BY t.portal_name
             """
         
         cursor.execute(query)
-        results = []
-        categories = _get_portal_categories()
+        raw_rows = cursor.fetchall()
         
-        for row in cursor.fetchall():
-            portal_name = str(row["portal_name"] or "")
+        categories = _get_portal_categories()
+        name_norm = _get_portal_name_normalization()  # slug -> canonical name
+
+        # Build merged results keyed by canonical portal name
+        merged: dict[str, dict[str, Any]] = {}
+        
+        for row in raw_rows:
+            portal_name_raw = str(row["portal_name"] or "")
             last_updated = str(row["last_updated"] or "")
+            
+            # Normalize slug-style names (e.g. "hptenders_gov_in" -> "HP Tenders")
+            canonical_name = name_norm.get(portal_name_raw, portal_name_raw)
             
             # Calculate days since update
             days_since_update = -1
             if last_updated:
                 try:
-                    # Parse datetime (handle both date and datetime formats)
                     if 'T' in last_updated or ' ' in last_updated:
                         update_time = datetime.fromisoformat(last_updated.replace(' ', 'T').split('.')[0])
                     else:
                         update_time = datetime.strptime(last_updated, '%Y-%m-%d')
                     days_since_update = (datetime.now() - update_time).days
-                except:
+                except Exception:
                     days_since_update = -1
             
-            results.append({
+            entry: dict[str, Any] = {
                 "portal_slug": str(row["portal_slug"] or ""),
-                "portal_name": portal_name,
+                "portal_name": canonical_name,
                 "base_url": str(row["base_url"] or ""),
                 "last_updated": last_updated,
                 "total_tenders": int(row["total_tenders"] or 0),
                 "live_tenders": int(row["live_tenders"] or 0),
                 "expired_tenders": int(row["expired_tenders"] or 0),
-                "category": categories.get(portal_name, "State"),
+                "category": categories.get(canonical_name, categories.get(portal_name_raw, "State")),
                 "days_since_update": days_since_update,
-            })
-        return results
+            }
+            
+            if canonical_name in merged:
+                # Merge: sum counts, keep most recent date
+                existing = merged[canonical_name]
+                existing["total_tenders"] += entry["total_tenders"]
+                existing["live_tenders"] += entry["live_tenders"]
+                existing["expired_tenders"] += entry["expired_tenders"]
+                # Keep whichever last_updated is more recent
+                if entry["last_updated"] > existing["last_updated"]:
+                    existing["last_updated"] = entry["last_updated"]
+                    existing["days_since_update"] = entry["days_since_update"]
+                    existing["base_url"] = entry["base_url"]
+            else:
+                merged[canonical_name] = entry
+        
+        return list(merged.values())
 
 
 def get_state_options() -> list[str]:
@@ -445,62 +703,40 @@ def get_summary(filters: TenderFilters) -> dict[str, Any]:
     with _get_connection() as conn:
         cursor = conn.cursor()
 
-        cursor.execute("SELECT COUNT(*) AS c FROM tender_items" if use_v3 else "SELECT COUNT(*) AS c FROM tenders")
-        total_tenders = int(cursor.fetchone()["c"])
-
-        cursor.execute(
-            "SELECT COUNT(*) AS c FROM tender_items WHERE is_live = 1"
-            if use_v3
-            else "SELECT COUNT(*) AS c FROM tenders WHERE LOWER(COALESCE(lifecycle_status, '')) = 'active'"
-        )
-        live_tenders = int(cursor.fetchone()["c"])
-
-        cursor.execute(
-            "SELECT COUNT(*) AS c FROM tender_items WHERE is_live = 0"
-            if use_v3
-            else "SELECT COUNT(*) AS c FROM tenders WHERE LOWER(COALESCE(lifecycle_status, '')) != 'active'"
-        )
-        expired_tenders = int(cursor.fetchone()["c"])
-
-        cursor.execute(
-            (
-                f"""
-                SELECT COUNT(*) AS c
-                FROM tender_items ti
-                JOIN portals p ON p.id = ti.portal_id
-                WHERE {where_sql}
-                """
-                if use_v3
-                else f"""
-                SELECT COUNT(*) AS c
-                FROM tenders ti
-                WHERE {where_sql}
-                """
-            ),
-            where_params,
-        )
-        filtered_results = int(cursor.fetchone()["c"])
-
-        cursor.execute(
-            (
-                f"""
-                SELECT COUNT(DISTINCT ti.department_name) AS c
-                FROM tender_items ti
-                JOIN portals p ON p.id = ti.portal_id
-                WHERE {where_sql} AND ti.department_name IS NOT NULL AND TRIM(ti.department_name) != ''
-                """
-                if use_v3
-                else f"""
-                SELECT COUNT(DISTINCT ti.department_name) AS c
-                FROM tenders ti
-                WHERE {where_sql} AND ti.department_name IS NOT NULL AND TRIM(ti.department_name) != ''
-                """
-            ),
-            where_params,
-        )
-        departments = int(cursor.fetchone()["c"])
+        if use_v3:
+            cursor.execute("SELECT COUNT(*) AS c FROM tender_items")
+            total_tenders = int(cursor.fetchone()["c"])
+            cursor.execute("SELECT COUNT(*) AS c FROM tender_items WHERE is_live = 1")
+            live_tenders = int(cursor.fetchone()["c"])
+            cursor.execute("SELECT COUNT(*) AS c FROM tender_items WHERE is_live = 0")
+            expired_tenders = int(cursor.fetchone()["c"])
+        else:
+            # Cached 120-second global counts — avoids 3×full-table CASE scan
+            total_tenders, live_tenders, expired_tenders = _get_global_counts()
 
         if use_v3:
+            cursor.execute(
+                f"""
+                SELECT COUNT(*) AS c
+                FROM tender_items ti
+                JOIN portals p ON p.id = ti.portal_id
+                WHERE {where_sql}
+                """,
+                where_params,
+            )
+            filtered_results = int(cursor.fetchone()["c"])
+
+            cursor.execute(
+                f"""
+                SELECT COUNT(DISTINCT ti.department_name) AS c
+                FROM tender_items ti
+                JOIN portals p ON p.id = ti.portal_id
+                WHERE {where_sql} AND ti.department_name IS NOT NULL AND TRIM(ti.department_name) != ''
+                """,
+                where_params,
+            )
+            departments = int(cursor.fetchone()["c"])
+
             cursor.execute(
                 f"""
                 SELECT COUNT(*) AS c
@@ -543,31 +779,32 @@ def get_summary(filters: TenderFilters) -> dict[str, Any]:
             cursor.execute("SELECT COUNT(*) AS c FROM portals")
             data_sources = int(cursor.fetchone()["c"])
         else:
+            # SINGLE aggregation: replaces 3 separate scans → 1 pass over the filtered set.
+            # filtered_results + departments + due_today/3/7 all computed together.
+            _cd_iso = _nic_iso_expr("ti.closing_date")
             cursor.execute(
                 f"""
-                SELECT ti.lifecycle_status, ti.closing_date
+                SELECT
+                  COUNT(*) AS filtered_results,
+                  COUNT(DISTINCT CASE WHEN ti.department_name IS NOT NULL
+                                           AND TRIM(ti.department_name) != ''
+                                      THEN ti.department_name END) AS departments,
+                  SUM(CASE WHEN ({_cd_iso}) = {_IST_NOW_SQL} THEN 1 ELSE 0 END) AS due_today,
+                  SUM(CASE WHEN ({_cd_iso}) > {_IST_NOW_SQL}
+                           AND ({_cd_iso}) <= DATE({_IST_NOW_SQL}, '+3 days') THEN 1 ELSE 0 END) AS due_3,
+                  SUM(CASE WHEN ({_cd_iso}) > {_IST_NOW_SQL}
+                           AND ({_cd_iso}) <= DATE({_IST_NOW_SQL}, '+7 days') THEN 1 ELSE 0 END) AS due_7
                 FROM tenders ti
                 WHERE {where_sql}
                 """,
                 where_params,
             )
-            due_today = 0
-            due_3_days = 0
-            due_7_days = 0
-            today = datetime.now().date()
-            for row in cursor.fetchall():
-                if str(row["lifecycle_status"] or "").lower() != "active":
-                    continue
-                closing_dt = _parse_portal_datetime(row["closing_date"])
-                if not closing_dt:
-                    continue
-                day_diff = (closing_dt.date() - today).days
-                if day_diff == 0:
-                    due_today += 1
-                if 0 < day_diff <= 3:
-                    due_3_days += 1
-                if 0 < day_diff <= 7:
-                    due_7_days += 1
+            _agg = cursor.fetchone()
+            filtered_results = int(_agg["filtered_results"])
+            departments = int(_agg["departments"] or 0)
+            due_today = int(_agg["due_today"] or 0)
+            due_3_days = int(_agg["due_3"] or 0)
+            due_7_days = int(_agg["due_7"] or 0)
 
             cursor.execute(
                 """
@@ -745,6 +982,7 @@ def search_tenders(
     page_size: int = 25,
     sort_by: str = "published_at",
     sort_order: str = "desc",
+    prefetched_count: int | None = None,
 ) -> tuple[list[dict[str, Any]], int]:
     where_sql, where_params = _build_where(filters)
     use_v3 = _is_v3_schema()
@@ -764,24 +1002,27 @@ def search_tenders(
     with _get_connection() as conn:
         cursor = conn.cursor()
 
-        cursor.execute(
-            (
-                f"""
-                SELECT COUNT(*) AS c
-                FROM tender_items ti
-                JOIN portals p ON p.id = ti.portal_id
-                WHERE {where_sql}
-                """
-                if use_v3
-                else f"""
-                SELECT COUNT(*) AS c
-                FROM tenders ti
-                WHERE {where_sql}
-                """
-            ),
-            where_params,
-        )
-        total_count = int(cursor.fetchone()["c"])
+        if prefetched_count is not None:
+            total_count = prefetched_count
+        else:
+            cursor.execute(
+                (
+                    f"""
+                    SELECT COUNT(*) AS c
+                    FROM tender_items ti
+                    JOIN portals p ON p.id = ti.portal_id
+                    WHERE {where_sql}
+                    """
+                    if use_v3
+                    else f"""
+                    SELECT COUNT(*) AS c
+                    FROM tenders ti
+                    WHERE {where_sql}
+                    """
+                ),
+                where_params,
+            )
+            total_count = int(cursor.fetchone()["c"])
 
         cursor.execute(
             (

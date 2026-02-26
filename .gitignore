@@ -8,16 +8,39 @@ __pycache__/
 # Runtime logs
 logs/*.log
 dist/logs/*.log
+tender_dashboard_reflex/reflex_backend*.log
+tender_dashboard_reflex/reflex_backend_err*.log
+
+# SQLite WAL / SHM temp files
+*.sqlite3-shm
+*.sqlite3-wal
+*.sqlite3-wal.bak
 
 # Local runtime state
 portal_config_history.json
 batch_scrape_profiles.json
 batch_tender_manifest.json
-Tender_Downloads/*.xlsx
-Tender_Downloads/*.sqlite3
+Tender_Downloads/
+Tender84_Exports/
 *.sqlite3
 batch_run_reports/
+tender_dashboard_reflex/temp_uploads/
+tender_dashboard_reflex/portal_config_memory.json
+
+# Test & stray Excel files in root
+test_upload.xlsx
 
 # OS/editor noise
 .DS_Store
 Thumbs.db
+
+# Playwright MCP logs
+.playwright-mcp/
+
+# Build artefacts
+build/
+dist/
+distmkdir/
+temp_dist/
+installer_output/
+*.spec

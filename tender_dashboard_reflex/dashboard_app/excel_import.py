@@ -13,31 +13,35 @@ def upload_section() -> rx.Component:
     return rx.vstack(
         rx.heading("📥 Import Tender Data", size="6", color="gray.12"),
         
-        rx.callout(
-            rx.vstack(
-                rx.text(
-                    "Import tender data from Excel or CSV files with smart column matching",
-                    size="3",
-                    weight="bold",
+        rx.box(
+            rx.hstack(
+                rx.icon("info", size=16, color="var(--blue-9)"),
+                rx.vstack(
+                    rx.text(
+                        "Import tender data from Excel or CSV files with smart column matching",
+                        size="2",
+                        weight="bold",
+                    ),
+                    rx.text("✅ Supports: .xlsx, .xls, .csv files", size="2"),
+                    rx.text(
+                        "🔍 Smart matching: Automatically detects columns like 'Tender ID', 'tender_id_extracted', 'TenderID', etc.",
+                        size="2",
+                    ),
+                    rx.text(
+                        "🎯 Production ready: Import your existing hptenders_gov_in_tenders_*.xlsx files",
+                        size="2",
+                    ),
+                    spacing="1",
+                    align="start",
                 ),
-                rx.text(
-                    "✅ Supports: .xlsx, .xls, .csv files",
-                    size="2",
-                ),
-                rx.text(
-                    "🔍 Smart matching: Automatically detects columns like 'Tender ID', 'tender_id_extracted', 'TenderID', etc.",
-                    size="2",
-                ),
-                rx.text(
-                    "🎯 Production ready: Import your existing hptenders_gov_in_tenders_*.xlsx files",
-                    size="2",
-                ),
-                spacing="2",
                 align="start",
+                spacing="2",
             ),
-            icon="info",
-            size="1",
-            color_scheme="blue",
+            padding="3",
+            border_radius="var(--radius-3)",
+            background="var(--blue-2)",
+            border="1px solid var(--blue-6)",
+            width="100%",
         ),
         
         rx.divider(),
@@ -45,11 +49,17 @@ def upload_section() -> rx.Component:
         # Upload area
         rx.upload(
             rx.vstack(
-                rx.button(
-                    rx.icon("upload"),
-                    "Select Excel/CSV File",
-                    color_scheme="blue",
-                    size="3",
+                rx.flex(
+                    rx.icon("upload", size=16),
+                    rx.text("Select Excel/CSV File", size="3", weight="medium"),
+                    align="center",
+                    gap="2",
+                    padding="0.6rem 1.4rem",
+                    border_radius="6px",
+                    background="var(--blue-9)",
+                    color="white",
+                    cursor="pointer",
+                    _hover={"background": "var(--blue-10)"},
                 ),
                 rx.text(
                     "Drag and drop or click to select file",
@@ -90,7 +100,33 @@ def upload_section() -> rx.Component:
                 align="center",
             ),
         ),
-        
+
+        # Upload errors (shown even before file_uploaded is True)
+        rx.cond(
+            ExcelImportState.has_errors & ~ExcelImportState.file_uploaded,
+            rx.box(
+                rx.hstack(
+                    rx.icon("circle_alert", size=16, color="var(--red-9)"),
+                    rx.vstack(
+                        rx.text("Upload Error", size="2", weight="bold"),
+                        rx.foreach(
+                            ExcelImportState.error_messages,
+                            lambda err: rx.text(f"• {err}", size="2"),
+                        ),
+                        spacing="1",
+                        align="start",
+                    ),
+                    align="start",
+                    spacing="2",
+                ),
+                padding="3",
+                border_radius="var(--radius-3)",
+                background="var(--red-2)",
+                border="1px solid var(--red-6)",
+                width="100%",
+            ),
+        ),
+
         spacing="3",
         width="100%",
     )
@@ -125,7 +161,7 @@ def file_preview_section() -> rx.Component:
                         ),
                         rx.vstack(
                             rx.text("Columns", size="1", color="gray.10"),
-                            rx.text(str(ExcelImportState.file_columns), size="3", weight="bold"),
+                            rx.text(ExcelImportState.file_columns, size="3", weight="bold"),
                             spacing="0",
                         ),
                         rx.vstack(
@@ -160,36 +196,47 @@ def column_mapping_section() -> rx.Component:
         rx.vstack(
             rx.heading("🔗 Column Mapping", size="5", color="gray.12"),
             
-            rx.callout(
-                rx.vstack(
-                    rx.text("Smart matching detected the following column mappings:", size="2", weight="bold"),
-                    rx.text(
-                        f"✅ {ExcelImportState.auto_matched_columns} / {ExcelImportState.total_required_columns} required columns matched automatically",
-                        size="2",
-                    ),
+            rx.box(
+                rx.hstack(
                     rx.cond(
-                        ~ExcelImportState.all_required_mapped,
-                        rx.text(
-                            "⚠️ Please map the remaining required columns manually below",
-                            size="2",
-                            color="orange.11",
-                            weight="medium",
-                        ),
+                        ExcelImportState.all_required_mapped,
+                        rx.icon("circle_check", size=16, color="var(--green-9)"),
+                        rx.icon("circle_alert", size=16, color="var(--orange-9)"),
                     ),
-                    spacing="1",
+                    rx.vstack(
+                        rx.text("Smart matching detected the following column mappings:", size="2", weight="bold"),
+                        rx.text(
+                            f"✅ {ExcelImportState.auto_matched_columns} / {ExcelImportState.total_required_columns} required columns matched automatically",
+                            size="2",
+                        ),
+                        rx.cond(
+                            ~ExcelImportState.all_required_mapped,
+                            rx.text(
+                                "⚠️ Please map the remaining required columns manually below",
+                                size="2",
+                                color="orange.11",
+                                weight="medium",
+                            ),
+                        ),
+                        spacing="1",
+                        align="start",
+                    ),
                     align="start",
+                    spacing="2",
                 ),
-                icon=rx.cond(
+                padding="3",
+                border_radius="var(--radius-3)",
+                background=rx.cond(
                     ExcelImportState.all_required_mapped,
-                    "circle-check",
-                    "alert-circle",
+                    "var(--green-2)",
+                    "var(--orange-2)",
                 ),
-                color_scheme=rx.cond(
+                border=rx.cond(
                     ExcelImportState.all_required_mapped,
-                    "green",
-                    "orange",
+                    "1px solid var(--green-6)",
+                    "1px solid var(--orange-6)",
                 ),
-                size="1",
+                width="100%",
             ),
             
             rx.divider(),
@@ -358,6 +405,35 @@ def import_settings_section() -> rx.Component:
                     ),
                     align="center",
                     spacing="2",
+                ),
+                # Scope selector — only shown when skip_duplicates is ON
+                rx.cond(
+                    ExcelImportState.skip_duplicates,
+                    rx.hstack(
+                        rx.text("Check against:", size="2", color="gray.11", weight="medium"),
+                        rx.select(
+                            ["live", "all"],
+                            value=ExcelImportState.duplicate_scope,
+                            on_change=ExcelImportState.set_duplicate_scope,
+                            size="1",
+                        ),
+                        rx.cond(
+                            ExcelImportState.duplicate_scope == "live",
+                            rx.text(
+                                "Only tenders with a future closing date (recommended — faster, same as scraper logic)",
+                                size="1",
+                                color="gray.10",
+                            ),
+                            rx.text(
+                                "All tenders ever stored for this portal — catches re-imports of expired/old data",
+                                size="1",
+                                color="gray.10",
+                            ),
+                        ),
+                        align="center",
+                        spacing="2",
+                        padding_left="8",
+                    ),
                 ),
                 
                 rx.hstack(
@@ -547,19 +623,26 @@ def import_action_section() -> rx.Component:
             # Error messages
             rx.cond(
                 ExcelImportState.has_errors,
-                rx.callout(
-                    rx.vstack(
-                        rx.text("Import Errors", size="2", weight="bold"),
-                        rx.foreach(
-                            ExcelImportState.error_messages,
-                            lambda error: rx.text(f"• {error}", size="2"),
+                rx.box(
+                    rx.hstack(
+                        rx.icon("circle_alert", size=16, color="var(--red-9)"),
+                        rx.vstack(
+                            rx.text("Import Errors", size="2", weight="bold"),
+                            rx.foreach(
+                                ExcelImportState.error_messages,
+                                lambda error: rx.text(f"• {error}", size="2"),
+                            ),
+                            spacing="1",
+                            align="start",
                         ),
-                        spacing="1",
                         align="start",
+                        spacing="2",
                     ),
-                    icon="alert-circle",
-                    color_scheme="red",
-                    size="1",
+                    padding="3",
+                    border_radius="var(--radius-3)",
+                    background="var(--red-2)",
+                    border="1px solid var(--red-6)",
+                    width="100%",
                 ),
             ),
             

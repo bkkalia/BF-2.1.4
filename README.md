@@ -1,77 +1,158 @@
-# Cloud84 Black Forest Project - Tender Search Utility
+# Black Forest — Government Tender Scraper & Dashboard
 
-Desktop utility for multi-portal government tender scraping, tracking, and export with a centralized SQLite datastore.
+> Desktop utility for multi-portal government tender scraping, tracking, and search with a centralized SQLite datastore and real-time Reflex web dashboard.
 
-## Current Version
-- **v2.3.4**
+**Current Version: v2.3.7** | [CHANGELOG](CHANGELOG.md) | [Repository](https://github.com/bkkalia/BF-2.1.4)
 
-## What This Tool Does
-- Scrapes tender listings by department/organization across supported portals.
-- Supports GUI and CLI workflows for operators and automation.
-- Persists runs and tenders in SQLite as the primary source of truth.
-- Exports user-facing Excel/CSV outputs from persisted data.
+---
+
+## What This Does
+
+- Scrapes tender listings across supported NIC government portals (HP Tenders, CPPP, GePNIC, etc.)
+- GUI and CLI workflows for operators and automation
+- Persists runs and tenders in SQLite — single source of truth
+- Real-time search dashboard with live/expired/recent filtering
+- Exports to Excel/CSV from persisted data
+
+---
+
+## Project Structure
+
+```
+BF 2.1.4/
+├── README.md                  ← this file
+├── CHANGELOG.md               ← full version history
+├── requirements.txt           ← Python dependencies
+├── config.py                  ← global configuration
+├── main.py                    ← CLI / GUI entry point
+├── settings.json              ← user settings
+│
+├── tender_dashboard_reflex/   ← Reflex web dashboard (port 3000)
+│   ├── tender_dashboard_reflex/   ← backend: state.py, db.py
+│   └── dashboard_app/             ← UI components
+│
+├── scraper/                   ← portal scraping engine
+├── gui/                       ← desktop GUI (Tkinter)
+├── tools/                     ← developer utilities (generate_changelog, etc.)
+│
+├── docs/                      ← all project documentation
+│   ├── README.md              ← documentation index
+│   ├── architecture/          ← technical design docs
+│   ├── guides/                ← user & developer how-to guides
+│   ├── planning/              ← roadmaps & blueprints
+│   └── reports/               ← test results & analysis reports
+│
+├── tests/                     ← automated test suite
+├── scripts/                   ← utility scripts (not part of the app)
+│   ├── diagnostics/           ← performance benchmarks & DB inspection
+│   └── maintenance/           ← cleanup, integrity checks, verification
+│
+├── database/                  ← SQLite database (gitignored)
+├── db_backups/                ← tiered automated DB backups
+├── logs/                      ← application logs
+└── resources/                 ← images & static assets
+```
+
+---
 
 ## Core Features
-- **Batch Multi-Portal Runs** with run dashboard and per-portal reporting.
-- **Refresh Watch Automation** to trigger scraping on detected change.
-- **Only-New / Resume Logic** with persistent manifest tracking.
-- **Tender Integrity Rules**:
-  - keep latest row per `(portal, Tender ID (Extracted))`
-  - drop missing/invalid tender IDs (`nan`, `none`, `null`, empty, etc.)
-- **Large Historical Import Tools** for Excel/CSV consolidation into SQLite.
 
-## Innovations (Recent)
-**SQLite-first pipeline** with run metadata and DB-backed exports.
-**High-volume dedupe optimization** using normalized composite indexing.
-**Tiered backup policy** (daily/weekly/monthly/yearly) with retention windows.
-**Operational resilience** via portal recovery, checkpoint continuity, and mode-based delta strategy.
-**Quick Delta by default** with optional Full Delta for stricter verification.
-**Department URL coverage tracking** with automatic and manual coverage reports.
+| Feature | Details |
+|---------|---------|
+| **Batch Multi-Portal Scraping** | Parallel scraping with per-portal run reports and resume logic |
+| **Only-New / Resume Logic** | Persistent manifest tracking; skips already-scraped tenders |
+| **Tender Integrity** | Deduped by `(portal, Tender ID Extracted)`; drops null/invalid IDs |
+| **Reflex Search Dashboard** | Real-time live search with 550ms debounce; full page refresh ~15ms |
+| **Live + Recent Filter** | Live tenders + expired within last 30 days (compound-indexed) |
+| **Closing Date Index** | Pre-computed `closing_date_iso` TEXT column (ISO format) + compound index `(portal_name, closing_date_iso)` for sub-5ms date-range queries |
+| **Excel/CSV Import & Export** | Full round-trip with column mapping and deduplication |
+| **Tiered Backups** | Daily / weekly / monthly / yearly with configurable retention policy |
+| **Data Integrity Dashboard** | Per-portal integrity scores, duplicate detection, actionable fixes |
 
-## Recent Features
-- Actionable data integrity dashboard
-- Portal status dashboard with sorting/filtering/quick actions
-- JS batch scraping optimization
-- Bug fixes for tender ID extraction and column names
+---
 
-## Known Limitations
-- Real-time worker feedback is lost after dashboard/server restart during ongoing scraping
-- Restoration and reconnection to ongoing jobs is planned for future releases (see TODO)
+## Reflex Dashboard
 
-## TODO
-- Restore worker feedback after restart
-- Reconnect dashboard to ongoing scraping jobs
+```bash
+cd tender_dashboard_reflex
+python -m reflex run
+# Open http://localhost:3000
+```
 
-## Version Highlights
-- **v2.3.5 (Feb 21, 2026):** Documentation update, planning for worker feedback restoration after restart, version bump.
+### Search Performance (v2.3.7)
+
+| Operation | Time |
+|-----------|------|
+| Full page refresh with keyword search | ~15 ms |
+| Portal + date range query (indexed) | ~3–5 ms |
+| Global live/expired counts | ~0 ms (120 s cache) |
+
+---
+
+## Running Tests
+
+```bash
+# From project root with venv active
+python -m pytest tests/ -v
+```
+
+See [tests/README.md](tests/README.md) for details.
+
+---
+
+## Utility Scripts
+
+```bash
+# Benchmark search performance
+python scripts/diagnostics/_bench_search.py
+
+# Check database schema and indexes
+python scripts/maintenance/check_db_schema.py
+
+# Remove duplicate rows
+python scripts/maintenance/fix_database_duplicates.py
+```
+
+See [scripts/README.md](scripts/README.md) for the full list.
+
+---
 
 ## Backup & Retention
-Configured backup directory receives:
-- Daily snapshots in root
-- Weekly snapshots in `weekly/`
-- Monthly snapshots in `monthly/`
-- Yearly snapshots in `yearly/`
 
-Retention policy:
-- Daily: `sqlite_backup_retention_days` (min 7)
-- Weekly: ~16 weeks
-- Monthly: ~24 months
-- Yearly: ~7 years
+DB backups go to `db_backups/`:
 
-## Version Highlights
-- **v2.3.4 (Feb 19, 2026):** Periodic database saves every 2 minutes (zero data loss on crash/freeze), department size safety limits, live progress updates in database.
-- **v2.3.3 (Feb 19, 2026):** IST-aware skip logic, default only-new scraping, 2-minute crash recovery checkpoints, JS fast path for large tables, Reflex dashboard fixes.
-- **v2.3.2 (Feb 18, 2026):** Checkpoint resume stability fix for async generator flow, NIC tender-ID canonical extraction and DB correction, closing-date-aware duplicate reprocessing, and new live dashboard counters (`Skipped Existing`, `Date Reprocessed`).
-- **v2.3.1 (Feb 17, 2026):** Portal management dashboard enhancements with health status indicators, category filters, bulk exports, export history tracking, and comprehensive documentation.
-- **v2.3.0 (Feb 14, 2026):** CLI subprocess architecture, emergency stop reliability, structured event streaming.
-- **v2.2.1 (Feb 13, 2026):** Parallel department de-duplication and ambiguous direct-link safety guard.
-- **v2.1.10 (Feb 13, 2026):** Quick Delta default, optional Full Delta, department name+count delta detection.
-- **v2.1.9 (Feb 13, 2026):** Tiered backups, stronger tender ID integrity, import performance upgrades.
-- **v2.1.8 (Feb 12, 2026):** SQLite-first persistence and DB-backed exports.
-- **v2.1.5 (Feb 12, 2026):** UX progress improvements and portal memory enhancements.
+| Tier | Location | Retention |
+|------|----------|-----------|
+| Daily | `db_backups/` | 7 days |
+| Weekly | `db_backups/weekly/` | 16 weeks |
+| Monthly | `db_backups/monthly/` | 24 months |
+| Yearly | `db_backups/yearly/` | 7 years |
 
-See full history in [CHANGELOG.md](CHANGELOG.md).
+---
 
-## Project Page
-- Product webpage: [blackforest_website.html](blackforest_website.html)
-- Repository: https://github.com/bkkalia/BF-2.1.4
+## Version History (Recent)
+
+- **v2.3.7 (Feb 26, 2026):** Search performance overhaul — `closing_date_iso` indexed column, merged aggregation query (52ms → 15ms), thread-local DB connections, Live+Recent 30-day filter, project reorganization.
+- **v2.3.6 (Feb 22, 2026):** Reflex runtime & type fixes, `rx.select` crash fix, pyrightconfig.
+- **v2.3.5 (Feb 21, 2026):** GUI controls for batched JS extraction, data integrity verification UI.
+- **v2.3.4 (Feb 19, 2026):** Periodic DB saves every 2 minutes, department size safety limits.
+- **v2.3.3 (Feb 19, 2026):** IST-aware skip logic, JS fast path for large portal tables.
+- **v2.3.2 (Feb 18, 2026):** Checkpoint resume stability, NIC tender-ID canonical extraction.
+- **v2.3.1 (Feb 17, 2026):** Portal management dashboard with health indicators.
+- **v2.3.0 (Feb 14, 2026):** CLI subprocess architecture, emergency-stop reliability.
+
+See [CHANGELOG.md](CHANGELOG.md) for full history.
+
+---
+
+## Documentation
+
+See [docs/README.md](docs/README.md) for the complete documentation index.
+
+**Quick links:**
+- [Dashboard User Guide](docs/guides/DASHBOARD_USER_GUIDE.md)
+- [Dashboard Developer Guide](docs/guides/DASHBOARD_DEVELOPER_GUIDE.md)
+- [CLI Reference](docs/guides/CLI_HELP.md)
+- [NIC Portal Architecture](docs/architecture/NIC_PORTAL_ARCHITECTURE.md)
+- [Roadmap to v2.5](docs/planning/ROADMAP_TO_2.5.md)
+- [Testing Guide](docs/guides/TESTING_GUIDE.md)

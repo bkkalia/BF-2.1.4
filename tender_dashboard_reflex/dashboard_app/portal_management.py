@@ -516,13 +516,8 @@ def portal_management_page() -> rx.Component:
                     rx.hstack(
                         rx.text("Sort By:", size="2", weight="medium"),
                         rx.select(
-                            [
-                                "portal_name",
-                                "total_tenders",
-                                "live_tenders",
-                                "last_updated",
-                            ],
-                            value=PortalManagementState.sort_by,
+                            ["Portal Name", "Total Tenders", "Live Tenders", "Last Updated"],
+                            value=PortalManagementState.sort_by_label,
                             on_change=PortalManagementState.set_sort_by,
                             size="2",
                             width="180px",
@@ -532,8 +527,13 @@ def portal_management_page() -> rx.Component:
                                 rx.icon(rx.cond(PortalManagementState.sort_order == "asc", "arrow-up", "arrow-down")),
                                 on_click=PortalManagementState.toggle_sort_order,
                                 size="2",
+                                color_scheme="blue",
                             ),
-                            content="Toggle sort order",
+                            content=rx.cond(
+                                PortalManagementState.sort_order == "asc",
+                                "Ascending - Click to sort descending",
+                                "Descending - Click to sort ascending",
+                            ),
                         ),
                         spacing="2",
                         align="center",
@@ -660,13 +660,46 @@ def portal_management_page() -> rx.Component:
                         rx.table.header(
                             rx.table.row(
                                 rx.table.column_header_cell(
-                                    rx.text("Select")
+                                    rx.hstack(
+                                        rx.checkbox(
+                                            checked=(PortalManagementState.selected_count > 0) & (PortalManagementState.selected_count == PortalManagementState.total_portals),
+                                            on_change=PortalManagementState.toggle_select_all,
+                                        ),
+                                        rx.text("Select", size="1", weight="bold"),
+                                        spacing="1",
+                                        align="center",
+                                    )
                                 ),
-                                rx.table.column_header_cell("Portal Name"),
-                                rx.table.column_header_cell("Total"),
-                                rx.table.column_header_cell("Live"),
-                                rx.table.column_header_cell("Expired"),
-                                rx.table.column_header_cell("Last Updated"),
+                                rx.table.column_header_cell(
+                                    rx.tooltip(
+                                        rx.text("Portal Name", size="2", weight="bold"),
+                                        content="Portal name and identifier slug",
+                                    )
+                                ),
+                                rx.table.column_header_cell(
+                                    rx.tooltip(
+                                        rx.text("Total", size="2", weight="bold"),
+                                        content="Total number of tenders (live + expired)",
+                                    )
+                                ),
+                                rx.table.column_header_cell(
+                                    rx.tooltip(
+                                        rx.text("Live", size="2", weight="bold"),
+                                        content="Currently active tenders",
+                                    )
+                                ),
+                                rx.table.column_header_cell(
+                                    rx.tooltip(
+                                        rx.text("Expired", size="2", weight="bold"),
+                                        content="Past closing date tenders",
+                                    )
+                                ),
+                                rx.table.column_header_cell(
+                                    rx.tooltip(
+                                        rx.text("Last Updated", size="2", weight="bold"),
+                                        content="When this portal was last scraped",
+                                    )
+                                ),
                             )
                         ),
                         rx.table.body(

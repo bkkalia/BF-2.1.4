@@ -1,7 +1,8 @@
 import json
 import sqlite3
+from pathlib import Path
 
-DB_PATH = r"D:/Dev84/BF 2.1.4/data/blackforest_tenders.sqlite3"
+DB_PATH = Path(__file__).resolve().parents[1] / "data" / "blackforest_tenders.sqlite3"
 
 
 def main():

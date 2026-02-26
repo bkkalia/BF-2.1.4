@@ -48,74 +48,143 @@ def stat_card(title: str, value, accent: str, on_click=None, tooltip: str = "") 
 
 
 def google_search_bar() -> rx.Component:
-    """Google-style search bar at top of page."""
-    return rx.box(
-        rx.vstack(
-            rx.hstack(
-                rx.input(
-                    value=DashboardState.search_query,
-                    on_change=DashboardState.set_search_query,
-                    placeholder="🔍 Search tenders by title, department, tender ID, organization... (comma-separated terms)",
-                    width="100%",
-                    size="3",
-                    on_blur=DashboardState.apply_filters,  # Auto-apply on blur
-                ),
-                rx.button("Search", on_click=DashboardState.apply_filters, color_scheme="blue", size="3", width="120px"),
+    """Live-search bar — fires 550 ms after typing stops. Centred, max-width constrained."""
+    inner = rx.vstack(
+        # ---- Row 1: Main search input ----
+        rx.hstack(
+            rx.icon("search", size=18, color="#3b82f6", flex_shrink="0"),
+            rx.input(
+                value=DashboardState.search_query,
+                on_change=DashboardState.set_search_and_apply,
+                placeholder="Search tenders by title, department, tender ID…  (comma-separated for multi-term)",
                 width="100%",
-                spacing="2",
+                size="3",
+                variant="soft",
+                style={
+                    "font_size": "15px",
+                    "font_weight": "500",
+                    "background": "transparent",
+                    "border": "none",
+                    "box_shadow": "none",
+                },
             ),
-            rx.hstack(
-                rx.text("Search Logic:", size="2", weight="medium", color="gray.11"),
-                rx.radio(
-                    ["OR", "AND"],
-                    value=DashboardState.search_logic,
-                    on_change=DashboardState.set_search_logic,
-                    direction="row",
-                    size="2",
-                    spacing="3",
+            # ✕ clear search
+            rx.cond(
+                DashboardState.search_query != "",
+                rx.icon_button(
+                    rx.icon("x", size=13),
+                    on_click=DashboardState.clear_search,
+                    size="1", variant="ghost", color_scheme="gray", flex_shrink="0",
+                    title="Clear search",
                 ),
-                rx.divider(orientation="vertical", height="20px"),
-                rx.text("Department Filter:", size="2", weight="medium", color="gray.11"),
-                rx.input(
-                    value=DashboardState.department_filter,
-                    on_change=DashboardState.set_department_filter,
-                    placeholder="dept1, dept2...",
-                    size="2",
-                    width="250px",
-                ),
-                rx.radio(
-                    ["OR", "AND"],
-                    value=DashboardState.department_logic,
-                    on_change=DashboardState.set_department_logic,
-                    direction="row",
-                    size="2",
-                    spacing="3",
-                ),
-                rx.divider(orientation="vertical", height="20px"),
-                rx.text("Lifecycle:", size="2", weight="medium", color="gray.11"),
-                rx.radio(
-                    ["All", "Live", "Expired"],
-                    value=DashboardState.lifecycle_filter,
-                    on_change=DashboardState.set_lifecycle_filter,
-                    direction="row",
-                    size="2",
-                    spacing="3",
-                ),
-                width="100%",
-                align="center",
-                wrap="wrap",
-                spacing="3",
+                rx.box(width="22px"),
             ),
-            align="start",
-            spacing="2",
             width="100%",
+            align="center",
+            spacing="2",
+            padding="0.25rem 0.6rem",
+            border_radius="10px",
+            background="white",
+            border="2px solid",
+            border_color="blue.5",
+            box_shadow="0 2px 10px rgba(59,130,246,0.10)",
+            _focus_within={"border_color": "blue.7", "box_shadow": "0 0 0 3px rgba(59,130,246,0.17)"},
         ),
-        padding="1.2rem",
-        border_radius="12px",
-        background="linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
-        border="2px solid",
-        border_color="blue.4",
-        box_shadow="xl",
+        # ---- Row 2: Department input ----
+        rx.hstack(
+            rx.icon("building-2", size=15, color="#7c3aed", flex_shrink="0"),
+            rx.input(
+                value=DashboardState.department_filter,
+                on_change=DashboardState.set_dept_and_apply,
+                placeholder="Filter by department…  (comma-separated)",
+                width="100%",
+                size="2",
+                variant="soft",
+                style={"font_weight": "500", "background": "transparent", "border": "none", "box_shadow": "none"},
+            ),
+            # ✕ clear dept
+            rx.cond(
+                DashboardState.department_filter != "",
+                rx.icon_button(
+                    rx.icon("x", size=12),
+                    on_click=DashboardState.clear_dept,
+                    size="1", variant="ghost", color_scheme="gray", flex_shrink="0",
+                    title="Clear department filter",
+                ),
+                rx.box(width="20px"),
+            ),
+            width="100%",
+            align="center",
+            spacing="2",
+            padding="0.15rem 0.6rem",
+            border_radius="8px",
+            background="white",
+            border="1.5px solid",
+            border_color="violet.4",
+            box_shadow="0 1px 6px rgba(124,58,237,0.07)",
+            _focus_within={"border_color": "violet.6", "box_shadow": "0 0 0 2px rgba(124,58,237,0.14)"},
+        ),
+        # ---- Row 3: Logic + lifecycle + clear all ----
+        rx.hstack(
+            rx.text("Search:", size="2", weight="medium", color="gray.11", white_space="nowrap"),
+            rx.radio(
+                ["OR", "AND"],
+                value=DashboardState.search_logic,
+                on_change=DashboardState.set_search_logic,
+                direction="row", size="2", spacing="2",
+            ),
+            rx.divider(orientation="vertical", height="18px"),
+            rx.text("Dept:", size="2", weight="medium", color="gray.11", white_space="nowrap"),
+            rx.radio(
+                ["OR", "AND"],
+                value=DashboardState.department_logic,
+                on_change=DashboardState.set_department_logic,
+                direction="row", size="2", spacing="2",
+            ),
+            rx.divider(orientation="vertical", height="18px"),
+            rx.text("Status:", size="2", weight="medium", color="gray.11", white_space="nowrap"),
+            rx.radio(
+                ["All", "Live", "Live + Recent", "Expired"],
+                value=DashboardState.lifecycle_filter,
+                on_change=DashboardState.set_lifecycle_filter,
+                direction="row", size="2", spacing="2",
+            ),
+            rx.tooltip(
+                rx.icon("info", size=13, color="gray"),
+                content="Live + Recent: live tenders + expired within last 30 days",
+            ),
+            rx.spacer(),
+            rx.button(
+                rx.icon("eraser", size=13),
+                "Clear All",
+                on_click=DashboardState.reset_filters,
+                size="1",
+                variant="soft",
+                color_scheme="gray",
+                style={"font_size": "12px"},
+            ),
+            width="100%",
+            align="center",
+            wrap="wrap",
+            spacing="3",
+        ),
+        align="stretch",
+        spacing="2",
+        width="100%",
+    )
+
+    return rx.center(
+        rx.box(
+            inner,
+            padding="0.9rem 1.1rem",
+            border_radius="14px",
+            background="linear-gradient(135deg, #f0f7ff 0%, #faf5ff 100%)",
+            border="1.5px solid",
+            border_color="blue.3",
+            box_shadow="0 4px 18px rgba(99,102,241,0.09)",
+            width="100%",
+            max_width="1000px",
+        ),
         width="100%",
     )
 
@@ -524,6 +593,18 @@ def main_content() -> rx.Component:
             ),
             rx.badge(f"Records: {DashboardState.total_count}", size="2", color_scheme="blue"),
             rx.badge(f"Page {DashboardState.page} / {DashboardState.total_pages}", size="2", color_scheme="purple"),
+            rx.cond(
+                DashboardState.query_time_ms != "",
+                rx.badge(
+                    rx.icon("timer", size=12),
+                    f" {DashboardState.query_time_ms}",
+                    size="2",
+                    color_scheme="gray",
+                    variant="surface",
+                    style={"font_family": "monospace", "opacity": "0.8"},
+                ),
+                rx.box(),
+            ),
             rx.select(DashboardState.view_mode_options, value=DashboardState.view_mode, on_change=DashboardState.set_view_mode, size="2", width="120px"),
             width="100%", align="center",
         ),

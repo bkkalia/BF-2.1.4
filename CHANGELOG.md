@@ -9,6 +9,35 @@ Run the helper tool (from project root) to infer and update version dates:
 The tool makes a backup of CHANGELOG.md (CHANGELOG.md.bak.TIMESTAMP) before editing.
 -->
 
+## Version 2.3.7 (Feb 26, 2026) - Search Performance Overhaul & Project Reorganization
+
+### ⚡ Performance
+- **Search 52ms → 15ms** — full `refresh_data()` cycle for HP Tenders with keyword search
+- **`closing_date_iso` indexed column** — pre-computed ISO-date TEXT column added to `tenders` table; maintained by `AFTER INSERT/UPDATE` triggers; eliminates per-row CASE expression on every query
+- **Compound index `idx_tenders_portal_iso(portal_name, closing_date_iso)`** — hot path for portal + live/expired + date-range queries (3–5ms)
+- **Merged aggregation query** — `get_summary()` previously fired 3 separate scans; now a single `SELECT COUNT(*), COUNT(DISTINCT ...), SUM(CASE ...)` aggregation over the filtered set
+- **Eliminated duplicate COUNT** — `search_tenders()` accepts `prefetched_count` parameter; `refresh_data()` passes the count already computed by `get_summary()`, removing a 4th redundant scan
+- **Thread-local SQLite connections** — `_get_connection()` now reuses one persistent connection per thread via `threading.local()`; removes repeated open/close overhead
+
+### ✨ New Features
+- **"Live + Recent" filter** — new lifecycle status option in the dashboard; shows live tenders plus those expired within the last **30 days** (configurable via `recent_days` state var)
+- **Info tooltip on radio** — hover tooltip explains "Live + Recent" behaviour to users
+
+### 🐛 Bug Fixes
+- **Migration column name fix** — `idx_tenders_portal_published` was created with `published_at` (v3 schema name) instead of `published_date` (legacy schema); this caused `sqlite3.OperationalError` that was silently caught, leaving `_has_closing_iso_column = False` and blocking the entire migration
+- **`recent_days` default corrected** — changed from 60 to 30 days everywhere (state var, `TenderFilters` dataclass, second state class, tooltip text)
+
+### 🗂️ Project Reorganization
+- Created `docs/architecture/`, `docs/guides/`, `docs/planning/`, `docs/reports/` subdirectories
+- Moved all 47 markdown/text doc files from root into appropriate `docs/` subdirectories
+- Created `tests/` — all `test_*.py` files moved from root
+- Created `scripts/diagnostics/` — `_bench_search.py`, `_diag_search.py`, `_perf_check*.py`, analysis scripts
+- Created `scripts/maintenance/` — all `check_*.py`, `verify_*.py`, `fix_*.py`, `temp_*.py` scripts
+- Added `README.md` index files for `docs/`, `tests/`, `scripts/`
+- Rewrote root `README.md` — accurate version, correct project structure diagram, performance tables
+
+---
+
 ## Version 2.3.6 (Feb 22, 2026) - Reflex Dashboard Runtime & Type Fixes
 
 ### 🐛 Bug Fixes
