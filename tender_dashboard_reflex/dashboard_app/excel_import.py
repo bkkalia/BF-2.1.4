@@ -455,6 +455,47 @@ def import_settings_section() -> rx.Component:
                     align="center",
                     spacing="2",
                 ),
+
+                rx.divider(),
+                rx.text("Import Notifications", size="3", weight="bold"),
+                rx.hstack(
+                    rx.switch(
+                        checked=ExcelImportState.import_success_toast_enabled,
+                        on_change=ExcelImportState.set_import_success_toast_enabled,
+                        size="2",
+                    ),
+                    rx.vstack(
+                        rx.text("Show success toast", size="2", weight="medium"),
+                        rx.text(
+                            "Display a toast when data is imported successfully",
+                            size="1",
+                            color="gray.10",
+                        ),
+                        spacing="0",
+                        align="start",
+                    ),
+                    align="center",
+                    spacing="2",
+                ),
+                rx.hstack(
+                    rx.switch(
+                        checked=ExcelImportState.import_success_log_enabled,
+                        on_change=ExcelImportState.set_import_success_log_enabled,
+                        size="2",
+                    ),
+                    rx.vstack(
+                        rx.text("Save import history log", size="2", weight="medium"),
+                        rx.text(
+                            "Persist import success/error events to logs/reflex_import_history.log",
+                            size="1",
+                            color="gray.10",
+                        ),
+                        spacing="0",
+                        align="start",
+                    ),
+                    align="center",
+                    spacing="2",
+                ),
                 
                 align="start",
                 spacing="3",
@@ -661,8 +702,55 @@ def excel_import_page() -> rx.Component:
             column_mapping_section(),
             import_settings_section(),
             import_action_section(),
+            rx.cond(
+                ExcelImportState.show_toast,
+                rx.box(
+                    rx.hstack(
+                        rx.cond(
+                            ExcelImportState.toast_type == "success",
+                            rx.icon("check", size=20, color="white"),
+                            rx.cond(
+                                ExcelImportState.toast_type == "error",
+                                rx.icon("x", size=20, color="white"),
+                                rx.icon("info", size=20, color="white"),
+                            ),
+                        ),
+                        rx.text(ExcelImportState.toast_message, size="2", weight="medium", color="white"),
+                        rx.icon_button(
+                            rx.icon("x", size=16),
+                            on_click=ExcelImportState.hide_toast,
+                            variant="ghost",
+                            size="1",
+                            color_scheme="gray",
+                        ),
+                        align="center",
+                        spacing="2",
+                        width="100%",
+                        justify="between",
+                    ),
+                    position="fixed",
+                    top="20px",
+                    right="20px",
+                    padding="1rem 1.5rem",
+                    border_radius="10px",
+                    background=rx.cond(
+                        ExcelImportState.toast_type == "success",
+                        "green.9",
+                        rx.cond(
+                            ExcelImportState.toast_type == "error",
+                            "red.9",
+                            "blue.9",
+                        ),
+                    ),
+                    box_shadow="xl",
+                    z_index="9999",
+                    min_width="350px",
+                    max_width="500px",
+                ),
+            ),
             spacing="4",
             width="100%",
+            on_mount=ExcelImportState.load_import_notification_settings,
         ),
         padding="2rem",
         max_width="1400px",

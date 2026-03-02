@@ -9,6 +9,25 @@ Run the helper tool (from project root) to infer and update version dates:
 The tool makes a backup of CHANGELOG.md (CHANGELOG.md.bak.TIMESTAMP) before editing.
 -->
 
+## Version 2.3.8 (Mar 2, 2026) - Dashboard Scraping Reliability & Visual Module Isolation
+
+### ✨ New Features
+- **Scraping milestone notification center** — added bell-style milestone feed for major scraping lifecycle events.
+- **Runtime status banner/strip** — improved in-page visibility of current scraping state during active runs.
+- **Decorative hero visuals isolation** — moved scraping hero visuals into dedicated module under `dashboard_app/visuals/` to keep core scraping logic clean.
+
+### 🐛 Bug Fixes
+- **Live skipped-tender aggregation** — fixed global skipped count updates to reflect worker totals continuously instead of waiting for portal completion.
+- **Checkpoint resume consistency** — resume flow now derives completed portals from `portal_progress` and auto-rebuilds checkpoint metadata on resume, preventing `0/N` regressions.
+
+### 🔧 Improvements
+- **Import completion notifications** — import success/failure visibility improved with persistent log entries and toggleable notification behavior.
+- **Scraping and import history logs** — documented and persisted at:
+  - `logs/reflex_scraping_control.log`
+  - `logs/reflex_import_history.log`
+
+---
+
 ## Version 2.3.7 (Feb 26, 2026) - Search Performance Overhaul & Project Reorganization
 
 ### ⚡ Performance

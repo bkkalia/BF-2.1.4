@@ -133,6 +133,15 @@ class ScrapingWorkerManager:
             
             # Monitor progress
             active_workers = self.worker_count
+            worker_live_totals: Dict[int, Dict[str, int]] = {
+                worker_id: {
+                    "total_tenders": 0,
+                    "total_departments": 0,
+                    "skipped_existing_total": 0,
+                    "closing_date_reprocessed_total": 0,
+                }
+                for worker_id in range(self.worker_count)
+            }
             while active_workers > 0:
                 try:
                     # Non-blocking check for results
@@ -150,9 +159,43 @@ class ScrapingWorkerManager:
                         progress_callback(result)
                     
                     elif result_type == "worker_status":
+                        worker_id = result.get("worker_id")
+                        if isinstance(worker_id, int) and worker_id in worker_live_totals:
+                            if "tenders_found" in result:
+                                worker_live_totals[worker_id]["total_tenders"] = int(result.get("tenders_found", 0) or 0)
+                            if "dept_current" in result:
+                                worker_live_totals[worker_id]["total_departments"] = int(result.get("dept_current", 0) or 0)
+                            if "skipped_existing" in result:
+                                worker_live_totals[worker_id]["skipped_existing_total"] = int(result.get("skipped_existing", 0) or 0)
                         progress_callback(result)
+
+                    elif result_type == "totals":
+                        worker_id = result.get("worker_id")
+                        if isinstance(worker_id, int) and worker_id in worker_live_totals:
+                            worker_live_totals[worker_id]["total_tenders"] = int(result.get("total_tenders", 0) or 0)
+                            worker_live_totals[worker_id]["total_departments"] = int(result.get("total_departments", 0) or 0)
+                            worker_live_totals[worker_id]["skipped_existing_total"] = int(result.get("skipped_existing_total", 0) or 0)
+                            worker_live_totals[worker_id]["closing_date_reprocessed_total"] = int(result.get("closing_date_reprocessed_total", 0) or 0)
+
+                        progress_callback({
+                            "type": "totals",
+                            "total_tenders": self.total_tenders + sum(v.get("total_tenders", 0) for v in worker_live_totals.values()),
+                            "total_departments": self.total_departments + sum(v.get("total_departments", 0) for v in worker_live_totals.values()),
+                            "portals_completed": self.portals_completed,
+                            "skipped_existing_total": self.total_skipped_existing + sum(v.get("skipped_existing_total", 0) for v in worker_live_totals.values()),
+                            "closing_date_reprocessed_total": self.total_closing_date_reprocessed + sum(v.get("closing_date_reprocessed_total", 0) for v in worker_live_totals.values()),
+                        })
                     
                     elif result_type == "portal_complete":
+                        worker_id = result.get("worker_id")
+                        if isinstance(worker_id, int) and worker_id in worker_live_totals:
+                            worker_live_totals[worker_id] = {
+                                "total_tenders": 0,
+                                "total_departments": 0,
+                                "skipped_existing_total": 0,
+                                "closing_date_reprocessed_total": 0,
+                            }
+
                         self.portals_completed += 1
                         self.total_tenders += result.get("tenders_found", 0)
                         self.total_departments += result.get("departments_processed", 0)
@@ -161,11 +204,11 @@ class ScrapingWorkerManager:
                         
                         progress_callback({
                             "type": "totals",
-                            "total_tenders": self.total_tenders,
-                            "total_departments": self.total_departments,
+                            "total_tenders": self.total_tenders + sum(v.get("total_tenders", 0) for v in worker_live_totals.values()),
+                            "total_departments": self.total_departments + sum(v.get("total_departments", 0) for v in worker_live_totals.values()),
                             "portals_completed": self.portals_completed,
-                            "skipped_existing_total": self.total_skipped_existing,
-                            "closing_date_reprocessed_total": self.total_closing_date_reprocessed,
+                            "skipped_existing_total": self.total_skipped_existing + sum(v.get("skipped_existing_total", 0) for v in worker_live_totals.values()),
+                            "closing_date_reprocessed_total": self.total_closing_date_reprocessed + sum(v.get("closing_date_reprocessed_total", 0) for v in worker_live_totals.values()),
                         })
                         
                         progress_callback({
@@ -534,9 +577,12 @@ class ScrapingWorkerManager:
                     # Also send totals update
                     result_queue.put({
                         "type": "totals",
+                        "worker_id": worker_id,
                         "total_tenders": tenders_scraped,
                         "total_departments": current,
                         "portals_completed": 0,
+                        "skipped_existing_total": worker_skipped_existing[0],
+                        "closing_date_reprocessed_total": 0,
                     })
             
             tenders_found = [0]  # Use list to allow modification in nested function

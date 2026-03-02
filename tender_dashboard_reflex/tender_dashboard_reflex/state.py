@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import time
+import json
 from datetime import datetime
 from pydantic import BaseModel
 from typing import Any
@@ -1071,8 +1072,8 @@ class PortalManagementState(rx.State):
                 yield
                 return
             
-            # Create export directory
-            export_dir = Path("Portal_Exports") / datetime.now().strftime("%Y%m%d_%H%M%S")
+            # Create export directory (use configured export_base_dir)
+            export_dir = Path(self.export_base_dir) / datetime.now().strftime("%Y%m%d_%H%M%S")
             export_dir.mkdir(parents=True, exist_ok=True)
             
             exported_files = []
@@ -1127,6 +1128,9 @@ class PortalManagementState(rx.State):
                 exported_files.append(filename)
                 total_tenders += len(tenders)
             
+            # Store export dir for "Open Folder" button
+            self.last_export_path = str(export_dir.resolve())
+            
             # Log export history
             portal_names = [p.portal_name for p in self.portal_rows if p.portal_slug in self.export_selected_portals]
             db.log_export_history(
@@ -1138,12 +1142,17 @@ class PortalManagementState(rx.State):
                 settings={
                     "live_only": self.export_live_only,
                     "expired_days": self.export_expired_days,
+                    "export_path": str(export_dir.resolve()),
                 }
             )
             
             # Success message
-            message = f"✅ Exported {len(exported_files)} portal(s) with {total_tenders} tenders to {export_dir.name}"
-            self.show_toast_notification(message, "success")
+            if len(exported_files) == 0:
+                message = f"⚠️ No data found for selected portal(s). Check filters (live_only={self.export_live_only}, expired_days={self.export_expired_days})"
+                self.show_toast_notification(message, "error")
+            else:
+                message = f"✅ Exported {len(exported_files)} portal(s) with {total_tenders} tenders to {export_dir.name}"
+                self.show_toast_notification(message, "success")
             
         except Exception as ex:
             error_msg = f"Export failed: {type(ex).__name__}: {ex}"
@@ -1168,8 +1177,8 @@ class PortalManagementState(rx.State):
                 yield
                 return
 
-            # Create export directory
-            export_dir = Path("Portal_Exports") / datetime.now().strftime("%Y%m%d_%H%M%S")
+            # Create export directory (use configured export_base_dir)
+            export_dir = Path(self.export_base_dir) / datetime.now().strftime("%Y%m%d_%H%M%S")
             export_dir.mkdir(parents=True, exist_ok=True)
 
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -1284,8 +1293,8 @@ class PortalManagementState(rx.State):
                 yield
                 return
 
-            # Create export directory
-            export_dir = Path("Portal_Exports") / datetime.now().strftime("%Y%m%d_%H%M%S")
+            # Create export directory (use configured export_base_dir)
+            export_dir = Path(self.export_base_dir) / datetime.now().strftime("%Y%m%d_%H%M%S")
             export_dir.mkdir(parents=True, exist_ok=True)
 
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -1406,8 +1415,8 @@ class PortalManagementState(rx.State):
                 yield
                 return
             
-            # Create export directory
-            export_dir = Path("Portal_Exports") / datetime.now().strftime("%Y%m%d_%H%M%S")
+            # Create export directory (use configured export_base_dir)
+            export_dir = Path(self.export_base_dir) / datetime.now().strftime("%Y%m%d_%H%M%S")
             export_dir.mkdir(parents=True, exist_ok=True)
             
             exported_files = []
@@ -1688,6 +1697,13 @@ class ExcelImportState(rx.State):
     # "all"   = check against every tender ever stored for this portal
     duplicate_scope: str = "live"
     validate_data: bool = True
+
+    # Import completion notifications
+    import_success_toast_enabled: bool = True
+    import_success_log_enabled: bool = True
+    toast_message: str = ""
+    toast_type: str = "info"
+    show_toast: bool = False
     
     # Import progress
     importing: bool = False
@@ -1700,6 +1716,85 @@ class ExcelImportState(rx.State):
     import_completed: bool = False
     import_duration: str = ""
     error_messages: list[str] = []
+
+    def _settings_file_path(self) -> Path:
+        """Path to shared dashboard settings file."""
+        return Path(__file__).resolve().parents[2] / "portal_config_memory.json"
+
+    def _import_history_log_path(self) -> Path:
+        """Persistent import history log path."""
+        log_dir = Path(__file__).resolve().parents[2] / "logs"
+        log_dir.mkdir(parents=True, exist_ok=True)
+        return log_dir / "reflex_import_history.log"
+
+    def load_import_notification_settings(self):
+        """Load import-notification settings from disk."""
+        try:
+            config_path = self._settings_file_path()
+            if not config_path.exists():
+                return
+            data = json.loads(config_path.read_text(encoding="utf-8"))
+            self.import_success_toast_enabled = bool(data.get("import_success_toast_enabled", True))
+            self.import_success_log_enabled = bool(data.get("import_success_log_enabled", True))
+        except Exception:
+            self.import_success_toast_enabled = True
+            self.import_success_log_enabled = True
+
+    def _save_import_notification_settings(self):
+        """Persist import-notification settings to disk."""
+        try:
+            config_path = self._settings_file_path()
+            config_data: dict[str, Any] = {}
+            if config_path.exists():
+                try:
+                    config_data = json.loads(config_path.read_text(encoding="utf-8"))
+                except Exception:
+                    config_data = {}
+
+            config_data["import_success_toast_enabled"] = bool(self.import_success_toast_enabled)
+            config_data["import_success_log_enabled"] = bool(self.import_success_log_enabled)
+            config_path.write_text(json.dumps(config_data, indent=2), encoding="utf-8")
+        except Exception:
+            pass
+
+    def set_import_success_toast_enabled(self, value: bool):
+        """Toggle success toast notification after import."""
+        self.import_success_toast_enabled = bool(value)
+        self._save_import_notification_settings()
+
+    def set_import_success_log_enabled(self, value: bool):
+        """Toggle persistent import history logging."""
+        self.import_success_log_enabled = bool(value)
+        self._save_import_notification_settings()
+
+    def show_toast_notification(self, message: str, toast_type: str = "info"):
+        """Show toast notification on import page."""
+        self.toast_message = message
+        self.toast_type = toast_type
+        self.show_toast = True
+
+    def hide_toast(self):
+        """Hide toast notification on import page."""
+        self.show_toast = False
+
+    def _append_import_history_log(self, status: str, message: str):
+        """Append one import event to persistent history log."""
+        try:
+            event = {
+                "timestamp": datetime.now().isoformat(timespec="seconds"),
+                "status": status,
+                "portal_name": self.portal_name or "imported",
+                "file_name": self.file_name,
+                "imported": int(self.import_success or 0),
+                "skipped": int(self.import_skipped or 0),
+                "errors": int(self.import_errors or 0),
+                "duration": self.import_duration,
+                "message": message,
+            }
+            with self._import_history_log_path().open("a", encoding="utf-8") as f:
+                f.write(json.dumps(event, ensure_ascii=False) + "\n")
+        except Exception:
+            pass
     
     @rx.var
     def has_errors(self) -> bool:
@@ -2179,10 +2274,21 @@ class ExcelImportState(rx.State):
             self.import_progress = 100
             self.import_status = f"Import completed! {self.import_success} tenders imported successfully."
             self.import_completed = True
+
+            success_message = (
+                f"Import completed: {self.import_success} imported, "
+                f"{self.import_skipped} skipped, {self.import_errors} errors"
+            )
+            if self.import_success_log_enabled:
+                self._append_import_history_log("success", success_message)
+            if self.import_success_toast_enabled:
+                self.show_toast_notification(success_message, "success")
             
         except Exception as ex:
             self.error_messages.append(f"Import failed: {str(ex)}")
             self.import_status = f"Import failed: {str(ex)}"
+            self._append_import_history_log("error", self.import_status)
+            self.show_toast_notification(self.import_status, "error")
             import traceback
             print(f"Import error: {traceback.format_exc()}")
         finally:
@@ -2223,4 +2329,7 @@ class ExcelImportState(rx.State):
         self.import_errors = 0
         self.import_completed = False
         self.import_duration = ""
+        self.show_toast = False
+        self.toast_message = ""
+        self.toast_type = "info"
         self.error_messages = []

@@ -14,6 +14,8 @@ from typing import Dict, List, Optional
 import reflex as rx
 from pydantic import BaseModel
 
+from .visuals.scraping_hero_visuals import hero_visual_section
+
 logger = logging.getLogger(__name__)
 
 
@@ -1801,6 +1803,9 @@ def scraping_control_page() -> rx.Component:
                 size="1",
                 margin_bottom="1rem",
             ),
+
+            # Isolated decorative hero visuals (separate module/state)
+            hero_visual_section(),
             
             # Portal Status Dashboard - NEW!
             portal_status_dashboard(),

@@ -1,4 +1,4 @@
-# app_settings.py v2.3.2
+# app_settings.py v2.3.8
 # Handles loading/saving settings.json and reading base_urls.csv, using absolute paths.
 
 import json
@@ -52,6 +52,7 @@ DEFAULT_SETTINGS_STRUCTURE = {
     "js_batch_size": 2000,  # Number of rows to extract per batch
     "excel_export_policy": "on_demand",
     "excel_export_interval_days": 2,
+    "post_scrape_script": "",  # Optional: path to script to run after each successful scrape (e.g. convert_data.py)
     **_initial_timeout_settings  # Unpack all timeout settings
 }
 

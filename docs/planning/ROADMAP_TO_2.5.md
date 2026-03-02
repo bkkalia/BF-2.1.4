@@ -1,6 +1,6 @@
 # Roadmap to Version 2.5.0
 
-**Current Version:** 2.3.3  
+**Current Version:** 2.3.8  
 **Target Version:** 2.5.0  
 **Strategy:** Stabilize, test all portals, then export for fresh 3.0 migration
 
