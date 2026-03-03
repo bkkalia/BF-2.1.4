@@ -223,7 +223,17 @@ class DashboardState(rx.State):
 
     def set_selected_portal(self, value: str):
         self.selected_portal = value
+        if value and value != "All":
+            self.selected_portal_group = "All"
         self.apply_filters()
+
+    @rx.var
+    def kpi_scope_label(self) -> str:
+        if self.selected_portal and self.selected_portal != "All":
+            return f"Portal: {self.selected_portal}"
+        if self.selected_portal_group and self.selected_portal_group != "All":
+            return f"Group: {self.selected_portal_group}"
+        return "All Portals"
 
     def set_selected_portal_group(self, value: str):
         self.selected_portal_group = value
@@ -823,6 +833,8 @@ class PortalManagementState(rx.State):
     sort_by_label: str = "Portal Name"  # Human-readable label matching sort_by
     sort_order: str = "asc"
     category_filter: str = "All"  # All, Central, State, PSU
+    freshness_filter: str = "All"  # All, Today (0d), Recent (1-2d), Older (3-7d), Stale (>7d), Unknown
+    portal_search_query: str = ""
 
     # Mapping of display label -> internal sort field
     _SORT_LABEL_TO_FIELD: dict = {
@@ -860,6 +872,43 @@ class PortalManagementState(rx.State):
     def selected_count(self) -> int:
         """Number of selected portals."""
         return len(self.export_selected_portals)
+
+    def _matches_freshness_filter(self, portal: PortalRow) -> bool:
+        """Check whether a portal matches the selected freshness bucket."""
+        days = portal.days_since_update
+
+        if self.freshness_filter == "All":
+            return True
+        if self.freshness_filter == "Today (0d)":
+            return days == 0
+        if self.freshness_filter == "Recent (1-2d)":
+            return 1 <= days <= 2
+        if self.freshness_filter == "Older (3-7d)":
+            return 3 <= days <= 7
+        if self.freshness_filter == "Stale (>7d)":
+            return days > 7
+        if self.freshness_filter == "Unknown":
+            return days < 0
+        return True
+
+    def _apply_portal_filters(self, all_rows: list[PortalRow]) -> list[PortalRow]:
+        """Apply category, freshness, and search filters to portal rows."""
+        filtered_rows = all_rows
+
+        if self.category_filter and self.category_filter != "All":
+            filtered_rows = [portal for portal in filtered_rows if portal.category == self.category_filter]
+
+        filtered_rows = [portal for portal in filtered_rows if self._matches_freshness_filter(portal)]
+
+        query = (self.portal_search_query or "").strip().lower()
+        if query:
+            filtered_rows = [
+                portal
+                for portal in filtered_rows
+                if query in portal.portal_name.lower() or query in portal.portal_slug.lower()
+            ]
+
+        return filtered_rows
     
     def is_portal_selected(self, portal_slug: str) -> bool:
         """Check if a portal is selected."""
@@ -890,11 +939,8 @@ class PortalManagementState(rx.State):
                 for p in portal_stats
             ]
             
-            # Apply category filter
-            if self.category_filter and self.category_filter != "All":
-                self.portal_rows = [p for p in all_rows if p.category == self.category_filter]
-            else:
-                self.portal_rows = all_rows
+            # Apply client-side filters
+            self.portal_rows = self._apply_portal_filters(all_rows)
             
             # Apply sorting
             self._apply_sort()
@@ -1392,6 +1438,21 @@ class PortalManagementState(rx.State):
     def hide_toast(self):
         """Hide toast notification."""
         self.show_toast = False
+
+    def set_freshness_filter(self, value: str):
+        """Set freshness bucket filter and reload data."""
+        self.freshness_filter = value or "All"
+        yield PortalManagementState.load_portal_statistics
+
+    def set_portal_search_query(self, value: str):
+        """Set portal search query and reload data."""
+        self.portal_search_query = value or ""
+        yield PortalManagementState.load_portal_statistics
+
+    def clear_portal_search_query(self):
+        """Clear portal search query and reload data."""
+        self.portal_search_query = ""
+        yield PortalManagementState.load_portal_statistics
     
     def set_category_filter(self, value: str):
         """Set category filter and reload data."""
@@ -1717,9 +1778,31 @@ class ExcelImportState(rx.State):
     import_duration: str = ""
     error_messages: list[str] = []
 
+    def _settings_file_candidates(self) -> list[Path]:
+        """Candidate locations for shared dashboard settings file."""
+        project_root = Path(__file__).resolve().parents[2]
+        dashboard_root = Path(__file__).resolve().parents[1]
+        return [
+            project_root / "portal_config_memory.json",
+            dashboard_root / "portal_config_memory.json",
+            Path.cwd() / "portal_config_memory.json",
+        ]
+
     def _settings_file_path(self) -> Path:
-        """Path to shared dashboard settings file."""
-        return Path(__file__).resolve().parents[2] / "portal_config_memory.json"
+        """Canonical settings path with automatic migration from legacy locations."""
+        candidates = self._settings_file_candidates()
+        canonical = candidates[0]
+
+        for existing in candidates:
+            if existing.exists():
+                if existing != canonical and not canonical.exists():
+                    try:
+                        canonical.write_text(existing.read_text(encoding="utf-8"), encoding="utf-8")
+                    except Exception:
+                        return existing
+                return canonical
+
+        return canonical
 
     def _import_history_log_path(self) -> Path:
         """Persistent import history log path."""

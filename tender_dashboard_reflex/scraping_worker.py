@@ -475,6 +475,7 @@ class ScrapingWorkerManager:
             
             # Track cumulative skipped duplicates for this worker
             worker_skipped_existing = [0]  # Use list for mutable reference
+            worker_closing_reprocessed = [0]  # Use list for mutable reference
             
             # Callbacks for progress updates
             def progress_callback(*args, **kwargs):
@@ -519,9 +520,12 @@ class ScrapingWorkerManager:
                         tenders_scraped = extra_info.get("total_tenders", 0)
                         pending_depts = extra_info.get("pending_depts", 0)
                         skipped_existing_this_dept = extra_info.get("skipped_duplicates", 0)
+                        closing_reprocessed_this_dept = extra_info.get("closing_date_reprocessed", 0)
                         # Track cumulative skipped count
                         if skipped_existing_this_dept > 0:
                             worker_skipped_existing[0] += skipped_existing_this_dept
+                        if closing_reprocessed_this_dept > 0:
+                            worker_closing_reprocessed[0] += closing_reprocessed_this_dept
                         if dept_name:
                             normalized_dept = str(dept_name).strip().lower()
                             if normalized_dept not in processed_department_names:
@@ -582,7 +586,7 @@ class ScrapingWorkerManager:
                         "total_departments": current,
                         "portals_completed": 0,
                         "skipped_existing_total": worker_skipped_existing[0],
-                        "closing_date_reprocessed_total": 0,
+                        "closing_date_reprocessed_total": worker_closing_reprocessed[0],
                     })
             
             tenders_found = [0]  # Use list to allow modification in nested function

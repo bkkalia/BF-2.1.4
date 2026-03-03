@@ -62,8 +62,47 @@ def _nic_iso_expr(col: str = "ti.closing_date") -> str:
         return col.replace("closing_date", "closing_date_iso")
     return _ISO_CASE_BODY.format(col=col)
 
+def _nic_dt_expr(col: str = "ti.closing_date") -> str:
+    """Return SQL expression yielding an IST datetime string (YYYY-MM-DD HH:MM:SS).
+    Supports NIC format 'DD-Mon-YYYY HH:MM AM/PM', ISO datetime, and date-only values.
+    Date-only values are treated as end-of-day (23:59:59) for backward compatibility.
+    """
+    month_sql = (
+        f"CASE UPPER(SUBSTR({col},4,3)) "
+        "WHEN 'JAN' THEN '01' WHEN 'FEB' THEN '02' WHEN 'MAR' THEN '03' "
+        "WHEN 'APR' THEN '04' WHEN 'MAY' THEN '05' WHEN 'JUN' THEN '06' "
+        "WHEN 'JUL' THEN '07' WHEN 'AUG' THEN '08' WHEN 'SEP' THEN '09' "
+        "WHEN 'OCT' THEN '10' WHEN 'NOV' THEN '11' WHEN 'DEC' THEN '12' "
+        "ELSE '00' END"
+    )
+    hour_sql = (
+        f"CASE "
+        f"WHEN UPPER(SUBSTR({col},19,2)) = 'AM' "
+        f"THEN CASE WHEN CAST(SUBSTR({col},13,2) AS INTEGER) = 12 THEN 0 ELSE CAST(SUBSTR({col},13,2) AS INTEGER) END "
+        f"WHEN UPPER(SUBSTR({col},19,2)) = 'PM' "
+        f"THEN CASE WHEN CAST(SUBSTR({col},13,2) AS INTEGER) = 12 THEN 12 ELSE CAST(SUBSTR({col},13,2) AS INTEGER) + 12 END "
+        f"ELSE CAST(SUBSTR({col},13,2) AS INTEGER) END"
+    )
+    return (
+        "CASE "
+        f"WHEN TRIM(COALESCE({col},'')) = '' THEN NULL "
+        f"WHEN SUBSTR({col},5,1) = '-' THEN "
+        f"  CASE "
+        f"    WHEN LENGTH(TRIM({col})) >= 19 THEN SUBSTR(TRIM({col}),1,19) "
+        f"    WHEN LENGTH(TRIM({col})) >= 16 THEN SUBSTR(TRIM({col}),1,16) || ':00' "
+        f"    WHEN LENGTH(TRIM({col})) >= 10 THEN SUBSTR(TRIM({col}),1,10) || ' 23:59:59' "
+        f"    ELSE NULL END "
+        f"WHEN LENGTH(TRIM({col})) >= 20 THEN "
+        f"  SUBSTR({col},8,4) || '-' || ({month_sql}) || '-' || SUBSTR({col},1,2) || ' ' || "
+        f"  printf('%02d', {hour_sql}) || ':' || SUBSTR({col},16,2) || ':00' "
+        f"WHEN LENGTH(TRIM({col})) >= 11 THEN "
+        f"  SUBSTR({col},8,4) || '-' || ({month_sql}) || '-' || SUBSTR({col},1,2) || ' 23:59:59' "
+        "ELSE NULL END"
+    )
+
 # IST offset expressed as SQLite modifier string (UTC+05:30 = +330 minutes)
 _IST_NOW_SQL = "DATE('now', '+330 minutes')"  # current date in IST
+_IST_NOW_DT_SQL = "DATETIME('now', '+330 minutes')"  # current datetime in IST
 
 # Set to True by _ensure_search_indexes once closing_date_iso column is confirmed
 _has_closing_iso_column: bool = False
@@ -181,10 +220,10 @@ def _get_global_counts() -> tuple[int, int, int]:
         c = conn.cursor()
         c.execute("SELECT COUNT(*) AS n FROM tenders")
         total = int(c.fetchone()["n"])
-        _iso = _nic_iso_expr("closing_date")  # uses column if available
+        _dt = _nic_dt_expr("closing_date")
         c.execute(
             f"SELECT COUNT(*) AS n FROM tenders "
-            f"WHERE ({_iso} >= {_IST_NOW_SQL} OR {_iso} IS NULL)"
+            f"WHERE ({_dt} >= {_IST_NOW_DT_SQL} OR {_dt} IS NULL)"
         )
         live = int(c.fetchone()["n"])
         expired = total - live
@@ -347,14 +386,14 @@ def _build_where(filters: TenderFilters) -> tuple[str, list[Any]]:
         if use_v3:
             clauses.append("ti.is_live = 1")
         else:
-            iso = _nic_iso_expr("ti.closing_date")
-            clauses.append(f"({iso} >= {_IST_NOW_SQL} OR {iso} IS NULL)")
+            dt = _nic_dt_expr("ti.closing_date")
+            clauses.append(f"({dt} >= {_IST_NOW_DT_SQL} OR {dt} IS NULL)")
     elif filters.show_expired_only:
         if use_v3:
             clauses.append("ti.is_live = 0")
         else:
-            iso = _nic_iso_expr("ti.closing_date")
-            clauses.append(f"({iso} IS NOT NULL AND {iso} < {_IST_NOW_SQL})")
+            dt = _nic_dt_expr("ti.closing_date")
+            clauses.append(f"({dt} IS NOT NULL AND {dt} < {_IST_NOW_DT_SQL})")
     elif filters.show_live_recent:
         if use_v3:
             clauses.append(
@@ -362,9 +401,9 @@ def _build_where(filters: TenderFilters) -> tuple[str, list[Any]]:
                 f"DATE(ti.closing_at) >= DATE({_IST_NOW_SQL}, '-{filters.recent_days} days'))"
             )
         else:
-            iso = _nic_iso_expr("ti.closing_date")
-            cutoff = f"DATE({_IST_NOW_SQL}, '-{filters.recent_days} days')"
-            clauses.append(f"({iso} IS NULL OR {iso} >= {cutoff})")
+            dt = _nic_dt_expr("ti.closing_date")
+            cutoff = f"DATETIME({_IST_NOW_DT_SQL}, '-{filters.recent_days} days')"
+            clauses.append(f"({dt} IS NULL OR {dt} >= {cutoff})")
 
     # Portal group filter
     if filters.portal_group and filters.portal_group != "All":
@@ -573,7 +612,7 @@ def get_portal_statistics(days_filter: int = 0) -> list[dict[str, Any]]:
                 """
             
             # Build the NIC date -> ISO CASE expression for the tenders table
-            _cd_iso = _nic_iso_expr("t.closing_date")
+            _cd_dt = _nic_dt_expr("t.closing_date")
             query = f"""
                 SELECT 
                     t.portal_name as portal_slug,
@@ -585,12 +624,12 @@ def get_portal_statistics(days_filter: int = 0) -> list[dict[str, Any]]:
                      WHERE portal_name = t.portal_name) as last_updated,
                     COUNT(*) as total_tenders,
                     SUM(CASE
-                        WHEN ({_cd_iso}) >= {_IST_NOW_SQL} THEN 1
-                        WHEN ({_cd_iso}) IS NULL THEN 1
+                        WHEN ({_cd_dt}) >= {_IST_NOW_DT_SQL} THEN 1
+                        WHEN ({_cd_dt}) IS NULL THEN 1
                         ELSE 0 END) as live_tenders,
                     SUM(CASE
-                        WHEN ({_cd_iso}) IS NOT NULL
-                             AND ({_cd_iso}) < {_IST_NOW_SQL} THEN 1
+                        WHEN ({_cd_dt}) IS NOT NULL
+                             AND ({_cd_dt}) < {_IST_NOW_DT_SQL} THEN 1
                         ELSE 0 END) as expired_tenders
                 FROM tenders t
                 WHERE t.portal_name IS NOT NULL AND TRIM(t.portal_name) != ''
@@ -698,21 +737,54 @@ def get_work_type_options() -> list[str]:
 
 def get_summary(filters: TenderFilters) -> dict[str, Any]:
     where_sql, where_params = _build_where(filters)
+    scope_filters = TenderFilters(portal=filters.portal, portal_group=filters.portal_group)
+    scope_where_sql, scope_where_params = _build_where(scope_filters)
+    has_portal_scope = (
+        (filters.portal and filters.portal != "All")
+        or (filters.portal_group and filters.portal_group != "All")
+    )
     use_v3 = _is_v3_schema()
 
     with _get_connection() as conn:
         cursor = conn.cursor()
 
         if use_v3:
-            cursor.execute("SELECT COUNT(*) AS c FROM tender_items")
-            total_tenders = int(cursor.fetchone()["c"])
-            cursor.execute("SELECT COUNT(*) AS c FROM tender_items WHERE is_live = 1")
-            live_tenders = int(cursor.fetchone()["c"])
-            cursor.execute("SELECT COUNT(*) AS c FROM tender_items WHERE is_live = 0")
-            expired_tenders = int(cursor.fetchone()["c"])
+            cursor.execute(
+                f"""
+                SELECT
+                    COUNT(*) AS total_tenders,
+                    SUM(CASE WHEN ti.is_live = 1 THEN 1 ELSE 0 END) AS live_tenders,
+                    SUM(CASE WHEN ti.is_live = 0 THEN 1 ELSE 0 END) AS expired_tenders
+                FROM tender_items ti
+                JOIN portals p ON p.id = ti.portal_id
+                WHERE {scope_where_sql}
+                """,
+                scope_where_params,
+            )
+            scope_counts = cursor.fetchone()
+            total_tenders = int(scope_counts["total_tenders"] or 0)
+            live_tenders = int(scope_counts["live_tenders"] or 0)
+            expired_tenders = int(scope_counts["expired_tenders"] or 0)
         else:
-            # Cached 120-second global counts — avoids 3×full-table CASE scan
-            total_tenders, live_tenders, expired_tenders = _get_global_counts()
+            if not has_portal_scope:
+                total_tenders, live_tenders, expired_tenders = _get_global_counts()
+            else:
+                cd_dt = _nic_dt_expr("ti.closing_date")
+                cursor.execute(
+                    f"""
+                    SELECT
+                        COUNT(*) AS total_tenders,
+                        SUM(CASE WHEN ({cd_dt} >= {_IST_NOW_DT_SQL} OR {cd_dt} IS NULL) THEN 1 ELSE 0 END) AS live_tenders,
+                        SUM(CASE WHEN ({cd_dt} IS NOT NULL AND {cd_dt} < {_IST_NOW_DT_SQL}) THEN 1 ELSE 0 END) AS expired_tenders
+                    FROM tenders ti
+                    WHERE {scope_where_sql}
+                    """,
+                    scope_where_params,
+                )
+                scope_counts = cursor.fetchone()
+                total_tenders = int(scope_counts["total_tenders"] or 0)
+                live_tenders = int(scope_counts["live_tenders"] or 0)
+                expired_tenders = int(scope_counts["expired_tenders"] or 0)
 
         if use_v3:
             cursor.execute(
@@ -776,12 +848,18 @@ def get_summary(filters: TenderFilters) -> dict[str, Any]:
             )
             due_7_days = int(cursor.fetchone()["c"])
 
-            cursor.execute("SELECT COUNT(*) AS c FROM portals")
+            cursor.execute(
+                f"""
+                SELECT COUNT(DISTINCT p.portal_slug) AS c
+                FROM tender_items ti
+                JOIN portals p ON p.id = ti.portal_id
+                WHERE {scope_where_sql}
+                """,
+                scope_where_params,
+            )
             data_sources = int(cursor.fetchone()["c"])
         else:
-            # SINGLE aggregation: replaces 3 separate scans → 1 pass over the filtered set.
-            # filtered_results + departments + due_today/3/7 all computed together.
-            _cd_iso = _nic_iso_expr("ti.closing_date")
+            cd_iso = _nic_iso_expr("ti.closing_date")
             cursor.execute(
                 f"""
                 SELECT
@@ -789,29 +867,32 @@ def get_summary(filters: TenderFilters) -> dict[str, Any]:
                   COUNT(DISTINCT CASE WHEN ti.department_name IS NOT NULL
                                            AND TRIM(ti.department_name) != ''
                                       THEN ti.department_name END) AS departments,
-                  SUM(CASE WHEN ({_cd_iso}) = {_IST_NOW_SQL} THEN 1 ELSE 0 END) AS due_today,
-                  SUM(CASE WHEN ({_cd_iso}) > {_IST_NOW_SQL}
-                           AND ({_cd_iso}) <= DATE({_IST_NOW_SQL}, '+3 days') THEN 1 ELSE 0 END) AS due_3,
-                  SUM(CASE WHEN ({_cd_iso}) > {_IST_NOW_SQL}
-                           AND ({_cd_iso}) <= DATE({_IST_NOW_SQL}, '+7 days') THEN 1 ELSE 0 END) AS due_7
+                  SUM(CASE WHEN ({cd_iso}) = {_IST_NOW_SQL} THEN 1 ELSE 0 END) AS due_today,
+                  SUM(CASE WHEN ({cd_iso}) > {_IST_NOW_SQL}
+                           AND ({cd_iso}) <= DATE({_IST_NOW_SQL}, '+3 days') THEN 1 ELSE 0 END) AS due_3,
+                  SUM(CASE WHEN ({cd_iso}) > {_IST_NOW_SQL}
+                           AND ({cd_iso}) <= DATE({_IST_NOW_SQL}, '+7 days') THEN 1 ELSE 0 END) AS due_7
                 FROM tenders ti
                 WHERE {where_sql}
                 """,
                 where_params,
             )
-            _agg = cursor.fetchone()
-            filtered_results = int(_agg["filtered_results"])
-            departments = int(_agg["departments"] or 0)
-            due_today = int(_agg["due_today"] or 0)
-            due_3_days = int(_agg["due_3"] or 0)
-            due_7_days = int(_agg["due_7"] or 0)
+            agg = cursor.fetchone()
+            filtered_results = int(agg["filtered_results"])
+            departments = int(agg["departments"] or 0)
+            due_today = int(agg["due_today"] or 0)
+            due_3_days = int(agg["due_3"] or 0)
+            due_7_days = int(agg["due_7"] or 0)
 
             cursor.execute(
-                """
-                SELECT COUNT(DISTINCT portal_name) AS c
-                FROM tenders
-                WHERE portal_name IS NOT NULL AND TRIM(portal_name) != ''
-                """
+                f"""
+                SELECT COUNT(DISTINCT ti.portal_name) AS c
+                FROM tenders ti
+                WHERE {scope_where_sql}
+                  AND ti.portal_name IS NOT NULL
+                  AND TRIM(ti.portal_name) != ''
+                """,
+                scope_where_params,
             )
             data_sources = int(cursor.fetchone()["c"])
 
@@ -1097,7 +1178,8 @@ def export_tenders_by_portal(filters: TenderFilters, expired_days: int = 30) -> 
         if use_v3:
             where_clauses.append("ti.is_live = 1")
         else:
-            where_clauses.append("LOWER(COALESCE(ti.lifecycle_status, '')) = 'active'")
+            legacy_dt = _nic_dt_expr("ti.closing_date")
+            where_clauses.append(f"({legacy_dt} >= {_IST_NOW_DT_SQL} OR {legacy_dt} IS NULL)")
     elif expired_days > 0:
         # Include expired tenders from last X days
         if use_v3:
@@ -1106,9 +1188,10 @@ def export_tenders_by_portal(filters: TenderFilters, expired_days: int = 30) -> 
                  julianday('now') - julianday(ti.closing_at) <= {expired_days})
             """)
         else:
+            legacy_dt = _nic_dt_expr("ti.closing_date")
             where_clauses.append(f"""
-                (LOWER(COALESCE(ti.lifecycle_status, '')) = 'active' OR
-                 julianday('now') - julianday(ti.closing_date) <= {expired_days})
+                ({legacy_dt} >= {_IST_NOW_DT_SQL} OR
+                 ({legacy_dt} IS NOT NULL AND {legacy_dt} >= DATETIME({_IST_NOW_DT_SQL}, '-{expired_days} days')))
             """)
     
     # Apply other filters
@@ -1190,7 +1273,7 @@ def export_tenders_by_portal(filters: TenderFilters, expired_days: int = 30) -> 
                     ti.published_date AS e_published_date,
                     ti.closing_date AS closing_date,
                     '' AS opening_date,
-                    ti.organization_chain AS organisation_chain,
+                    ti.organisation_chain AS organisation_chain,
                     ti.title_ref AS title_and_ref,
                     ti.tender_id_extracted,
                     COALESCE(ti.direct_url, '') AS direct_url,
@@ -1421,7 +1504,7 @@ def get_tender_data_paginated(filters: TenderFilters, limit: int = 50, offset: i
                     ti.tender_id_extracted,
                     ti.title_ref,
                     ti.department_name,
-                    ti.organization_chain as organisation_chain,
+                    ti.organisation_chain as organisation_chain,
                     '' as serial_no,
                     ti.published_at as published_date,
                     ti.opening_at as opening_date,

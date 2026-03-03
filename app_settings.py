@@ -1,4 +1,4 @@
-# app_settings.py v2.3.8
+# app_settings.py v2.3.9
 # Handles loading/saving settings.json and reading base_urls.csv, using absolute paths.
 
 import json

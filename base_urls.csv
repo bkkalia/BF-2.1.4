@@ -2,7 +2,6 @@ Name,BaseURL,Keyword
 CPPP1 eProcure,https://eprocure.gov.in/eprocure/app,Central Public Procurement Portal
 CPPP2 eTenders,https://etenders.gov.in/eprocure/app,Central Public Procurement Portal 2
 DefProc,https://defproc.gov.in/nicgep/app,Defence eProcurement
-GePNIC,https://gepnic.gov.in/,NIC GePNIC Portal
 NRRDA,https://pmgsytenders.gov.in/nicgep/app,PMGSY eProcurement
 Arunachal Pradesh,https://arunachaltenders.gov.in/nicgep/app,Arunachal Pradesh
 Chandigarh,https://etenders.chd.nic.in/nicgep/app,Chandigarh
@@ -12,7 +11,7 @@ HP Tenders,https://hptenders.gov.in/nicgep/app,Himachal Pradesh
 Jammu Kashmir,https://jktenders.gov.in/nicgep/app,Jammu and Kashmir
 Jharkhand,https://jharkhandtenders.gov.in/nicgep/app,Jharkhand
 Kerala,https://etenders.kerala.gov.in/nicgep/app,Kerala
-Ladakh,https://jktenders.gov.in/nicgep/app,Ladakh
+Ladakh,https://tenders.ladakh.gov.in/nicgep/app,Ladakh
 Madhya Pradesh,https://mptenders.gov.in/nicgep/app,Madhya Pradesh
 Maharashtra,https://mahatenders.gov.in/nicgep/app,Maharashtra
 Manipur,https://manipurtenders.gov.in/nicgep/app,Manipur

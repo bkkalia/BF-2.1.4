@@ -70,7 +70,7 @@
             "detail": "Watcher stop requested"
         }
     ],
-    "central_sqlite_db_path": "D:\\Dev84\\BF 2.1.4\\data\\blackforest_tenders.sqlite3",
+    "central_sqlite_db_path": "D:\\Dev84\\BF 2.1.4\\database\\blackforest_tenders.sqlite3",
     "sqlite_backup_directory": "D:\\Dev84\\BF 2.1.4\\db_backups",
     "sqlite_backup_retention_days": 30,
     "excel_export_policy": "alternate_days",

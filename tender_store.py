@@ -16,6 +16,7 @@ class TenderDataStore:
 
     def __init__(self, db_path):
         self.db_path = db_path
+        self._use_v3 = False
         self._ensure_schema()
 
     def _connect(self):
@@ -28,6 +29,49 @@ class TenderDataStore:
     def _ensure_schema(self):
         os.makedirs(os.path.dirname(self.db_path) or ".", exist_ok=True)
         with self._connect() as conn:
+            tables = {
+                str(row[0]).strip().lower()
+                for row in conn.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()
+            }
+            has_v3 = "portals" in tables and "tender_items" in tables
+
+            if has_v3:
+                self._use_v3 = True
+                conn.executescript(
+                    """
+                    CREATE TABLE IF NOT EXISTS scrape_runs (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        portal_name TEXT NOT NULL,
+                        base_url TEXT,
+                        scope_mode TEXT,
+                        started_at TEXT NOT NULL,
+                        completed_at TEXT,
+                        status TEXT,
+                        expected_total_tenders INTEGER DEFAULT 0,
+                        extracted_total_tenders INTEGER DEFAULT 0,
+                        skipped_existing_total INTEGER DEFAULT 0,
+                        partial_saved INTEGER DEFAULT 0,
+                        output_file_path TEXT,
+                        output_file_type TEXT
+                    );
+
+                    CREATE TABLE IF NOT EXISTS scrape_run_items (
+                        run_id INTEGER NOT NULL,
+                        tender_item_id INTEGER NOT NULL,
+                        PRIMARY KEY (run_id, tender_item_id),
+                        FOREIGN KEY (run_id) REFERENCES scrape_runs(id) ON DELETE CASCADE,
+                        FOREIGN KEY (tender_item_id) REFERENCES tender_items(id) ON DELETE CASCADE
+                    );
+
+                    CREATE INDEX IF NOT EXISTS idx_scrape_run_items_run_id ON scrape_run_items(run_id);
+                    CREATE INDEX IF NOT EXISTS idx_scrape_runs_portal_name ON scrape_runs(LOWER(TRIM(COALESCE(portal_name, ''))));
+                    CREATE INDEX IF NOT EXISTS idx_tender_items_portal_slug_tender_id
+                        ON tender_items(LOWER(TRIM(COALESCE(portal_slug, ''))), TRIM(COALESCE(tender_id_extracted, '')));
+                    """
+                )
+                return
+
+            self._use_v3 = False
             conn.executescript(
                 """
                 CREATE TABLE IF NOT EXISTS runs (
@@ -117,6 +161,45 @@ class TenderDataStore:
                 WHERE trim(coalesce(lifecycle_status, '')) = ''
                 """
             )
+
+    @staticmethod
+    def _portal_key(portal_name):
+        return str(portal_name or "").strip().lower()
+
+    def _resolve_portal_record(self, conn, portal_name):
+        portal_text = str(portal_name or "").strip()
+        portal_key = self._portal_key(portal_name)
+        if not portal_key:
+            return None
+
+        row = conn.execute(
+            """
+            SELECT id, portal_slug, portal_name
+            FROM portals
+            WHERE LOWER(TRIM(COALESCE(portal_slug, ''))) = ?
+               OR LOWER(TRIM(COALESCE(portal_name, ''))) = ?
+            ORDER BY CASE WHEN LOWER(TRIM(COALESCE(portal_slug, ''))) = ? THEN 0 ELSE 1 END, id ASC
+            LIMIT 1
+            """,
+            (portal_key, portal_key, portal_key),
+        ).fetchone()
+        if row:
+            return row
+
+        conn.execute(
+            """
+            INSERT INTO portals (portal_slug, portal_name, base_url, last_updated)
+            VALUES (?, ?, NULL, NULL)
+            """,
+            (portal_text or portal_key, portal_text or portal_key),
+        )
+        return conn.execute(
+            """
+            SELECT id, portal_slug, portal_name
+            FROM portals
+            WHERE id = last_insert_rowid()
+            """
+        ).fetchone()
 
     def _ensure_column(self, conn, table_name, column_name, ddl):
         columns = conn.execute(f"PRAGMA table_info({table_name})").fetchall()
@@ -258,17 +341,34 @@ class TenderDataStore:
         now_ist = datetime.now(tz=_IST)
 
         with self._connect() as conn:
-            rows = conn.execute(
-                """
-                SELECT DISTINCT
-                    TRIM(tender_id_extracted) AS tender_id,
-                    TRIM(COALESCE(closing_date, ''))  AS closing_date
-                FROM tenders
-                WHERE LOWER(TRIM(COALESCE(portal_name, ''))) = ?
-                  AND TRIM(COALESCE(tender_id_extracted, '')) != ''
-                """,
-                (portal_key,),
-            ).fetchall()
+            if self._use_v3:
+                rows = conn.execute(
+                    """
+                    SELECT DISTINCT
+                        TRIM(COALESCE(ti.tender_id_extracted, '')) AS tender_id,
+                        TRIM(COALESCE(ti.closing_at, '')) AS closing_date
+                    FROM tender_items ti
+                    JOIN portals p ON p.id = ti.portal_id
+                    WHERE (
+                            LOWER(TRIM(COALESCE(ti.portal_slug, ''))) = ?
+                         OR LOWER(TRIM(COALESCE(p.portal_name, ''))) = ?
+                    )
+                      AND TRIM(COALESCE(ti.tender_id_extracted, '')) != ''
+                    """,
+                    (portal_key, portal_key),
+                ).fetchall()
+            else:
+                rows = conn.execute(
+                    """
+                    SELECT DISTINCT
+                        TRIM(tender_id_extracted) AS tender_id,
+                        TRIM(COALESCE(closing_date, ''))  AS closing_date
+                    FROM tenders
+                    WHERE LOWER(TRIM(COALESCE(portal_name, ''))) = ?
+                      AND TRIM(COALESCE(tender_id_extracted, '')) != ''
+                    """,
+                    (portal_key,),
+                ).fetchall()
 
         live_ids: set[str] = set()
         for row in rows:
@@ -323,16 +423,32 @@ class TenderDataStore:
         now_ist = datetime.now(tz=_IST)
 
         with self._connect() as conn:
-            rows = conn.execute(
-                """
-                SELECT TRIM(COALESCE(tender_id_extracted, '')) AS tender_id,
-                       TRIM(COALESCE(closing_date, ''))        AS closing_date
-                FROM tenders
-                WHERE LOWER(TRIM(COALESCE(portal_name, ''))) = ?
-                  AND TRIM(COALESCE(tender_id_extracted, '')) != ''
-                """,
-                (portal_key,),
-            ).fetchall()
+                        if self._use_v3:
+                                rows = conn.execute(
+                                        """
+                                        SELECT TRIM(COALESCE(ti.tender_id_extracted, '')) AS tender_id,
+                                                     TRIM(COALESCE(ti.closing_at, ''))          AS closing_date
+                                        FROM tender_items ti
+                                        JOIN portals p ON p.id = ti.portal_id
+                                        WHERE (
+                                                        LOWER(TRIM(COALESCE(ti.portal_slug, ''))) = ?
+                                                 OR LOWER(TRIM(COALESCE(p.portal_name, ''))) = ?
+                                        )
+                                            AND TRIM(COALESCE(ti.tender_id_extracted, '')) != ''
+                                        """,
+                                        (portal_key, portal_key),
+                                ).fetchall()
+                        else:
+                                rows = conn.execute(
+                                        """
+                                        SELECT TRIM(COALESCE(tender_id_extracted, '')) AS tender_id,
+                                                     TRIM(COALESCE(closing_date, ''))        AS closing_date
+                                        FROM tenders
+                                        WHERE LOWER(TRIM(COALESCE(portal_name, ''))) = ?
+                                            AND TRIM(COALESCE(tender_id_extracted, '')) != ''
+                                        """,
+                                        (portal_key,),
+                                ).fetchall()
 
         snapshot: dict = {}
         for row in rows:
@@ -358,6 +474,19 @@ class TenderDataStore:
     def start_run(self, portal_name, base_url, scope_mode="all"):
         started_at = datetime.now().isoformat(timespec="seconds")
         with self._connect() as conn:
+            if self._use_v3:
+                cur = conn.execute(
+                    """
+                    INSERT INTO scrape_runs (portal_name, base_url, scope_mode, started_at, status)
+                    VALUES (?, ?, ?, ?, ?)
+                    """,
+                    (portal_name or "Unknown", base_url or "", scope_mode, started_at, "running")
+                )
+                run_id = cur.lastrowid
+                if run_id is None:
+                    raise RuntimeError("Failed to create run record in SQLite datastore")
+                return int(run_id)
+
             cur = conn.execute(
                 """
                 INSERT INTO runs (portal_name, base_url, scope_mode, started_at, status)
@@ -383,6 +512,130 @@ class TenderDataStore:
             return tender_id.lower() in {"nan", "none", "null", "na", "n/a", "-"}
 
         with self._connect() as conn:
+            if self._use_v3:
+                run_row = conn.execute(
+                    """
+                    SELECT portal_name
+                    FROM scrape_runs
+                    WHERE id = ?
+                    """,
+                    (int(run_id),)
+                ).fetchone()
+                if not run_row:
+                    raise RuntimeError(f"Run id {run_id} not found")
+
+                portal_row = self._resolve_portal_record(conn, run_row["portal_name"])
+                if not portal_row:
+                    return 0
+
+                portal_id = int(portal_row["id"])
+                portal_slug = str(portal_row["portal_slug"] or "").strip()
+
+                conn.execute("DELETE FROM scrape_run_items WHERE run_id = ?", (int(run_id),))
+                if not tenders:
+                    return 0
+
+                deduped = {}
+                ordered_keys = []
+                for item in tenders:
+                    tender_id = _normalize_text(item.get("Tender ID (Extracted)"))
+                    if _is_missing_tender_id(tender_id):
+                        continue
+
+                    key = tender_id
+                    if key not in deduped:
+                        ordered_keys.append(key)
+                    deduped[key] = item
+
+                now_ts = datetime.now().isoformat(timespec="seconds")
+                now_ist = datetime.now(tz=_IST)
+                inserted_item_ids = []
+
+                for key in ordered_keys:
+                    item = deduped[key]
+                    tender_id = _normalize_text(item.get("Tender ID (Extracted)"))
+                    if not tender_id:
+                        continue
+
+                    published_at = _normalize_text(item.get("Published Date") or item.get("e-Published Date"))
+                    closing_at = _normalize_text(item.get("Closing Date"))
+                    parsed_close = self._parse_closing_date_ist(closing_at)
+                    is_live = 1 if (parsed_close is None or parsed_close > now_ist) else 0
+
+                    conn.execute(
+                        """
+                        DELETE FROM tender_items
+                        WHERE portal_id = ?
+                          AND TRIM(COALESCE(tender_id_extracted, '')) = ?
+                        """,
+                        (portal_id, tender_id),
+                    )
+
+                    cur = conn.execute(
+                        """
+                        INSERT INTO tender_items (
+                            portal_id,
+                            portal_slug,
+                            tender_id_extracted,
+                            title_ref,
+                            department_name,
+                            published_at,
+                            closing_at,
+                            opening_date,
+                            organisation_chain,
+                            tender_url,
+                            status_url,
+                            estimated_cost_value,
+                            tender_status,
+                            is_live,
+                            created_at,
+                            updated_at
+                        )
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        """,
+                        (
+                            portal_id,
+                            portal_slug,
+                            tender_id,
+                            _normalize_text(item.get("Title and Ref.No./Tender ID")),
+                            _normalize_text(item.get("Department Name")),
+                            published_at,
+                            closing_at,
+                            _normalize_text(item.get("Opening Date")),
+                            _normalize_text(item.get("Organisation Chain")),
+                            _normalize_text(item.get("Direct URL")),
+                            _normalize_text(item.get("Status URL")),
+                            None,
+                            "active" if is_live else "expired",
+                            is_live,
+                            now_ts,
+                            now_ts,
+                        ),
+                    )
+                    item_id = cur.lastrowid
+                    if item_id is not None:
+                        inserted_item_ids.append((int(run_id), int(item_id)))
+
+                if inserted_item_ids:
+                    conn.executemany(
+                        """
+                        INSERT OR IGNORE INTO scrape_run_items (run_id, tender_item_id)
+                        VALUES (?, ?)
+                        """,
+                        inserted_item_ids,
+                    )
+
+                conn.execute(
+                    """
+                    UPDATE portals
+                    SET last_updated = ?
+                    WHERE id = ?
+                    """,
+                    (now_ts, portal_id),
+                )
+
+                return len(inserted_item_ids)
+
             conn.execute("DELETE FROM tenders WHERE run_id = ?", (run_id,))
             if not tenders:
                 return 0
@@ -479,6 +732,62 @@ class TenderDataStore:
             return len(rows)
 
     def export_run(self, run_id, output_dir, website_keyword, mark_partial=False):
+        if self._use_v3:
+            query = """
+                SELECT
+                    ti.department_name AS [Department Name],
+                    '' AS [S.No],
+                    ti.published_at AS [e-Published Date],
+                    ti.published_at AS [Published Date],
+                    ti.closing_at AS [Closing Date],
+                    ti.opening_date AS [Opening Date],
+                    ti.tender_url AS [Direct URL],
+                    ti.status_url AS [Status URL],
+                    ti.title_ref AS [Title and Ref.No./Tender ID],
+                    ti.organisation_chain AS [Organisation Chain],
+                    TRIM(COALESCE(ti.tender_id_extracted, '')) AS [Tender ID (Extracted)],
+                    CASE
+                        WHEN LOWER(TRIM(COALESCE(ti.tender_status, ''))) = 'cancelled' THEN 'cancelled'
+                        WHEN COALESCE(ti.is_live, 0) = 1 THEN 'active'
+                        ELSE 'expired'
+                    END AS [Lifecycle Status],
+                    '' AS [Cancelled Detected At],
+                    '' AS [Cancelled Source],
+                    '' AS [EMD Amount],
+                    NULL AS [EMD Amount (Numeric)],
+                    p.portal_name AS [Portal],
+                    sr.started_at AS [Run Started At],
+                    sr.completed_at AS [Run Completed At],
+                    sr.status AS [Run Status],
+                    sr.scope_mode AS [Scope]
+                FROM scrape_run_items sri
+                JOIN tender_items ti ON ti.id = sri.tender_item_id
+                JOIN portals p ON p.id = ti.portal_id
+                JOIN scrape_runs sr ON sr.id = sri.run_id
+                WHERE sri.run_id = ?
+                ORDER BY [Department Name] ASC, [Tender ID (Extracted)] ASC
+            """
+
+            with self._connect() as conn:
+                df = pd.read_sql_query(query, conn, params=(run_id,))
+
+            if df.empty:
+                return None, None
+
+            os.makedirs(output_dir, exist_ok=True)
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            suffix = "_partial" if mark_partial else ""
+            file_stem = f"{website_keyword}{suffix}_tenders_{timestamp}"
+            excel_path = os.path.join(output_dir, f"{file_stem}.xlsx")
+
+            try:
+                df.to_excel(excel_path, index=False, engine="openpyxl")
+                return excel_path, "excel"
+            except Exception:
+                csv_path = os.path.join(output_dir, f"{file_stem}.csv")
+                df.to_csv(csv_path, index=False, encoding="utf-8-sig")
+                return csv_path, "csv"
+
         query = """
             SELECT
                 department_name AS [Department Name],
@@ -531,6 +840,30 @@ class TenderDataStore:
             return csv_path, "csv"
 
     def get_latest_completed_run_id(self, portal_name=None, full_only=False):
+        if self._use_v3:
+            where = ["completed_at IS NOT NULL", "LOWER(TRIM(COALESCE(status, ''))) LIKE 'scraping completed%'"]
+            params = []
+
+            portal_key = str(portal_name or "").strip().lower()
+            if portal_key:
+                where.append("LOWER(TRIM(COALESCE(portal_name, ''))) = ?")
+                params.append(portal_key)
+
+            if full_only:
+                where.append("LOWER(TRIM(COALESCE(scope_mode, 'all'))) = 'all'")
+
+            query = f"""
+                SELECT id
+                FROM scrape_runs
+                WHERE {' AND '.join(where)}
+                ORDER BY id DESC
+                LIMIT 1
+            """
+
+            with self._connect() as conn:
+                row = conn.execute(query, tuple(params)).fetchone()
+                return int(row[0]) if row and row[0] is not None else None
+
         where = ["completed_at IS NOT NULL", "LOWER(TRIM(COALESCE(status, ''))) LIKE 'scraping completed%'"]
         params = []
 
@@ -555,6 +888,60 @@ class TenderDataStore:
             return int(row[0]) if row and row[0] is not None else None
 
     def get_portal_status_snapshot(self, portal_name=None):
+        if self._use_v3:
+            params = []
+            portal_filter = ""
+            portal_key = str(portal_name or "").strip().lower()
+            if portal_key:
+                portal_filter = " AND LOWER(TRIM(COALESCE(portal_name, ''))) = ?"
+                params.append(portal_key)
+
+            with self._connect() as conn:
+                last_run = conn.execute(
+                    f"""
+                    SELECT portal_name, scope_mode, status, started_at, completed_at,
+                           output_file_path, output_file_type
+                    FROM scrape_runs
+                    WHERE 1=1 {portal_filter}
+                    ORDER BY id DESC
+                    LIMIT 1
+                    """,
+                    tuple(params),
+                ).fetchone()
+
+                last_full = conn.execute(
+                    f"""
+                    SELECT completed_at
+                    FROM scrape_runs
+                    WHERE LOWER(TRIM(COALESCE(status, ''))) LIKE 'scraping completed%'
+                      AND LOWER(TRIM(COALESCE(scope_mode, 'all'))) = 'all'
+                      {portal_filter}
+                    ORDER BY id DESC
+                    LIMIT 1
+                    """,
+                    tuple(params),
+                ).fetchone()
+
+                last_excel = conn.execute(
+                    f"""
+                    SELECT completed_at, output_file_path
+                    FROM scrape_runs
+                    WHERE TRIM(COALESCE(output_file_path, '')) <> ''
+                      AND LOWER(TRIM(COALESCE(output_file_type, ''))) = 'excel'
+                      {portal_filter}
+                    ORDER BY id DESC
+                    LIMIT 1
+                    """,
+                    tuple(params),
+                ).fetchone()
+
+            return {
+                "last_run": dict(last_run) if last_run else None,
+                "last_full_scrape_at": str(last_full[0]) if last_full and last_full[0] else None,
+                "last_excel_export_at": str(last_excel[0]) if last_excel and last_excel[0] else None,
+                "last_excel_export_path": str(last_excel[1]) if last_excel and len(last_excel) > 1 and last_excel[1] else None,
+            }
+
         params = []
         portal_filter = ""
         portal_key = str(portal_name or "").strip().lower()
@@ -627,6 +1014,13 @@ class TenderDataStore:
                 return
             
             params.append(int(run_id))
+            if self._use_v3:
+                conn.execute(
+                    f"UPDATE scrape_runs SET {', '.join(updates)} WHERE id = ?",
+                    params
+                )
+                return
+
             conn.execute(
                 f"UPDATE runs SET {', '.join(updates)} WHERE id = ?",
                 params
@@ -635,6 +1029,35 @@ class TenderDataStore:
     def finalize_run(self, run_id, status, expected_total, extracted_total, skipped_total, partial_saved=False, output_file_path=None, output_file_type=None):
         completed_at = datetime.now().isoformat(timespec="seconds")
         with self._connect() as conn:
+            if self._use_v3:
+                conn.execute(
+                    """
+                    UPDATE scrape_runs
+                    SET
+                        completed_at = ?,
+                        status = ?,
+                        expected_total_tenders = ?,
+                        extracted_total_tenders = ?,
+                        skipped_existing_total = ?,
+                        partial_saved = ?,
+                        output_file_path = ?,
+                        output_file_type = ?
+                    WHERE id = ?
+                    """,
+                    (
+                        completed_at,
+                        status,
+                        int(expected_total or 0),
+                        int(extracted_total or 0),
+                        int(skipped_total or 0),
+                        1 if partial_saved else 0,
+                        output_file_path,
+                        output_file_type,
+                        int(run_id)
+                    )
+                )
+                return
+
             conn.execute(
                 """
                 UPDATE runs
@@ -673,6 +1096,26 @@ class TenderDataStore:
         params = [now, str(source or "cancelled_page"), portal_key] + clean_ids
 
         with self._connect() as conn:
+            if self._use_v3:
+                cur = conn.execute(
+                    f"""
+                    UPDATE tender_items
+                    SET
+                        tender_status = 'cancelled',
+                        is_live = 0,
+                        updated_at = ?
+                    WHERE (
+                            lower(trim(coalesce(portal_slug, ''))) = ?
+                         OR portal_id IN (
+                                SELECT id FROM portals WHERE lower(trim(coalesce(portal_name, ''))) = ?
+                            )
+                    )
+                      AND trim(coalesce(tender_id_extracted, '')) IN ({placeholders})
+                    """,
+                    [now, portal_key, portal_key] + clean_ids,
+                )
+                return int(cur.rowcount or 0)
+
             cur = conn.execute(
                 f"""
                 UPDATE tenders

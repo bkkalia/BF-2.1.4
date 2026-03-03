@@ -924,6 +924,33 @@ class CLIRunner:
                 print(f"\n✅ Scraping completed successfully in {elapsed:.1f} seconds!")
                 print(f"📁 Output directory: {self.paths['output_dir']}")
 
+            # Run post-scrape script if configured (e.g. convert_data.py for Tender84)
+            post_script = (self.settings or {}).get("post_scrape_script", "") or ""
+            if post_script.strip():
+                import subprocess
+                self.logger.info(f"Running post-scrape script: {post_script}")
+                if not self.args.quiet:
+                    print(f"\n🔄 Running post-scrape script: {post_script}")
+                try:
+                    result = subprocess.run(
+                        [sys.executable, post_script.strip()],
+                        capture_output=True, text=True, timeout=300
+                    )
+                    if result.returncode == 0:
+                        self.logger.info(f"Post-scrape script completed successfully")
+                        if not self.args.quiet:
+                            print(f"✅ Post-scrape script done")
+                        if result.stdout.strip():
+                            self.logger.info(f"Script output: {result.stdout.strip()}")
+                    else:
+                        self.logger.warning(f"Post-scrape script exited with code {result.returncode}: {result.stderr.strip()}")
+                        if not self.args.quiet:
+                            print(f"⚠️  Post-scrape script failed (code {result.returncode}): {result.stderr.strip()[:200]}")
+                except subprocess.TimeoutExpired:
+                    self.logger.warning("Post-scrape script timed out after 300s")
+                except Exception as script_err:
+                    self.logger.warning(f"Post-scrape script error: {script_err}")
+
         except KeyboardInterrupt:
             self.logger.info("Operation cancelled by user")
             self._emit_event('cancelled', reason='keyboard_interrupt')

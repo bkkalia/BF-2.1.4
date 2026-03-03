@@ -714,6 +714,12 @@ def index() -> rx.Component:
                 rx.spacer(),
                 rx.vstack(
                     rx.text(DashboardState.current_time, size="2", color="gray.10"),
+                    rx.badge(
+                        DashboardState.kpi_scope_label,
+                        size="2",
+                        color_scheme="blue",
+                        variant="soft",
+                    ),
                     rx.cond(
                         DashboardState.lifecycle_filter == "Live",
                         rx.text("✓ Live Tenders Only", size="2", color="green.10", weight="bold"),

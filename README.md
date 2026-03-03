@@ -2,7 +2,7 @@
 
 > Desktop utility for multi-portal government tender scraping, tracking, and search with a centralized SQLite datastore and real-time Reflex web dashboard.
 
-**Current Version: v2.3.8** | [CHANGELOG](CHANGELOG.md) | [Repository](https://github.com/bkkalia/BF-2.1.4)
+**Current Version: v2.3.9** | [CHANGELOG](CHANGELOG.md) | [Repository](https://github.com/bkkalia/BF-2.1.4)
 
 ---
 
@@ -79,7 +79,7 @@ python -m reflex run
 # Open http://localhost:3000
 ```
 
-### Search Performance (v2.3.8)
+### Search Performance (v2.3.9)
 
 | Operation | Time |
 |-----------|------|
@@ -132,6 +132,7 @@ DB backups go to `db_backups/`:
 
 ## Version History (Recent)
 
+- **v2.3.9 (Mar 3, 2026):** V3-only database runtime enforcement, portal-scoped KPI summaries, live skipped/extended counter updates, and extended-deadline overcount reduction.
 - **v2.3.8 (Mar 2, 2026):** Dashboard scraping control updates — live skipped-tender aggregation fix, milestone notifications/status strip improvements, resume checkpoint robustness, and visuals module isolation under `dashboard_app/visuals/`.
 - **v2.3.7 (Feb 26, 2026):** Search performance overhaul — `closing_date_iso` indexed column, merged aggregation query (52ms → 15ms), thread-local DB connections, Live+Recent 30-day filter, project reorganization.
 - **v2.3.6 (Feb 22, 2026):** Reflex runtime & type fixes, `rx.select` crash fix, pyrightconfig.

@@ -9,6 +9,25 @@ Run the helper tool (from project root) to infer and update version dates:
 The tool makes a backup of CHANGELOG.md (CHANGELOG.md.bak.TIMESTAMP) before editing.
 -->
 
+## Version 2.3.9 (Mar 3, 2026) - V3-Only Database Runtime, Portal KPI Scope, and Live Counter Accuracy
+
+### ✨ New Features
+- **V3-only SQLite runtime enforcement** — consolidated active runtime to `database/blackforest_tenders.sqlite3` with schema-driven usage of `portals`, `tender_items`, and `scrape_runs`.
+- **Single active DB operational model** — archived mixed/legacy DB artifacts to backup locations so app runtime and dashboard read from one canonical SQLite file.
+
+### 🐛 Bug Fixes
+- **Portal-scoped KPI cards** — dashboard summary cards now reflect selected portal context instead of global-only totals.
+- **Live worker card counters** — skipped and extended counters now update continuously during scraping (not only at completion).
+- **Extended deadline overcounting** — reduced duplicate inflation by batch-level tender-ID dedupe in scrape progress aggregation.
+- **Dashboard summary stability** — repaired summary query/function path that previously caused homepage/filter load regression.
+
+### 🔧 Improvements
+- **V3 ingestion path in `tender_store.py`** — scraping persistence now writes to v3 tables in v3 mode and avoids legacy table writes.
+- **External conversion compatibility** — updated external converter (`convert_data.py`) to use v3 schema (`portals` + `tender_items`).
+- **Operational health checks** — added/used v3 health snapshots to verify `legacy_tables=0`, active DB path correctness, and live run status.
+
+---
+
 ## Version 2.3.8 (Mar 2, 2026) - Dashboard Scraping Reliability & Visual Module Isolation
 
 ### ✨ New Features

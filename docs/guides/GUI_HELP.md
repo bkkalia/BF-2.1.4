@@ -36,7 +36,7 @@ python main.py
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│ Black Forest Tender Scraper v2.3.8                   [_][□][X] │
+│ Black Forest Tender Scraper v2.3.9                   [_][□][X] │
 ├─────────────────────────────────────────────────────────────┤
 │ [By Department] [By Tender ID] [By Direct URL] [Settings] [Help] │
 ├─────────────────────────────────────────────────────────────┤
@@ -387,5 +387,5 @@ Output_Directory/
 ---
 
 **Last Updated**: March 2, 2026
-**Version**: 2.3.8
+**Version**: 2.3.9
 **GUI Mode**: Interactive tender scraping with visual progress monitoring

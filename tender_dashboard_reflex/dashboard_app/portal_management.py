@@ -327,6 +327,42 @@ def portal_table_row(portal: PortalRow) -> rx.Component:
             )
         )
     )
+
+    recency_label = rx.cond(
+        portal.days_since_update < 0,
+        "Unknown",
+        rx.cond(
+            portal.days_since_update == 0,
+            "Today",
+            rx.cond(
+                portal.days_since_update <= 2,
+                "Recent",
+                rx.cond(
+                    portal.days_since_update <= 7,
+                    "Older",
+                    "Stale",
+                )
+            )
+        )
+    )
+
+    recency_scheme = rx.cond(
+        portal.days_since_update < 0,
+        "gray",
+        rx.cond(
+            portal.days_since_update == 0,
+            "green",
+            rx.cond(
+                portal.days_since_update <= 2,
+                "blue",
+                rx.cond(
+                    portal.days_since_update <= 7,
+                    "orange",
+                    "red",
+                )
+            )
+        )
+    )
     
     return rx.table.row(
         rx.table.cell(
@@ -357,6 +393,9 @@ def portal_table_row(portal: PortalRow) -> rx.Component:
         ),
         rx.table.cell(
             rx.badge(portal.expired_tenders, color_scheme="gray", size="2")
+        ),
+        rx.table.cell(
+            rx.badge(recency_label, color_scheme=recency_scheme, size="2", variant="soft")
         ),
         rx.table.cell(
             rx.cond(
@@ -448,7 +487,7 @@ def portal_management_page() -> rx.Component:
             rx.hstack(
                 rx.vstack(
                     rx.heading("🌐 Portal Management", size="8", color="gray.12"),
-                    rx.text("View statistics and export data for all portals", size="3", color="gray.10"),
+                    rx.text("Track portal freshness, sort by recency, and export quickly", size="3", color="gray.10"),
                     align="start",
                     spacing="1",
                 ),
@@ -511,7 +550,7 @@ def portal_management_page() -> rx.Component:
             # Filters and actions
             rx.vstack(
                 # First row: Days filter and category filter
-                rx.hstack(
+                rx.grid(
                     # Sort controls
                     rx.hstack(
                         rx.text("Sort By:", size="2", weight="medium"),
@@ -539,6 +578,18 @@ def portal_management_page() -> rx.Component:
                         align="center",
                     ),
                     rx.hstack(
+                        rx.text("Freshness:", size="2", weight="medium"),
+                        rx.select(
+                            ["All", "Today (0d)", "Recent (1-2d)", "Older (3-7d)", "Stale (>7d)", "Unknown"],
+                            value=PortalManagementState.freshness_filter,
+                            on_change=PortalManagementState.set_freshness_filter,
+                            size="2",
+                            width="170px",
+                        ),
+                        align="center",
+                        spacing="2",
+                    ),
+                    rx.hstack(
                         rx.text("Updated in last:", size="2", weight="medium"),
                         rx.select(
                             ["0 (All)", "1", "7", "30", "90"],
@@ -563,6 +614,33 @@ def portal_management_page() -> rx.Component:
                         align="center",
                         spacing="2",
                     ),
+                    rx.hstack(
+                        rx.text("Search:", size="2", weight="medium"),
+                        rx.input(
+                            value=PortalManagementState.portal_search_query,
+                            on_change=PortalManagementState.set_portal_search_query,
+                            placeholder="Portal name or slug",
+                            size="2",
+                            width="220px",
+                        ),
+                        rx.cond(
+                            PortalManagementState.portal_search_query != "",
+                            rx.icon_button(
+                                rx.icon("x", size=14),
+                                on_click=PortalManagementState.clear_portal_search_query,
+                                size="2",
+                                variant="soft",
+                            ),
+                            rx.fragment(),
+                        ),
+                        align="center",
+                        spacing="2",
+                    ),
+                    columns="4",
+                    spacing="3",
+                    width="100%",
+                ),
+                rx.hstack(
                     rx.spacer(),
                     rx.button(
                         rx.icon("history"),
@@ -692,6 +770,12 @@ def portal_management_page() -> rx.Component:
                                     rx.tooltip(
                                         rx.text("Expired", size="2", weight="bold"),
                                         content="Past closing date tenders",
+                                    )
+                                ),
+                                rx.table.column_header_cell(
+                                    rx.tooltip(
+                                        rx.text("Freshness", size="2", weight="bold"),
+                                        content="Quick recency bucket: Today, Recent, Older, Stale, or Unknown",
                                     )
                                 ),
                                 rx.table.column_header_cell(

@@ -88,15 +88,28 @@ def setup_driver(initial_download_dir=None):
             global _CHROMEDRIVER_PATH
             with _CHROMEDRIVER_LOCK:
                 if _CHROMEDRIVER_PATH:
-                    logger.info("Using cached ChromeDriver path")
-                    service = Service(_CHROMEDRIVER_PATH)
-                else:
+                    if os.path.exists(_CHROMEDRIVER_PATH):
+                        logger.info(f"Using cached ChromeDriver path: {_CHROMEDRIVER_PATH}")
+                        service = Service(_CHROMEDRIVER_PATH)
+                    else:
+                        logger.warning(f"Cached ChromeDriver not found at {_CHROMEDRIVER_PATH}. Reinstalling...")
+                        _CHROMEDRIVER_PATH = None
+
+                if not _CHROMEDRIVER_PATH:
                     logger.info("Installing ChromeDriver using webdriver-manager...")
                     from webdriver_manager.chrome import ChromeDriverManager
                     try:
-                        _CHROMEDRIVER_PATH = ChromeDriverManager().install()
-                        service = Service(_CHROMEDRIVER_PATH)
-                        logger.info("ChromeDriver installed successfully")
+                        # Force verify to ensure valid path
+                        installed_path = ChromeDriverManager().install()
+                        if installed_path and os.path.exists(installed_path):
+                            _CHROMEDRIVER_PATH = installed_path
+                            service = Service(_CHROMEDRIVER_PATH)
+                            logger.info(f"ChromeDriver installed successfully at: {_CHROMEDRIVER_PATH}")
+                        else:
+                            logger.error(f"ChromeDriver installation returned invalid path: {installed_path}")
+                            _CHROMEDRIVER_PATH = None
+                            # Fallback to default service (system PATH)
+                            service = Service()
                     except Exception as version_error:
                         logger.warning(f"Could not install ChromeDriver: {version_error}")
                         _CHROMEDRIVER_PATH = None

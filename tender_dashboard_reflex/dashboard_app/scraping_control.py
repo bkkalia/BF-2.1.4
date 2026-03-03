@@ -92,10 +92,36 @@ class ScrapingControlState(rx.State):
     portal_search_query: str = ""
     show_portal_dashboard: bool = True
 
+    def _settings_file_candidates(self) -> List[Path]:
+        """Candidate locations for shared settings file."""
+        project_root = Path(__file__).resolve().parents[2]
+        dashboard_root = Path(__file__).resolve().parents[1]
+        return [
+            project_root / "portal_config_memory.json",
+            dashboard_root / "portal_config_memory.json",
+            Path.cwd() / "portal_config_memory.json",
+        ]
+
+    def _settings_file_path(self) -> Path:
+        """Canonical settings path with automatic migration from legacy locations."""
+        candidates = self._settings_file_candidates()
+        canonical = candidates[0]
+
+        for existing in candidates:
+            if existing.exists():
+                if existing != canonical and not canonical.exists():
+                    try:
+                        canonical.write_text(existing.read_text(encoding="utf-8"), encoding="utf-8")
+                    except Exception:
+                        return existing
+                return canonical
+
+        return canonical
+
     def on_load(self):
         """Load saved worker settings and portal status when page loads"""
         try:
-            config_path = Path("portal_config_memory.json")
+            config_path = self._settings_file_path()
             if config_path.exists():
                 with open(config_path, "r", encoding="utf-8") as f:
                     config_data = json.load(f)
@@ -173,9 +199,8 @@ class ScrapingControlState(rx.State):
         """Save worker count and names to persistent config"""
         try:
             # Save to portal_config_memory for persistence
-            from pathlib import Path
             import json
-            config_path = Path("portal_config_memory.json")
+            config_path = self._settings_file_path()
             
             config_data = {}
             if config_path.exists():
@@ -235,10 +260,28 @@ class ScrapingControlState(rx.State):
         try:
             import csv
             import sqlite3
+
+            project_root = Path(__file__).resolve().parents[2]
+            dashboard_root = Path(__file__).resolve().parents[1]
+
+            csv_candidates = [
+                project_root / "base_urls.csv",
+                dashboard_root / "base_urls.csv",
+                Path("base_urls.csv"),
+            ]
+
+            db_candidates = [
+                project_root / "database" / "blackforest_tenders.sqlite3",
+                project_root / "data" / "blackforest_tenders.sqlite3",
+                dashboard_root / "database" / "blackforest_tenders.sqlite3",
+                Path("database/blackforest_tenders.sqlite3"),
+            ]
+
+            csv_path = next((path for path in csv_candidates if path.exists()), csv_candidates[0])
+            db_path = next((path for path in db_candidates if path.exists()), db_candidates[0])
             
             # Read all configured portals
             portals_config = {}
-            csv_path = Path("base_urls.csv")
             if csv_path.exists():
                 with open(csv_path, 'r', encoding='utf-8') as f:
                     reader = csv.DictReader(f)
@@ -251,7 +294,6 @@ class ScrapingControlState(rx.State):
                             }
             
             # Get portal stats from database
-            db_path = Path("database/blackforest_tenders.sqlite3")
             portal_stats = {}
             if db_path.exists():
                 conn = sqlite3.connect(str(db_path))
@@ -274,6 +316,11 @@ class ScrapingControlState(rx.State):
                         'latest_run_id': latest_run or 0
                     }
                 conn.close()
+
+            logger.info(
+                f"Portal status load: csv='{csv_path}', db='{db_path}', "
+                f"configured_portals={len(portals_config)}, portal_stats={len(portal_stats)}"
+            )
             
             # Combine data
             status_list = []

@@ -745,6 +745,7 @@ def _bulk_filter_new_tenders(
     filtered_rows = []
     skipped_count = 0
     changed_closing_date_count = 0
+    seen_tender_ids_in_batch = set()
     
     # Determine column layout (3-col vs standard)
     sample_row = js_rows[0] if isinstance(js_rows[0], dict) else {'c': []}
@@ -775,6 +776,12 @@ def _bulk_filter_new_tenders(
             # Can't normalize, include row
             filtered_rows.append(row)
             continue
+
+        # Guard against repeated same tender ID in the same table snapshot.
+        # Without this, "changed/extended" can be over-counted for duplicate rows.
+        if tender_id_norm in seen_tender_ids_in_batch:
+            skipped_count += 1
+            continue
         
         # Check if exists
         if tender_id_norm in existing_tender_ids_normalized:
@@ -788,12 +795,14 @@ def _bulk_filter_new_tenders(
                 # Closing date changed - re-process
                 filtered_rows.append(row)
                 changed_closing_date_count += 1
+                seen_tender_ids_in_batch.add(tender_id_norm)
             else:
                 # Exact duplicate - skip
                 skipped_count += 1
         else:
             # New tender - include
             filtered_rows.append(row)
+            seen_tender_ids_in_batch.add(tender_id_norm)
     
     # Log results with comprehensive metrics
     if log_callback and isinstance(log_callback, type(lambda: None)):
@@ -1561,6 +1570,12 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
         for name in (kwargs.get("existing_department_names") or [])
         if str(name).strip()
     }
+    
+    # Output variables initialization
+    saved_output_path = None
+    saved_output_type = None
+    status_msg = "Initializing..."
+
     skipped_existing_total = 0
     closing_date_reprocessed_total = 0
     skipped_resume_departments = 0
@@ -1678,6 +1693,40 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
     except Exception as ds_err:
         log_callback(f"WARNING: SQLite datastore unavailable ({ds_err}). Falling back to direct file export.")
         log_callback(f"[PERSIST] SQLite DB path (unavailable): {sqlite_db_path}")
+
+    # Helper function to generate summary
+    def _prepare_summary(override_status=None):
+        nonlocal status_msg
+        final_status = override_status or status_msg
+        
+        extracted_ids = sorted({
+            str(item.get("Tender ID (Extracted)", "")).strip()
+            for item in all_tender_details
+            if str(item.get("Tender ID (Extracted)", "")).strip()
+        })
+
+        return {
+            "status": final_status,
+            "processed_departments": processed_depts,
+            "expected_total_tenders": expected_total_tenders,
+            "extracted_total_tenders": total_tenders,
+            "skipped_existing_total": skipped_existing_total,
+            "closing_date_reprocessed_total": closing_date_reprocessed_total,
+            "skipped_resume_departments": skipped_resume_departments,
+            "department_summaries": department_summaries,
+            "direct_nav_attempted": direct_nav_attempted,
+            "direct_nav_success": direct_nav_success,
+            "direct_nav_fallback_click": direct_nav_fallback_click,
+            "click_only_success": click_only_success,
+            "extracted_tender_ids": extracted_ids,
+            "processed_department_names": sorted(list(processed_department_names)),
+            "output_file_path": saved_output_path,
+            "output_file_type": saved_output_type,
+            "partial_saved": False,
+            "sqlite_db_path": sqlite_db_path,
+            "sqlite_run_id": sqlite_run_id
+        }
+
         data_store = None
         sqlite_run_id = None
 
@@ -2147,6 +2196,7 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
             with state_lock:
                 skipped_existing_total += skipped_existing
                 closing_date_reprocessed_total += changed_closing_date_count
+                current_total_after = total_tenders
                 if dept_name_norm:
                     processed_department_names.add(dept_name_norm)
 
@@ -2241,6 +2291,21 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
                 dept_total_time = time.time() - dept_start_time
                 log_callback(f"[{worker_label}] No tenders found/extracted from department {dept_name}")
                 log_callback(f"[{worker_label}] ⏱️ Department processing time: {dept_total_time:.2f}s")
+
+                if progress_callback:
+                    progress_details = (
+                        f"Dept {current_processed}/{total_depts}: {dept_name[:28]}... "
+                        f"| Scraped: {current_total_after} | Pending: {pending_depts}"
+                    )
+                    extra_info = {
+                        "dept_name": dept_name,
+                        "scraped_tenders": 0,
+                        "total_tenders": current_total_after,
+                        "pending_depts": pending_depts,
+                        "skipped_duplicates": skipped_existing,
+                        "closing_date_reprocessed": changed_closing_date_count,
+                    }
+                    progress_callback(current_processed, total_depts, progress_details, extra_info)
 
             if nav_mode == "direct":
                 log_callback(f"[{worker_label}] Direct navigation mode: skipping return-to-org and proceeding to next department")
