@@ -762,6 +762,7 @@ class PortalRow(BaseModel):
     expired_tenders: int = 0
     category: str = "State"  # Central, State, PSU
     days_since_update: int = -1  # Days since last update (-1 if unknown)
+    hours_since_update: int = -1  # Hours since last update (-1 if unknown)
 
 
 class ExportHistoryEntry(BaseModel):
@@ -833,7 +834,9 @@ class PortalManagementState(rx.State):
     sort_by_label: str = "Portal Name"  # Human-readable label matching sort_by
     sort_order: str = "asc"
     category_filter: str = "All"  # All, Central, State, PSU
-    freshness_filter: str = "All"  # All, Today (0d), Recent (1-2d), Older (3-7d), Stale (>7d), Unknown
+    freshness_filter: str = "All"  # All, Today, Last 3 Hours, Last 1 Hour, Custom
+    freshness_custom_hours: int = 6
+    last_refreshed_at: str = ""
     portal_search_query: str = ""
 
     # Mapping of display label -> internal sort field
@@ -876,20 +879,43 @@ class PortalManagementState(rx.State):
     def _matches_freshness_filter(self, portal: PortalRow) -> bool:
         """Check whether a portal matches the selected freshness bucket."""
         days = portal.days_since_update
+        hours = portal.hours_since_update
 
         if self.freshness_filter == "All":
             return True
-        if self.freshness_filter == "Today (0d)":
+        if self.freshness_filter == "Today":
             return days == 0
-        if self.freshness_filter == "Recent (1-2d)":
-            return 1 <= days <= 2
-        if self.freshness_filter == "Older (3-7d)":
-            return 3 <= days <= 7
-        if self.freshness_filter == "Stale (>7d)":
-            return days > 7
-        if self.freshness_filter == "Unknown":
-            return days < 0
+        if self.freshness_filter == "Last 3 Hours":
+            return 0 <= hours <= 3
+        if self.freshness_filter == "Last 1 Hour":
+            return 0 <= hours <= 1
+        if self.freshness_filter == "Custom":
+            return 0 <= hours <= max(1, int(self.freshness_custom_hours or 1))
         return True
+
+    @staticmethod
+    def _parse_last_updated(value: str) -> datetime | None:
+        text = str(value or "").strip()
+        if not text:
+            return None
+
+        normalized = text.replace(" ", "T")
+        if normalized.endswith("Z"):
+            normalized = normalized[:-1] + "+00:00"
+        try:
+            dt = datetime.fromisoformat(normalized)
+            if dt.tzinfo is not None:
+                dt = dt.astimezone().replace(tzinfo=None)
+            return dt
+        except Exception:
+            pass
+
+        for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M", "%Y-%m-%d"):
+            try:
+                return datetime.strptime(text, fmt)
+            except Exception:
+                continue
+        return None
 
     def _apply_portal_filters(self, all_rows: list[PortalRow]) -> list[PortalRow]:
         """Apply category, freshness, and search filters to portal rows."""
@@ -923,6 +949,8 @@ class PortalManagementState(rx.State):
             # Get portal stats
             portal_stats = db.get_portal_statistics(self.days_filter)
             
+            now_dt = datetime.now()
+
             # Convert to PortalRow objects
             all_rows = [
                 PortalRow(
@@ -934,7 +962,16 @@ class PortalManagementState(rx.State):
                     live_tenders=p["live_tenders"],
                     expired_tenders=p["expired_tenders"],
                     category=p.get("category", "State"),
-                    days_since_update=p.get("days_since_update", -1),
+                    days_since_update=(
+                        int((now_dt - parsed_dt).total_seconds() // 86400)
+                        if (parsed_dt := self._parse_last_updated(p.get("last_updated", ""))) is not None
+                        else p.get("days_since_update", -1)
+                    ),
+                    hours_since_update=(
+                        int((now_dt - parsed_dt).total_seconds() // 3600)
+                        if parsed_dt is not None
+                        else -1
+                    ),
                 )
                 for p in portal_stats
             ]
@@ -944,6 +981,7 @@ class PortalManagementState(rx.State):
             
             # Apply sorting
             self._apply_sort()
+            self.last_refreshed_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             
         except Exception as ex:
             self.show_toast_notification(f"Error loading portal data: {ex}", "error")
@@ -1442,6 +1480,14 @@ class PortalManagementState(rx.State):
     def set_freshness_filter(self, value: str):
         """Set freshness bucket filter and reload data."""
         self.freshness_filter = value or "All"
+        yield PortalManagementState.load_portal_statistics
+
+    def set_freshness_custom_hours(self, value: str):
+        """Set custom freshness window (hours) and reload data."""
+        try:
+            self.freshness_custom_hours = max(1, int(value))
+        except Exception:
+            self.freshness_custom_hours = 1
         yield PortalManagementState.load_portal_statistics
 
     def set_portal_search_query(self, value: str):

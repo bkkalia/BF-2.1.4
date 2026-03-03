@@ -404,8 +404,16 @@ def portal_table_row(portal: PortalRow) -> rx.Component:
                     rx.icon(status_icon, size=16, color=status_color),
                     rx.text(portal.last_updated[:16], size="2", color="gray.11"),
                     rx.cond(
-                        portal.days_since_update >= 0,
-                        rx.text(f"({portal.days_since_update}d)", size="1", color="gray.10"),
+                        portal.hours_since_update >= 0,
+                        rx.text(
+                            rx.cond(
+                                portal.hours_since_update < 24,
+                                f"({portal.hours_since_update}h)",
+                                f"({portal.days_since_update}d)",
+                            ),
+                            size="1",
+                            color="gray.10",
+                        ),
                         rx.fragment(),
                     ),
                     align="center",
@@ -488,6 +496,16 @@ def portal_management_page() -> rx.Component:
                 rx.vstack(
                     rx.heading("🌐 Portal Management", size="8", color="gray.12"),
                     rx.text("Track portal freshness, sort by recency, and export quickly", size="3", color="gray.10"),
+                    rx.text("Auto refresh: every 15 minutes", size="2", color="gray.9"),
+                    rx.cond(
+                        PortalManagementState.last_refreshed_at != "",
+                        rx.text(
+                            f"Last refreshed: {PortalManagementState.last_refreshed_at}",
+                            size="2",
+                            color="gray.10",
+                        ),
+                        rx.fragment(),
+                    ),
                     align="start",
                     spacing="1",
                 ),
@@ -498,6 +516,7 @@ def portal_management_page() -> rx.Component:
                     on_click=PortalManagementState.load_portal_statistics,
                     variant="soft",
                     size="2",
+                    id="portal-management-refresh-btn",
                 ),
                 width="100%",
                 align="center",
@@ -580,11 +599,28 @@ def portal_management_page() -> rx.Component:
                     rx.hstack(
                         rx.text("Freshness:", size="2", weight="medium"),
                         rx.select(
-                            ["All", "Today (0d)", "Recent (1-2d)", "Older (3-7d)", "Stale (>7d)", "Unknown"],
+                            ["All", "Today", "Last 3 Hours", "Last 1 Hour", "Custom"],
                             value=PortalManagementState.freshness_filter,
                             on_change=PortalManagementState.set_freshness_filter,
                             size="2",
                             width="170px",
+                        ),
+                        rx.cond(
+                            PortalManagementState.freshness_filter == "Custom",
+                            rx.hstack(
+                                rx.input(
+                                    value=str(PortalManagementState.freshness_custom_hours),
+                                    on_change=PortalManagementState.set_freshness_custom_hours,
+                                    type="number",
+                                    min=1,
+                                    size="2",
+                                    width="90px",
+                                ),
+                                rx.text("hours", size="2", color="gray.10"),
+                                align="center",
+                                spacing="1",
+                            ),
+                            rx.fragment(),
                         ),
                         align="center",
                         spacing="2",
@@ -866,6 +902,24 @@ def portal_management_page() -> rx.Component:
             spacing="4",
             width="100%",
             on_mount=PortalManagementState.load_portal_statistics,
+        ),
+        rx.script(
+            """
+            (() => {
+                const KEY = '__portalManagementAutoRefresh';
+                if (window[KEY]) {
+                    try { clearInterval(window[KEY]); } catch (_) {}
+                    window[KEY] = null;
+                }
+
+                window[KEY] = setInterval(() => {
+                    const btn = document.getElementById('portal-management-refresh-btn');
+                    if (btn) {
+                        btn.click();
+                    }
+                }, 15 * 60 * 1000);
+            })();
+            """
         ),
         width="100%",
         max_width="100%",

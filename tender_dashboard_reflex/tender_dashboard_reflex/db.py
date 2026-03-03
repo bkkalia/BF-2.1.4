@@ -581,6 +581,7 @@ def get_portal_statistics(days_filter: int = 0) -> list[dict[str, Any]]:
             date_filter = ""
             if days_filter > 0:
                 date_filter = f"AND p.last_updated >= date('now', '-{days_filter} days')"
+            cd_dt = _nic_dt_expr("ti.closing_at")
             
             query = f"""
                 SELECT 
@@ -589,8 +590,14 @@ def get_portal_statistics(days_filter: int = 0) -> list[dict[str, Any]]:
                     p.base_url,
                     p.last_updated,
                     COUNT(ti.id) as total_tenders,
-                    SUM(CASE WHEN ti.is_live = 1 THEN 1 ELSE 0 END) as live_tenders,
-                    SUM(CASE WHEN ti.is_live = 0 THEN 1 ELSE 0 END) as expired_tenders
+                    SUM(CASE
+                        WHEN ({cd_dt}) >= {_IST_NOW_DT_SQL} THEN 1
+                        WHEN ({cd_dt}) IS NULL THEN 1
+                        ELSE 0 END) as live_tenders,
+                    SUM(CASE
+                        WHEN ({cd_dt}) IS NOT NULL
+                             AND ({cd_dt}) < {_IST_NOW_DT_SQL} THEN 1
+                        ELSE 0 END) as expired_tenders
                 FROM portals p
                 LEFT JOIN tender_items ti ON p.portal_slug = ti.portal_slug
                 WHERE 1=1 {date_filter}

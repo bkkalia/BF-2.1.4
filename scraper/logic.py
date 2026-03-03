@@ -1578,6 +1578,7 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
 
     skipped_existing_total = 0
     closing_date_reprocessed_total = 0
+    changed_reprocessed_ids_global = set()
     skipped_resume_departments = 0
     expected_total_tenders = 0
     department_summaries = []
@@ -2048,6 +2049,7 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
             nonlocal skipped_resume_departments, direct_nav_attempted, direct_nav_success
             nonlocal direct_nav_fallback_click, click_only_success
             nonlocal total_nav_time, total_scrape_time, total_dept_processing_time
+            nonlocal changed_reprocessed_ids_global
 
             if stop_event and stop_event.is_set():
                 return
@@ -2193,12 +2195,7 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
             log_callback(f"[{worker_label}] ⏱️ Table scraping time: {scrape_time:.2f}s")
 
             expected_for_dept = int(str(dept_info.get('count_text', '0')).strip()) if str(dept_info.get('count_text', '')).strip().isdigit() else None
-            with state_lock:
-                skipped_existing_total += skipped_existing
-                closing_date_reprocessed_total += changed_closing_date_count
-                current_total_after = total_tenders
-                if dept_name_norm:
-                    processed_department_names.add(dept_name_norm)
+            effective_changed_closing_date_count = 0
 
             if tender_data:
                 dept_tender_count = len(tender_data)
@@ -2213,6 +2210,29 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
                     if normalize_tender_id(item)
                 }
                 with state_lock:
+                    skipped_existing_total += skipped_existing
+
+                    # Recompute changed-closing counts under lock against the latest shared
+                    # snapshot and dedupe globally by tender ID across all departments.
+                    dept_changed_ids = set()
+                    for item in tender_data:
+                        fresh_id = normalize_tender_id(item.get("Tender ID (Extracted)"))
+                        if not fresh_id:
+                            continue
+                        if fresh_id in changed_reprocessed_ids_global:
+                            continue
+
+                        previous = existing_tender_snapshot.get(fresh_id, {})
+                        previous_close = normalize_closing_date(previous.get("closing_date", ""))
+                        current_close = normalize_closing_date(item.get("Closing Date", ""))
+                        if current_close and previous_close and current_close != previous_close:
+                            dept_changed_ids.add(fresh_id)
+
+                    if dept_changed_ids:
+                        changed_reprocessed_ids_global.update(dept_changed_ids)
+                    effective_changed_closing_date_count = len(dept_changed_ids)
+                    closing_date_reprocessed_total += effective_changed_closing_date_count
+
                     total_tenders += dept_tender_count
                     current_total = total_tenders
                     all_tender_details.extend(tender_data)
@@ -2231,6 +2251,8 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
                         "scraped": dept_tender_count,
                         "resume_skipped": False
                     })
+                    if dept_name_norm:
+                        processed_department_names.add(dept_name_norm)
                 dept_info['processed'] = True
                 dept_info['tenders_found'] = dept_tender_count
                 dept_total_time = time.time() - dept_start_time
@@ -2245,8 +2267,8 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
                 log_callback(f"[{worker_label}] ⏱️ Total department time: {dept_total_time:.2f}s (Nav: {nav_time:.2f}s, Scrape: {scrape_time:.2f}s)")
                 if skipped_existing > 0:
                     log_callback(f"[{worker_label}] ⏭️  Skipped {skipped_existing} duplicates in {dept_name}")
-                if changed_closing_date_count > 0:
-                    log_callback(f"[{worker_label}] ↻ Reprocessed {changed_closing_date_count} due to closing date changes in {dept_name}")
+                if effective_changed_closing_date_count > 0:
+                    log_callback(f"[{worker_label}] ↻ Reprocessed {effective_changed_closing_date_count} due to closing date changes in {dept_name}")
 
                 if progress_callback:
                     progress_details = (
@@ -2259,7 +2281,7 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
                         "total_tenders": current_total,
                         "pending_depts": pending_depts,
                         "skipped_duplicates": skipped_existing,
-                        "closing_date_reprocessed": changed_closing_date_count
+                        "closing_date_reprocessed": effective_changed_closing_date_count
                     }
                     progress_callback(current_processed, total_depts, progress_details, extra_info)
                     
@@ -2275,17 +2297,21 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
                         "total_tenders": current_total,
                         "pending_depts": pending_depts,
                         "skipped_duplicates": skipped_existing,
-                        "closing_date_reprocessed": changed_closing_date_count
+                        "closing_date_reprocessed": effective_changed_closing_date_count
                     }
                 )
             else:
                 with state_lock:
+                    skipped_existing_total += skipped_existing
+                    current_total_after = total_tenders
                     department_summaries.append({
                         "department": dept_name,
                         "expected": expected_for_dept,
                         "scraped": 0,
                         "resume_skipped": False
                     })
+                    if dept_name_norm:
+                        processed_department_names.add(dept_name_norm)
                 dept_info['processed'] = True
                 dept_info['tenders_found'] = 0
                 dept_total_time = time.time() - dept_start_time
@@ -2303,7 +2329,7 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
                         "total_tenders": current_total_after,
                         "pending_depts": pending_depts,
                         "skipped_duplicates": skipped_existing,
-                        "closing_date_reprocessed": changed_closing_date_count,
+                        "closing_date_reprocessed": effective_changed_closing_date_count,
                     }
                     progress_callback(current_processed, total_depts, progress_details, extra_info)
 
