@@ -1254,6 +1254,11 @@ def _scrape_tender_details(
                                     log_callback(f"{prefix} ERROR - Row index out of range after refetch")
                                     break
                             except Exception as refetch_err:
+                                refetch_msg = str(refetch_err).lower()
+                                if INVALID_SESSION_ERROR in refetch_msg or SESSION_TIMEOUT_ERROR in refetch_msg:
+                                    log_callback(f"{prefix} ERROR - WebDriver session lost during row refetch: {refetch_err}")
+                                    logger.error(f"Session lost while refetching row {i} for {department_name}", exc_info=True)
+                                    return tender_data, skipped_existing_count, changed_closing_date_count
                                 log_callback(f"{prefix} ERROR - Failed to refetch table: {refetch_err}")
                                 break
                         else:
@@ -1261,6 +1266,11 @@ def _scrape_tender_details(
                             skipped_count += 1
                             break
                     except Exception as row_err:
+                        row_msg = str(row_err).lower()
+                        if INVALID_SESSION_ERROR in row_msg or SESSION_TIMEOUT_ERROR in row_msg:
+                            log_callback(f"{prefix} ERROR - WebDriver session lost during row parse. Aborting {department_name} details scan.")
+                            logger.error(f"Session lost while scraping tender detail row {i} for {department_name}", exc_info=True)
+                            return tender_data, skipped_existing_count, changed_closing_date_count
                         log_callback(f"{prefix} WARN - Unexpected row error: {row_err}")
                         logger.warning(f"Error tender detail row {i}", exc_info=True)
                         skipped_count += 1
@@ -1303,16 +1313,16 @@ def _scrape_tender_details(
                 return [], 0, 0
         except WebDriverException as wde: 
             # Check if it's a session error
-            if "invalid session id" in str(wde).lower() or "session deleted" in str(wde).lower():
+            if INVALID_SESSION_ERROR in str(wde).lower() or SESSION_TIMEOUT_ERROR in str(wde).lower():
                 log_callback(f"  ERROR: WebDriver session lost while scraping {department_name}: {wde}")
             else:
                 log_callback(f"  ERROR: WebDriverException scraping {department_name}: {wde}")
             logger.error(f"WebDriverException scraping details {department_name}", exc_info=True)
-            return [], 0
+            return [], 0, 0
         except Exception as e: 
             log_callback(f"  ERROR: Unexpected error scraping {department_name}: {e}")
             logger.error(f"Unexpected error scraping details {department_name}", exc_info=True)
-            return [], 0
+            return [], 0, 0
 
 
 def _click_on_page_back_button(driver, log_callback, org_list_url=None, stop_event=None):
@@ -2408,6 +2418,77 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
                 except Exception as nav_err:
                     log_callback(f"[{worker_label}] ERROR: Failed to navigate back (session may be lost): {nav_err}")
 
+        def _is_session_lost_error(err):
+            msg = str(err).lower()
+            return INVALID_SESSION_ERROR in msg or SESSION_TIMEOUT_ERROR in msg
+
+        def _create_replacement_driver(worker_label):
+            replacement_driver = None
+            try:
+                from scraper.driver_manager import setup_driver
+                replacement_driver = setup_driver(initial_download_dir=download_dir)
+
+                worker_org_url = str(base_url_config.get('OrgListURL') or base_url_config.get('BaseURL') or '').strip()
+                if worker_org_url:
+                    prime_ok = navigate_to_org_list(
+                        replacement_driver,
+                        lambda msg: log_callback(f"[{worker_label}] {msg}"),
+                        org_list_url=worker_org_url
+                    )
+                    primed_url = str(replacement_driver.current_url or '')
+                    invalid_primed = (
+                        primed_url.startswith('data:')
+                        or primed_url.startswith('about:blank')
+                        or primed_url.startswith('chrome-error://')
+                        or primed_url.startswith('edge-error://')
+                    )
+                    if not prime_ok or invalid_primed:
+                        raise RuntimeError(f"replacement driver not primed to org list ({primed_url[:80]})")
+
+                log_callback(f"[{worker_label}] ✓ Replacement browser ready")
+                return replacement_driver
+            except Exception as recreate_err:
+                log_callback(f"[{worker_label}] ❌ Failed to recreate browser after session loss: {recreate_err}")
+                if replacement_driver is not None:
+                    safe_quit_driver(replacement_driver, lambda _msg: None)
+                return None
+
+        def _process_department_with_recovery(active_driver, dept_info, worker_label="W1", max_recoveries=1):
+            recovery_attempts = 0
+            current_driver = active_driver
+
+            while True:
+                if stop_event and stop_event.is_set():
+                    return current_driver
+
+                _process_department_with_driver(current_driver, dept_info, worker_label)
+
+                if dept_info.get('processed'):
+                    return current_driver
+
+                session_lost = False
+                try:
+                    current_driver.current_url
+                except Exception as session_err:
+                    if _is_session_lost_error(session_err):
+                        session_lost = True
+                        log_callback(f"[{worker_label}] Session lost detected after department '{dept_info.get('name', 'Unknown')}'")
+
+                if not session_lost or recovery_attempts >= max_recoveries:
+                    return current_driver
+
+                replacement_driver = _create_replacement_driver(worker_label)
+                if replacement_driver is None:
+                    return current_driver
+
+                safe_quit_driver(current_driver, lambda _msg: None)
+                current_driver = replacement_driver
+                recovery_attempts += 1
+                log_callback(
+                    f"[{worker_label}] Retrying department '{dept_info.get('name', 'Unknown')}' "
+                    f"after browser recovery ({recovery_attempts}/{max_recoveries})"
+                )
+
         department_parallel_workers = 1
         active_workers = 1
         try:
@@ -2554,7 +2635,7 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
                 for dept_info in departments_to_scrape:
                     if stop_event and stop_event.is_set():
                         break
-                    _process_department_with_driver(driver, dept_info, "W1")
+                    driver = _process_department_with_recovery(driver, dept_info, "W1", max_recoveries=1)
                 return _prepare_summary()
 
             def _worker_loop(worker_index, label, assigned_departments, worker_driver):
@@ -2573,7 +2654,12 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
                         
                         # Process with dedicated driver (no locks, true parallel execution)
                         try:
-                            _process_department_with_driver(worker_driver, dept_task, label)
+                            worker_driver = _process_department_with_recovery(
+                                worker_driver,
+                                dept_task,
+                                label,
+                                max_recoveries=1
+                            )
                             departments_completed += 1
                             
                         except Exception as dept_err:
@@ -2646,7 +2732,7 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
             for dept_info in departments_to_scrape:
                 if stop_event and stop_event.is_set():
                     break
-                _process_department_with_driver(driver, dept_info, "W1")
+                driver = _process_department_with_recovery(driver, dept_info, "W1", max_recoveries=1)
 
         # Generate output file if we have data
         was_stopped = stop_event and stop_event.is_set()
