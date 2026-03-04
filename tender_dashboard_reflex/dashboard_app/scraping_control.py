@@ -168,6 +168,15 @@ class ScrapingControlState(rx.State):
         return len([w for w in self.workers if w.status != "idle"])
 
     @rx.var
+    def extended_unique_this_run(self) -> int:
+        """Unique changed tender IDs counted in the active run.
+        In resume mode, exclude checkpoint baseline so this reflects current run only.
+        """
+        if self.resume_mode:
+            return max(0, int(self.total_closing_date_reprocessed) - int(self.resume_base_closing_date_reprocessed))
+        return max(0, int(self.total_closing_date_reprocessed))
+
+    @rx.var
     def has_checkpoint(self) -> bool:
         return self.checkpoint_available
 
@@ -1485,6 +1494,17 @@ def progress_stats() -> rx.Component:
                 width="100%",
             ),
             rx.divider(),
+            rx.hstack(
+                rx.badge("Audit", color_scheme="indigo", variant="soft", size="1"),
+                rx.text(
+                    f"Unique changed tender IDs (this run): {ScrapingControlState.extended_unique_this_run}",
+                    size="2",
+                    color="gray.11",
+                ),
+                width="100%",
+                align="center",
+                spacing="2",
+            ),
             rx.vstack(
                 rx.hstack(
                     rx.text("All Workers Department Progress", size="2", weight="medium"),
