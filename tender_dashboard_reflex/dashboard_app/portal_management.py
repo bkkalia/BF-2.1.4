@@ -316,14 +316,14 @@ def portal_table_row(portal: PortalRow) -> rx.Component:
     
     status_icon = rx.cond(
         portal.days_since_update == 0,
-        "check-circle",
+        "check-check",
         rx.cond(
             portal.days_since_update <= 7,
             "clock",
             rx.cond(
                 portal.days_since_update <= 30,
-                "alert-circle",
-                "alert-triangle"
+                "message-circle-warning",
+                "triangle-alert"
             )
         )
     )

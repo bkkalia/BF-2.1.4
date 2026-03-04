@@ -313,7 +313,7 @@ def column_mapping_section() -> rx.Component:
                                         rx.cond(
                                             mapping.is_required,
                                             rx.hstack(
-                                                rx.icon("alert-circle", size=16, color="red.9"),
+                                                rx.icon("message-circle-warning", size=16, color="red.9"),
                                                 rx.text("Required", size="1", color="red.11", weight="medium"),
                                                 spacing="1",
                                             ),

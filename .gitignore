@@ -20,6 +20,7 @@ tender_dashboard_reflex/reflex_backend_err*.log
 portal_config_history.json
 batch_scrape_profiles.json
 batch_tender_manifest.json
+dashboard_runtime.env
 Tender_Downloads/
 Tender84_Exports/
 *.sqlite3

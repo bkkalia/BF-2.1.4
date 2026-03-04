@@ -648,7 +648,7 @@ def schema_visualization_tab() -> rx.Component:
             rx.box(
                 rx.vstack(
                     rx.hstack(
-                        rx.icon("check-circle", size=20, color="green.9"),
+                        rx.icon("check-check", size=20, color="green.9"),
                         rx.text("Active Tenders", size="2", weight="bold"),
                         spacing="2",
                     ),

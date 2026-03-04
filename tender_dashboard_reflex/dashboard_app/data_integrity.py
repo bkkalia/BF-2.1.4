@@ -864,7 +864,7 @@ def duplicate_records_table() -> rx.Component:
                 ),
                 rx.callout(
                     "✅ No duplicate tender IDs found",
-                    icon="check-circle",
+                    icon="check-check",
                     color_scheme="green",
                 ),
             ),
@@ -917,7 +917,7 @@ def missing_fields_table() -> rx.Component:
                 ),
                 rx.callout(
                     "✅ All records have closing dates",
-                    icon="check-circle",
+                    icon="check-check",
                     color_scheme="green",
                 ),
             ),
@@ -969,7 +969,7 @@ def cleanup_confirmation_dialog() -> rx.Component:
             rx.vstack(
                 rx.dialog.title(
                     rx.hstack(
-                        rx.icon("alert-triangle", size=20, color="orange"),
+                        rx.icon("triangle-alert", size=20, color="orange"),
                         rx.text("Confirm Cleanup Action", weight="bold"),
                         spacing="2",
                     )
@@ -1024,7 +1024,7 @@ def cleanup_confirmation_dialog() -> rx.Component:
                         ),
                         rx.callout(
                             f"⚠️ This will permanently delete {DataIntegrityState.cleanup_preview_count} record(s).",
-                            icon="alert-circle",
+                            icon="message-circle-warning",
                             color_scheme="orange",
                             size="1",
                         ),
@@ -1125,7 +1125,7 @@ def portal_detail_modal() -> rx.Component:
                                 ),
                                 rx.callout(
                                     "✓ No duplicate tender IDs found",
-                                    icon="check-circle",
+                                    icon="check-check",
                                     color_scheme="green",
                                 ),
                             ),
@@ -1182,7 +1182,7 @@ def portal_detail_modal() -> rx.Component:
                                 ),
                                 rx.callout(
                                     "✓ No invalid tender IDs found",
-                                    icon="check-circle",
+                                    icon="check-check",
                                     color_scheme="green",
                                 ),
                             ),
@@ -1239,7 +1239,7 @@ def portal_detail_modal() -> rx.Component:
                                 ),
                                 rx.callout(
                                     "✓ No missing closing dates found",
-                                    icon="check-circle",
+                                    icon="check-check",
                                     color_scheme="green",
                                 ),
                             ),
@@ -1421,7 +1421,7 @@ def portal_integrity_table() -> rx.Component:
                                         rx.cond(
                                             (portal.missing_tender_ids > 0) | (portal.missing_closing_dates > 0),
                                             rx.button(
-                                                rx.icon("x-circle", size=14),
+                                                rx.icon("x", size=14),
                                                 on_click=lambda p=portal.portal_name: DataIntegrityState.preview_cleanup_action("invalid", p),
                                                 variant="soft",
                                                 color_scheme="red",
@@ -1580,7 +1580,7 @@ def data_integrity_page() -> rx.Component:
                     "Missing Tender IDs",
                     DataIntegrityState.missing_tender_ids.to(str),
                     rx.cond(DataIntegrityState.missing_tender_ids == 0, "good", "error"),
-                    "alert-triangle",
+                    "triangle-alert",
                     "Records without valid IDs",
                 ),
                 metric_card(
