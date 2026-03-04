@@ -14,6 +14,8 @@ import concurrent.futures
 import socket
 import json
 import tempfile
+import subprocess
+import shutil
 import pandas as pd
 import logging
 from datetime import datetime
@@ -113,6 +115,146 @@ CRITICAL_ERROR_MSG = "CRITICAL"
 
 PORTAL_SKILL_NIC = "NIC_SCRAPING_SKILL"
 PORTAL_SKILL_GENERIC = "GENERIC_SCRAPING_SKILL"
+
+_LINUX_INHIBIT_PROCESS = None
+
+
+def _probe_tcp_connection(host, port=443, timeout=2.5):
+    try:
+        with socket.create_connection((host, int(port)), timeout=float(timeout)):
+            return True, "connected"
+    except Exception as err:
+        return False, str(err)
+
+
+def _log_session_loss_forensics(driver, base_url, log_callback, context="unknown", worker_label=None, err=None):
+    try:
+        prefix = f"[{worker_label}] " if worker_label else ""
+        stamp = datetime.now().isoformat(timespec="seconds")
+        err_text = str(err) if err is not None else "n/a"
+        err_text = err_text[:240]
+
+        current_url = "<unavailable>"
+        try:
+            current_url = str(driver.current_url or "")
+        except Exception as url_err:
+            current_url = f"<unavailable: {url_err}>"
+
+        host = (urlparse(str(base_url or "")).hostname or "").strip().lower()
+        dns_ip = ""
+        dns_err = ""
+        portal_tcp_ok = None
+        portal_tcp_detail = ""
+        if host:
+            try:
+                dns_ip = socket.gethostbyname(host)
+            except Exception as resolve_err:
+                dns_err = str(resolve_err)
+
+            probe_target = dns_ip or host
+            portal_tcp_ok, portal_tcp_detail = _probe_tcp_connection(probe_target, 443, timeout=2.5)
+
+        internet_tcp_ok, internet_tcp_detail = _probe_tcp_connection("1.1.1.1", 443, timeout=2.5)
+
+        log_callback(f"{prefix}[FORENSICS] SessionLost context={context} at {stamp}")
+        log_callback(f"{prefix}[FORENSICS] error={err_text}")
+        log_callback(f"{prefix}[FORENSICS] current_url={current_url}")
+        if host:
+            log_callback(
+                f"{prefix}[FORENSICS] portal_host={host} portal_ip={dns_ip or 'n/a'} "
+                f"dns_err={dns_err or 'none'} tcp_443={'ok' if portal_tcp_ok else 'fail'} "
+                f"detail={portal_tcp_detail or 'n/a'}"
+            )
+        else:
+            log_callback(f"{prefix}[FORENSICS] portal_host=n/a")
+        log_callback(
+            f"{prefix}[FORENSICS] internet_probe=1.1.1.1:443 "
+            f"{'ok' if internet_tcp_ok else 'fail'} detail={internet_tcp_detail or 'n/a'}"
+        )
+    except Exception as forensic_err:
+        log_callback(f"[FORENSICS] capture_failed: {forensic_err}")
+
+
+def _set_sleep_prevention(active, log_callback=None):
+    log_callback = log_callback or (lambda *_args, **_kwargs: None)
+    if os.name == "nt":
+        try:
+            import ctypes
+
+            es_continuous = 0x80000000
+            es_system_required = 0x00000001
+            flags = es_continuous | es_system_required if active else es_continuous
+            result = ctypes.windll.kernel32.SetThreadExecutionState(flags)
+            if result == 0:
+                log_callback("[POWER] Sleep prevention call failed")
+                return False
+            if active:
+                log_callback("[POWER] Sleep prevention enabled for scraping (Windows)")
+            else:
+                log_callback("[POWER] Sleep prevention released (Windows)")
+            return True
+        except Exception as power_err:
+            log_callback(f"[POWER] Sleep prevention unavailable on Windows: {power_err}")
+            return False
+
+    if sys.platform.startswith("linux"):
+        global _LINUX_INHIBIT_PROCESS
+
+        in_container = os.path.exists('/.dockerenv')
+        inhibit_bin = shutil.which("systemd-inhibit")
+
+        if not active:
+            if _LINUX_INHIBIT_PROCESS is not None:
+                try:
+                    _LINUX_INHIBIT_PROCESS.terminate()
+                    _LINUX_INHIBIT_PROCESS.wait(timeout=3)
+                except Exception:
+                    pass
+                _LINUX_INHIBIT_PROCESS = None
+                log_callback("[POWER] Sleep prevention released (Linux)")
+                return True
+            return False
+
+        if _LINUX_INHIBIT_PROCESS is not None and _LINUX_INHIBIT_PROCESS.poll() is None:
+            return True
+
+        if not inhibit_bin:
+            if in_container:
+                log_callback("[POWER] Linux container detected; host sleep cannot be controlled from container (systemd-inhibit not found)")
+            else:
+                log_callback("[POWER] systemd-inhibit not found; Linux sleep prevention disabled")
+            return False
+
+        try:
+            _LINUX_INHIBIT_PROCESS = subprocess.Popen(
+                [
+                    inhibit_bin,
+                    "--what=sleep",
+                    "--why=BlackForest scraping in progress",
+                    "bash",
+                    "-lc",
+                    "while true; do sleep 3600; done",
+                ],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            if _LINUX_INHIBIT_PROCESS.poll() is None:
+                if in_container:
+                    log_callback("[POWER] Linux container detected; inhibition started inside container namespace (host policy may still sleep)")
+                else:
+                    log_callback("[POWER] Sleep prevention enabled for scraping (Linux/systemd-inhibit)")
+                return True
+            _LINUX_INHIBIT_PROCESS = None
+            log_callback("[POWER] systemd-inhibit exited immediately; sleep prevention not active")
+            return False
+        except Exception as power_err:
+            _LINUX_INHIBIT_PROCESS = None
+            log_callback(f"[POWER] Sleep prevention unavailable on Linux: {power_err}")
+            return False
+
+    if active:
+        log_callback(f"[POWER] Sleep prevention not supported on platform: {sys.platform}")
+    return False
 
 
 def _sleep_with_stop(seconds, stop_event=None, step=0.2):
@@ -1257,6 +1399,13 @@ def _scrape_tender_details(
                                 refetch_msg = str(refetch_err).lower()
                                 if INVALID_SESSION_ERROR in refetch_msg or SESSION_TIMEOUT_ERROR in refetch_msg:
                                     log_callback(f"{prefix} ERROR - WebDriver session lost during row refetch: {refetch_err}")
+                                    _log_session_loss_forensics(
+                                        driver=driver,
+                                        base_url=base_url,
+                                        log_callback=log_callback,
+                                        context=f"row_refetch:{department_name}:{i}",
+                                        err=refetch_err,
+                                    )
                                     logger.error(f"Session lost while refetching row {i} for {department_name}", exc_info=True)
                                     return tender_data, skipped_existing_count, changed_closing_date_count
                                 log_callback(f"{prefix} ERROR - Failed to refetch table: {refetch_err}")
@@ -1269,6 +1418,13 @@ def _scrape_tender_details(
                         row_msg = str(row_err).lower()
                         if INVALID_SESSION_ERROR in row_msg or SESSION_TIMEOUT_ERROR in row_msg:
                             log_callback(f"{prefix} ERROR - WebDriver session lost during row parse. Aborting {department_name} details scan.")
+                            _log_session_loss_forensics(
+                                driver=driver,
+                                base_url=base_url,
+                                log_callback=log_callback,
+                                context=f"row_parse:{department_name}:{i}",
+                                err=row_err,
+                            )
                             logger.error(f"Session lost while scraping tender detail row {i} for {department_name}", exc_info=True)
                             return tender_data, skipped_existing_count, changed_closing_date_count
                         log_callback(f"{prefix} WARN - Unexpected row error: {row_err}")
@@ -1315,6 +1471,13 @@ def _scrape_tender_details(
             # Check if it's a session error
             if INVALID_SESSION_ERROR in str(wde).lower() or SESSION_TIMEOUT_ERROR in str(wde).lower():
                 log_callback(f"  ERROR: WebDriver session lost while scraping {department_name}: {wde}")
+                _log_session_loss_forensics(
+                    driver=driver,
+                    base_url=base_url,
+                    log_callback=log_callback,
+                    context=f"details_webdriver_exception:{department_name}",
+                    err=wde,
+                )
             else:
                 log_callback(f"  ERROR: WebDriverException scraping {department_name}: {wde}")
             logger.error(f"WebDriverException scraping details {department_name}", exc_info=True)
@@ -1604,6 +1767,8 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
     progress_callback = progress_callback or (lambda *args: None) 
     timer_callback = timer_callback or (lambda x: None)
     status_callback = status_callback or (lambda x: None)
+    prevent_sleep = bool(kwargs.get("prevent_sleep", True))
+    sleep_prevention_active = _set_sleep_prevention(True, log_callback=log_callback) if prevent_sleep else False
         
     start_time = datetime.now()
     total_tenders = 0
@@ -2199,6 +2364,14 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
                 log_callback(f"[{worker_label}] Current URL before processing: {current_url}")
             except Exception as session_err:
                 log_callback(f"[{worker_label}] Driver session lost before dept {dept_name}: {session_err}")
+                _log_session_loss_forensics(
+                    driver=active_driver,
+                    base_url=base_url_config.get('BaseURL', ''),
+                    log_callback=log_callback,
+                    context=f"before_department:{dept_name}",
+                    worker_label=worker_label,
+                    err=session_err,
+                )
                 return
 
             has_direct_url = bool(str(dept_info.get('direct_url', '')).strip())
@@ -2236,6 +2409,14 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
                 active_driver.current_url
             except Exception as session_err:
                 log_callback(f"[{worker_label}] Driver session lost after opening dept {dept_name}: {session_err}")
+                _log_session_loss_forensics(
+                    driver=active_driver,
+                    base_url=base_url_config.get('BaseURL', ''),
+                    log_callback=log_callback,
+                    context=f"after_open_department:{dept_name}",
+                    worker_label=worker_label,
+                    err=session_err,
+                )
                 return
 
             scrape_start_time = time.time()
@@ -2402,6 +2583,14 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
                 active_driver.current_url
             except Exception as session_err:
                 log_callback(f"[{worker_label}] Driver session lost before back navigation for {dept_name}: {session_err}")
+                _log_session_loss_forensics(
+                    driver=active_driver,
+                    base_url=base_url_config.get('BaseURL', ''),
+                    log_callback=log_callback,
+                    context=f"before_back_navigation:{dept_name}",
+                    worker_label=worker_label,
+                    err=session_err,
+                )
                 return
 
             back_clicked = _click_on_page_back_button(active_driver, log_callback, base_url_config.get('OrgListURL'), stop_event=stop_event)
@@ -2473,6 +2662,14 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
                     if _is_session_lost_error(session_err):
                         session_lost = True
                         log_callback(f"[{worker_label}] Session lost detected after department '{dept_info.get('name', 'Unknown')}'")
+                        _log_session_loss_forensics(
+                            driver=current_driver,
+                            base_url=base_url_config.get('BaseURL', ''),
+                            log_callback=log_callback,
+                            context=f"post_department_session_check:{dept_info.get('name', 'Unknown')}",
+                            worker_label=worker_label,
+                            err=session_err,
+                        )
 
                 if not session_lost or recovery_attempts >= max_recoveries:
                     return current_driver
@@ -3077,6 +3274,9 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
             "sqlite_db_path": sqlite_db_path,
             "sqlite_run_id": sqlite_run_id
         }
+    finally:
+        if sleep_prevention_active:
+            _set_sleep_prevention(False, log_callback=log_callback)
 
 def process_department(dept_info, base_url_config, download_dir, driver,
                       log_callback=None, progress_callback=None, stop_event=None):
