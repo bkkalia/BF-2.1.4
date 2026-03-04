@@ -173,6 +173,57 @@ def normalize_closing_date(value):
     return text
 
 
+def _parse_closing_date_for_compare(value):
+    """Parse heterogeneous closing-date formats into a datetime for stable comparison.
+    Returns None when parsing is not possible.
+    """
+    text = str(value or "").strip()
+    if not text:
+        return None
+
+    for fmt in (
+        "%d-%b-%Y %I:%M %p",   # 05-Mar-2026 09:00 AM
+        "%d/%b/%Y %I:%M %p",   # 05/Mar/2026 09:00 AM
+        "%d-%m-%Y %I:%M %p",   # 05-03-2026 09:00 AM
+        "%d/%m/%Y %I:%M %p",   # 05/03/2026 09:00 AM
+        "%d-%b-%Y %H:%M",      # 05-Mar-2026 09:00
+        "%d/%b/%Y %H:%M",      # 05/Mar/2026 09:00
+        "%Y-%m-%d %H:%M:%S",   # 2026-03-05 09:00:00
+        "%Y-%m-%d %H:%M",      # 2026-03-05 09:00
+        "%Y-%m-%d",            # 2026-03-05
+    ):
+        try:
+            dt = datetime.strptime(text, fmt)
+            if fmt == "%Y-%m-%d":
+                dt = dt.replace(hour=23, minute=59, second=59)
+            return dt
+        except ValueError:
+            continue
+
+    try:
+        text_iso = text.replace("Z", "+00:00")
+        dt2 = datetime.fromisoformat(text_iso)
+        if dt2.tzinfo is not None:
+            dt2 = dt2.astimezone().replace(tzinfo=None)
+        return dt2
+    except ValueError:
+        return None
+
+
+def _closing_dates_match(current_value, previous_value):
+    """Return True when two closing dates represent the same timestamp/date.
+    Falls back to normalized text equality when parsing fails.
+    """
+    cur_dt = _parse_closing_date_for_compare(current_value)
+    prev_dt = _parse_closing_date_for_compare(previous_value)
+    if cur_dt is not None and prev_dt is not None:
+        return cur_dt == prev_dt
+
+    cur_norm = normalize_closing_date(current_value)
+    prev_norm = normalize_closing_date(previous_value)
+    return bool(cur_norm and prev_norm and cur_norm == prev_norm)
+
+
 def extract_tender_id_from_title(title_text):
     """
     Canonical tender-id extraction.
@@ -786,12 +837,12 @@ def _bulk_filter_new_tenders(
         # Check if exists
         if tender_id_norm in existing_tender_ids_normalized:
             # Get closing dates for comparison
-            current_close = normalize_closing_date(cells[close_date_idx]) if close_date_idx < len(cells) else ""
+            current_close = cells[close_date_idx] if close_date_idx < len(cells) else ""
             prev_record = existing_tender_snapshot.get(tender_id_norm, {})
-            prev_close = normalize_closing_date(prev_record.get("closing_date", ""))
+            prev_close = prev_record.get("closing_date", "")
             
             # Check if closing date changed
-            if current_close and prev_close and current_close != prev_close:
+            if current_close and prev_close and not _closing_dates_match(current_close, prev_close):
                 # Closing date changed - re-process
                 filtered_rows.append(row)
                 changed_closing_date_count += 1
@@ -1085,12 +1136,12 @@ def _scrape_tender_details(
                                 quick_closing_date = ""
                                 if num_cells > 2:
                                     try:
-                                        quick_closing_date = normalize_closing_date(cells[2].text.strip())
+                                        quick_closing_date = cells[2].text.strip()
                                     except Exception:
                                         quick_closing_date = ""
                                 existing_record = existing_tender_snapshot.get(quick_id_normalized, {})
-                                existing_closing_date = normalize_closing_date(existing_record.get("closing_date", ""))
-                                if quick_closing_date and existing_closing_date and quick_closing_date != existing_closing_date:
+                                existing_closing_date = existing_record.get("closing_date", "")
+                                if quick_closing_date and existing_closing_date and not _closing_dates_match(quick_closing_date, existing_closing_date):
                                     changed_closing_date_count += 1
                                 else:
                                     skipped_existing_count += 1
@@ -1167,10 +1218,10 @@ def _scrape_tender_details(
                         # Final duplicate check (in case tender ID wasn't extractable earlier)
                         t_id_normalized = normalize_tender_id(t_id)
                         if t_id_normalized and t_id_normalized in existing_tender_ids_normalized:
-                            row_closing_date = normalize_closing_date(data.get("Closing Date", ""))
+                            row_closing_date = data.get("Closing Date", "")
                             existing_record = existing_tender_snapshot.get(t_id_normalized, {})
-                            existing_closing_date = normalize_closing_date(existing_record.get("closing_date", ""))
-                            if row_closing_date and existing_closing_date and row_closing_date != existing_closing_date:
+                            existing_closing_date = existing_record.get("closing_date", "")
+                            if row_closing_date and existing_closing_date and not _closing_dates_match(row_closing_date, existing_closing_date):
                                 changed_closing_date_count += 1
                             else:
                                 skipped_existing_count += 1
@@ -2223,9 +2274,9 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
                             continue
 
                         previous = existing_tender_snapshot.get(fresh_id, {})
-                        previous_close = normalize_closing_date(previous.get("closing_date", ""))
-                        current_close = normalize_closing_date(item.get("Closing Date", ""))
-                        if current_close and previous_close and current_close != previous_close:
+                        previous_close = previous.get("closing_date", "")
+                        current_close = item.get("Closing Date", "")
+                        if current_close and previous_close and not _closing_dates_match(current_close, previous_close):
                             dept_changed_ids.add(fresh_id)
 
                     if dept_changed_ids:
