@@ -1,0 +1,20 @@
+{
+  "worker_count": 4,
+  "worker_names": [
+    "Modi",
+    "Trump",
+    "RaGa",
+    "Putin"
+  ],
+  "js_batch_threshold": 300,
+  "js_batch_size": 500,
+  "webhook_enabled": false,
+  "completion_webhook_url": "",
+  "completion_webhook_secret": "",
+  "telegram_enabled": false,
+  "telegram_bot_token": "",
+  "telegram_chat_id": "",
+  "post_scrape_script_enabled": false,
+  "post_scrape_script": "",
+  "post_scrape_script_args": ""
+}

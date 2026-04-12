@@ -6,7 +6,7 @@ import reflex as rx
 from tender_dashboard_reflex.state import DashboardState, TenderRow
 from dashboard_app.portal_management import portal_management_page
 from dashboard_app.data_visualization import data_visualization_page
-from dashboard_app.scraping_control import scraping_control_page, scraping_settings_page
+from dashboard_app.scraping_control import scraping_control_page, scraping_settings_page, ScrapingControlState
 from dashboard_app.excel_import import excel_import_page
 from dashboard_app.data_integrity import data_integrity_page
 
@@ -788,7 +788,7 @@ app = rx.App()
 app.add_page(index, route="/", title="Tender Dashboard - Enhanced v2.1")
 app.add_page(portal_management_page, route="/portals", title="Portal Management")
 app.add_page(data_visualization_page, route="/data", title="Data Visualization")
-app.add_page(scraping_control_page, route="/scraping", title="Scraping Control")
-app.add_page(scraping_settings_page, route="/scraping-settings", title="Scraping Settings")
+app.add_page(scraping_control_page, route="/scraping", title="Scraping Control", on_load=ScrapingControlState.on_load)
+app.add_page(scraping_settings_page, route="/scraping-settings", title="Scraping Settings", on_load=ScrapingControlState.on_load)
 app.add_page(excel_import_page, route="/import", title="Import Data")
 app.add_page(data_integrity_page, route="/integrity", title="Data Integrity")

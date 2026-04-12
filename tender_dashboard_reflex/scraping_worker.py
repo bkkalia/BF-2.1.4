@@ -5,10 +5,12 @@ Imports existing scraper logic without modifications.
 
 import multiprocessing as mp
 import queue
+import socket
 import time
 import copy
 from pathlib import Path
 from typing import List, Callable, Dict, Optional, Set
+from urllib.parse import urlparse
 import sys
 
 
@@ -44,6 +46,19 @@ class ScrapingWorkerManager:
         self.portals_completed = 0
         self.total_skipped_existing = 0
         self.total_closing_date_reprocessed = 0
+
+        # Stop flag – set by stop() to terminate the monitoring loop
+        self._stop_requested = False
+
+    def stop(self):
+        """Signal the monitoring loop to exit and terminate all worker processes."""
+        self._stop_requested = True
+        for proc in self.workers:
+            try:
+                if proc.is_alive():
+                    proc.terminate()
+            except Exception:
+                pass
     
     def start_scraping(self, progress_callback: Callable[[Dict], None]):
         """Start scraping with worker processes."""
@@ -219,6 +234,14 @@ class ScrapingWorkerManager:
                         })
                 
                 except queue.Empty:
+                    # Check if stop was requested
+                    if self._stop_requested:
+                        progress_callback({
+                            "type": "log",
+                            "message": "⏹️ Stop requested — terminating workers..."
+                        })
+                        self.stop()
+                        break
                     # No results yet, continue monitoring
                     continue
                 except Exception as e:
@@ -346,6 +369,15 @@ class ScrapingWorkerManager:
             base_url = portal_config.get('BaseURL', '')
             resume_data = portal_config.get("_resume_data", {}) if isinstance(portal_config, dict) else {}
 
+            # Resolve portal hostname to IP for display in worker cards
+            portal_ip = ""
+            try:
+                hostname = urlparse(base_url).hostname or ""
+                if hostname:
+                    portal_ip = socket.gethostbyname(hostname)
+            except Exception:
+                portal_ip = ""
+
             processed_department_names: Set[str] = {
                 str(name).strip().lower()
                 for name in (resume_data.get("processed_departments") or [])
@@ -379,6 +411,7 @@ class ScrapingWorkerManager:
                 "worker_id": worker_id,
                 "status": "running",
                 "portal_name": portal_name,
+                "portal_ip": portal_ip,
                 "current_department": "Fetching departments..." if resume_dept_count == 0 else f"Resuming: {resume_dept_count} department(s) already completed",
                 "tenders_found": 0,
                 "expected_tenders": 0,

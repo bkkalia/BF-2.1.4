@@ -9,6 +9,38 @@ Run the helper tool (from project root) to infer and update version dates:
 The tool makes a backup of CHANGELOG.md (CHANGELOG.md.bak.TIMESTAMP) before editing.
 -->
 
+## Version 2.3.11 (Apr 12, 2026) - Dashboard Enhancement & Notification System
+
+### ✨ New Features
+- **Portal Status Dashboard — V3 schema fix** — `_load_portal_status()` now detects the active DB schema at runtime and queries `portals` + `tender_items` (V3) or `tenders` (V2 fallback), resolving the 0/0/0/0 display issue.
+- **Settings persistence** — `/scraping` and `/scraping-settings` pages now wire `on_load=ScrapingControlState.on_load`, so worker count, names, and batch thresholds survive page refresh.
+- **Real worker stop** — `stop_scraping()` now calls `process.terminate()` on every live worker process via a module-level `_active_manager` reference; previously it only set a flag.
+- **Portal IP in worker cards** — each worker resolves the portal hostname to an IP via `socket.gethostbyname()` and displays it as a tooltip badge, making IP conflicts across workers immediately visible.
+- **Completion Telegram notification** — configurable Bot Token + Chat ID; sends a formatted summary message to your phone when scraping finishes. Works locally and on cloud without changes.
+- **Completion webhook (cPanel / any server)** — POST JSON summary to a URL with optional `X-BF-Secret` header to prevent unauthorised triggers.
+- **Post-scrape local script runner** — auto-run any `.py` file with optional CLI args after scraping; exit code and stdout/stderr appear in the scraping log.
+- **Worker Configuration save button** — Save button added directly to the Worker Config panel on `/scraping` so changes are not lost on refresh.
+
+### 🐛 Bug Fixes
+- **Worker pause/resume/stop stubs replaced** — placeholder TODOs replaced with honest log messages and a working global stop path.
+
+### 🔧 Technical
+- All three notification features (Telegram, webhook, local script) are independently toggle-able with an enable switch; settings persist to `portal_config_memory.json`.
+- Cloud migration guidance embedded in each settings card UI.
+- `scraping_worker.py` gains `_stop_requested` flag, `stop()` method, and `socket`/`urlparse` imports for IP resolution.
+
+---
+
+## Version 2.3.10 (Apr 12, 2026) - Portal List Expansion
+
+### ✨ New Features
+- **Portal coverage expanded** — added `ePublish`, `BEL`, `Meghalaya`, `Mizoram`, `Nagaland`, and `Puducherry` entries to `base_urls.csv`.
+
+### 🐛 Bug Fixes
+- **CSV keyword consistency** — normalized keyword fields with commas so values are correctly preserved in the `Keyword` column.
+
+---
+
 ## Version 2.3.9 (Mar 3, 2026) - V3-Only Database Runtime, Portal KPI Scope, and Live Counter Accuracy
 
 ### ✨ New Features

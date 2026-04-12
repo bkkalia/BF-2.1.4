@@ -18,6 +18,10 @@ from .visuals.scraping_hero_visuals import hero_visual_section
 
 logger = logging.getLogger(__name__)
 
+# Module-level reference to the active ScrapingWorkerManager so that
+# stop_scraping() can terminate worker processes from a different async task.
+_active_manager = None
+
 
 class WorkerStatus(BaseModel):
     """Status for a single worker process."""
@@ -38,6 +42,7 @@ class WorkerStatus(BaseModel):
     progress_percent: int = 0
     skipped_existing: int = 0
     last_update: str = ""
+    portal_ip: str = ""
 
 
 class ScrapingControlState(rx.State):
@@ -92,6 +97,21 @@ class ScrapingControlState(rx.State):
     portal_search_query: str = ""
     show_portal_dashboard: bool = True
 
+    # Completion webhook – called once when scraping finishes
+    webhook_enabled: bool = False
+    completion_webhook_url: str = ""
+    completion_webhook_secret: str = ""   # sent as X-BF-Secret header
+
+    # Telegram notification
+    telegram_enabled: bool = False
+    telegram_bot_token: str = ""
+    telegram_chat_id: str = ""
+
+    # Local post-scrape script (full path to .py file, optional CLI args)
+    post_scrape_script_enabled: bool = False
+    post_scrape_script: str = ""
+    post_scrape_script_args: str = ""   # e.g. --mode data --env prod
+
     def _settings_file_candidates(self) -> List[Path]:
         """Candidate locations for shared settings file."""
         project_root = Path(__file__).resolve().parents[2]
@@ -133,6 +153,24 @@ class ScrapingControlState(rx.State):
                         self.js_batch_threshold = int(config_data["js_batch_threshold"])
                     if "js_batch_size" in config_data:
                         self.js_batch_size = int(config_data["js_batch_size"])
+                    if "webhook_enabled" in config_data:
+                        self.webhook_enabled = bool(config_data["webhook_enabled"])
+                    if "completion_webhook_url" in config_data:
+                        self.completion_webhook_url = str(config_data["completion_webhook_url"])
+                    if "completion_webhook_secret" in config_data:
+                        self.completion_webhook_secret = str(config_data["completion_webhook_secret"])
+                    if "telegram_enabled" in config_data:
+                        self.telegram_enabled = bool(config_data["telegram_enabled"])
+                    if "telegram_bot_token" in config_data:
+                        self.telegram_bot_token = str(config_data["telegram_bot_token"])
+                    if "telegram_chat_id" in config_data:
+                        self.telegram_chat_id = str(config_data["telegram_chat_id"])
+                    if "post_scrape_script_enabled" in config_data:
+                        self.post_scrape_script_enabled = bool(config_data["post_scrape_script_enabled"])
+                    if "post_scrape_script" in config_data:
+                        self.post_scrape_script = str(config_data["post_scrape_script"])
+                    if "post_scrape_script_args" in config_data:
+                        self.post_scrape_script_args = str(config_data["post_scrape_script_args"])
             
             # Load portal status from database
             self._load_portal_status()
@@ -223,6 +261,15 @@ class ScrapingControlState(rx.State):
             config_data["worker_names"] = self.worker_names[:]
             config_data["js_batch_threshold"] = self.js_batch_threshold
             config_data["js_batch_size"] = self.js_batch_size
+            config_data["webhook_enabled"] = self.webhook_enabled
+            config_data["completion_webhook_url"] = self.completion_webhook_url
+            config_data["completion_webhook_secret"] = self.completion_webhook_secret
+            config_data["telegram_enabled"] = self.telegram_enabled
+            config_data["telegram_bot_token"] = self.telegram_bot_token
+            config_data["telegram_chat_id"] = self.telegram_chat_id
+            config_data["post_scrape_script_enabled"] = self.post_scrape_script_enabled
+            config_data["post_scrape_script"] = self.post_scrape_script
+            config_data["post_scrape_script_args"] = self.post_scrape_script_args
             
             with open(config_path, "w", encoding="utf-8") as f:
                 json.dump(config_data, f, indent=2)
@@ -234,35 +281,143 @@ class ScrapingControlState(rx.State):
         except Exception as e:
             self.add_log(f"❌ Failed to save settings: {str(e)}")
 
+    def set_webhook_enabled(self, value: bool):
+        self.webhook_enabled = value
+
+    def set_completion_webhook_url(self, value: str):
+        self.completion_webhook_url = value.strip()
+
+    def set_completion_webhook_secret(self, value: str):
+        self.completion_webhook_secret = value.strip()
+
+    def set_telegram_enabled(self, value: bool):
+        self.telegram_enabled = value
+
+    def set_telegram_bot_token(self, value: str):
+        self.telegram_bot_token = value.strip()
+
+    def set_telegram_chat_id(self, value: str):
+        self.telegram_chat_id = value.strip()
+
+    def set_post_scrape_script_enabled(self, value: bool):
+        self.post_scrape_script_enabled = value
+
+    def set_post_scrape_script(self, value: str):
+        self.post_scrape_script = value.strip()
+
+    def set_post_scrape_script_args(self, value: str):
+        self.post_scrape_script_args = value
+
+    async def _fire_completion_webhook(self):
+        """POST a JSON summary to completion_webhook_url after scraping finishes."""
+        if not self.webhook_enabled:
+            return
+        url = self.completion_webhook_url.strip()
+        if not url:
+            return
+        payload = {
+            "event": "scraping_completed",
+            "timestamp": datetime.now().isoformat(),
+            "total_tenders": self.total_tenders_found,
+            "total_departments": self.total_departments_processed,
+            "total_portals": self.total_portals_completed,
+            "skipped_existing": self.total_skipped_existing,
+        }
+        try:
+            import urllib.request
+            import json as _json
+            data = _json.dumps(payload).encode("utf-8")
+            headers = {
+                "Content-Type": "application/json",
+                "User-Agent": "BlackForest-Webhook/1.0",
+            }
+            if self.completion_webhook_secret:
+                headers["X-BF-Secret"] = self.completion_webhook_secret
+            req = urllib.request.Request(url, data=data, headers=headers, method="POST")
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                self.add_log(f"🔔 Webhook delivered: HTTP {resp.status}")
+        except Exception as e:
+            self.add_log(f"⚠️ Webhook failed: {e}")
+
+    async def _fire_telegram_notification(self):
+        """Send a Telegram message via Bot API when scraping finishes."""
+        if not self.telegram_enabled:
+            return
+        token = self.telegram_bot_token.strip()
+        chat_id = self.telegram_chat_id.strip()
+        if not token or not chat_id:
+            return
+        ts = datetime.now().strftime("%d %b %Y, %H:%M")
+        text = (
+            f"✅ *Black Forest scraping completed*\n"
+            f"📅 {ts}\n"
+            f"📋 Portals: {self.total_portals_completed}\n"
+            f"🗂 Departments: {self.total_departments_processed}\n"
+            f"💼 Tenders found: {self.total_tenders_found:,}\n"
+            f"⏭ Skipped \\(duplicates\\): {self.total_skipped_existing:,}"
+        )
+        try:
+            import urllib.request
+            import urllib.parse
+            import json as _json
+            api_url = f"https://api.telegram.org/bot{token}/sendMessage"
+            payload = _json.dumps({
+                "chat_id": chat_id,
+                "text": text,
+                "parse_mode": "MarkdownV2",
+            }).encode("utf-8")
+            req = urllib.request.Request(
+                api_url,
+                data=payload,
+                headers={"Content-Type": "application/json"},
+                method="POST",
+            )
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                self.add_log("📱 Telegram notification sent")
+        except Exception as e:
+            self.add_log(f"⚠️ Telegram notification failed: {e}")
+
+    async def _run_post_scrape_script(self):
+        """Run the configured local Python script after scraping finishes."""
+        if not self.post_scrape_script_enabled:
+            return
+        script = self.post_scrape_script.strip()
+        if not script:
+            return
+        try:
+            import subprocess
+            import sys as _sys
+            import shlex
+            args = self.post_scrape_script_args.strip()
+            cmd = [_sys.executable, script]
+            if args:
+                cmd.extend(shlex.split(args))
+            label = script + (f" {args}" if args else "")
+            self.add_log(f"⚙️ Running post-scrape script: {label}")
+            result = await asyncio.to_thread(
+                lambda: subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+            )
+            if result.returncode == 0:
+                self.add_log(f"✅ Post-scrape script finished (exit 0)")
+                if result.stdout.strip():
+                    self.add_log(f"   stdout: {result.stdout.strip()[:300]}")
+            else:
+                self.add_log(f"⚠️ Post-scrape script exited {result.returncode}: {result.stderr.strip()[:300]}")
+        except Exception as e:
+            self.add_log(f"❌ Post-scrape script error: {e}")
+
     async def pause_worker(self, worker_id: int):
         """Pause a specific worker."""
-        try:
-            if self.worker_manager:
-                # TODO: Implement actual pause logic in worker manager
-                self.add_log(f"⏸️ Pausing worker {worker_id + 1}...")
-                await asyncio.sleep(0.1)
-        except Exception as e:
-            logger.error(f"Error pausing worker {worker_id}: {e}")
+        self.add_log(f"⏸️ Pause is not yet supported for individual workers.")
 
     async def resume_worker(self, worker_id: int):
         """Resume a paused worker."""
-        try:
-            if self.worker_manager:
-                # TODO: Implement actual resume logic in worker manager
-                self.add_log(f"▶️ Resuming worker {worker_id + 1}...")
-                await asyncio.sleep(0.1)
-        except Exception as e:
-            logger.error(f"Error resuming worker {worker_id}: {e}")
+        self.add_log(f"▶️ Resume is not yet supported for individual workers.")
 
     async def stop_worker(self, worker_id: int):
-        """Stop a specific worker."""
-        try:
-            if self.worker_manager:
-                # TODO: Implement actual stop logic in worker manager
-                self.add_log(f"⏹️ Stopping worker {worker_id + 1}...")
-                await asyncio.sleep(0.1)
-        except Exception as e:
-            logger.error(f"Error stopping worker {worker_id}: {e}")
+        """Stop a specific worker — currently stops all workers (global stop)."""
+        self.add_log(f"⏹️ Stopping all workers (per-worker stop not yet supported)...")
+        await self.stop_scraping()
 
     def _load_portal_status(self):
         """Load portal status from database and base_urls.csv"""
@@ -307,23 +462,50 @@ class ScrapingControlState(rx.State):
             if db_path.exists():
                 conn = sqlite3.connect(str(db_path))
                 cursor = conn.cursor()
-                results = cursor.execute("""
-                    SELECT 
-                        portal_name,
-                        COUNT(*) as tender_count,
-                        MAX(published_date) as latest_published,
-                        MAX(run_id) as latest_run_id
-                    FROM tenders
-                    WHERE portal_name IS NOT NULL
-                    GROUP BY portal_name
-                """).fetchall()
-                
+
+                # Detect V3 schema (portals + tender_items) vs V2 (tenders)
+                existing_tables = {
+                    r[0] for r in cursor.execute(
+                        "SELECT name FROM sqlite_master WHERE type='table'"
+                    ).fetchall()
+                }
+                use_v3 = "portals" in existing_tables and "tender_items" in existing_tables
+
+                if use_v3:
+                    results = cursor.execute("""
+                        SELECT
+                            p.portal_name,
+                            COUNT(ti.id) AS tender_count,
+                            MAX(ti.published_at) AS latest_published,
+                            MAX(sr.id) AS latest_run_id
+                        FROM portals p
+                        LEFT JOIN tender_items ti ON ti.portal_id = p.id
+                        LEFT JOIN scrape_runs sr
+                            ON LOWER(TRIM(COALESCE(sr.portal_name, ''))) =
+                               LOWER(TRIM(COALESCE(p.portal_name, '')))
+                        GROUP BY p.portal_name
+                    """).fetchall()
+                else:
+                    results = cursor.execute("""
+                        SELECT
+                            portal_name,
+                            COUNT(*) AS tender_count,
+                            MAX(published_date) AS latest_published,
+                            MAX(run_id) AS latest_run_id
+                        FROM tenders
+                        WHERE portal_name IS NOT NULL
+                        GROUP BY portal_name
+                    """).fetchall()
+
                 for portal, count, latest_pub, latest_run in results:
-                    portal_stats[portal] = {
-                        'tender_count': count,
-                        'latest_published': latest_pub or '',
-                        'latest_run_id': latest_run or 0
-                    }
+                    if portal:
+                        portal_stats[portal] = {
+                            'tender_count': count,
+                            'latest_published': latest_pub or '',
+                            'latest_run_id': latest_run or 0
+                        }
+                        # Also store by lowercase key for case-insensitive matching
+                        portal_stats[portal.lower()] = portal_stats[portal]
                 conn.close()
 
             logger.info(
@@ -334,7 +516,7 @@ class ScrapingControlState(rx.State):
             # Combine data
             status_list = []
             for portal_name, config in portals_config.items():
-                stats = portal_stats.get(portal_name, {})
+                stats = portal_stats.get(portal_name) or portal_stats.get(portal_name.lower(), {})
                 status_list.append({
                     'name': portal_name,
                     'url': config.get('url', ''),
@@ -831,6 +1013,7 @@ class ScrapingControlState(rx.State):
             self.add_log(f"ERROR resuming checkpoint: {str(e)}")
 
     async def _run_scraping_background(self):
+        global _active_manager
         try:
             import sys
             from pathlib import Path
@@ -849,6 +1032,9 @@ class ScrapingControlState(rx.State):
                 js_batch_threshold=self.js_batch_threshold,
                 js_batch_size=self.js_batch_size,
             )
+
+            # Store globally so stop_scraping() can terminate processes
+            _active_manager = manager
 
             self.add_log("Initializing worker processes...")
             yield
@@ -893,6 +1079,19 @@ class ScrapingControlState(rx.State):
             self.checkpoint_summary = ""
             self.portal_progress = {}
             self.add_log("Scraping completed!")
+
+            # Fire completion webhook (if enabled)
+            await self._fire_completion_webhook()
+
+            # Send Telegram notification (if enabled)
+            await self._fire_telegram_notification()
+
+            # Run local post-scrape script (if enabled)
+            if self.post_scrape_script_enabled and self.post_scrape_script:
+                await self._run_post_scrape_script()
+                yield
+
+            _active_manager = None
             yield
 
         except Exception as e:
@@ -900,6 +1099,7 @@ class ScrapingControlState(rx.State):
             self.is_scraping = False
             self.auto_refresh_enabled = False
             self._save_checkpoint()
+            _active_manager = None
             yield
 
     def _update_progress_sync(self, update_data: Dict):
@@ -940,6 +1140,7 @@ class ScrapingControlState(rx.State):
                         progress_percent=update_data.get("progress_percent", old_worker.progress_percent),
                         skipped_existing=update_data.get("skipped_existing", old_worker.skipped_existing),
                         last_update=datetime.now().isoformat(),
+                        portal_ip=update_data.get("portal_ip", old_worker.portal_ip),
                     )
 
                 portal_name = str(update_data.get("portal_name") or "").strip()
@@ -1013,12 +1214,22 @@ class ScrapingControlState(rx.State):
             self.add_log(f"ERROR in progress update: {str(e)}")
 
     async def stop_scraping(self):
+        global _active_manager
         if not self.is_scraping:
             return
 
         self.add_log("Stopping scraping...")
         self.is_scraping = False
         self.auto_refresh_enabled = False
+
+        # Terminate worker processes via the module-level manager reference
+        if _active_manager is not None:
+            try:
+                _active_manager.stop()
+            except Exception as e:
+                logger.warning(f"Error stopping workers: {e}")
+            _active_manager = None
+
         self._save_checkpoint()
 
     def clear_logs(self):
@@ -1326,6 +1537,29 @@ def worker_config_panel() -> rx.Component:
                 color_scheme="blue",
                 size="1",
             ),
+            rx.hstack(
+                rx.spacer(),
+                rx.cond(
+                    ScrapingControlState.settings_saved,
+                    rx.button(
+                        rx.icon("check", size=15),
+                        " Saved!",
+                        color_scheme="green",
+                        variant="soft",
+                        size="2",
+                        disabled=True,
+                    ),
+                    rx.button(
+                        rx.icon("save", size=15),
+                        " Save",
+                        on_click=ScrapingControlState.save_worker_settings,
+                        color_scheme="blue",
+                        variant="soft",
+                        size="2",
+                    ),
+                ),
+                width="100%",
+            ),
             spacing="3",
             align="start",
             width="100%",
@@ -1612,7 +1846,18 @@ def worker_status_cards() -> rx.Component:
                         ),
                         rx.cond(
                             worker.portal_name != "",
-                            rx.text(f"Portal: {worker.portal_name}", size="2", weight="medium", color="blue"),
+                            rx.hstack(
+                                rx.text(f"Portal: {worker.portal_name}", size="2", weight="medium", color="blue"),
+                                rx.cond(
+                                    worker.portal_ip != "",
+                                    rx.tooltip(
+                                        rx.badge(worker.portal_ip, color_scheme="gray", size="1", variant="outline"),
+                                        content="Resolved portal IP address",
+                                    ),
+                                ),
+                                spacing="2",
+                                align="center",
+                            ),
                         ),
                         rx.cond(
                             worker.dept_total > 0,
@@ -1764,6 +2009,218 @@ def scraping_settings_page() -> rx.Component:
                 ),
                 size="2",
                 width="100%",
+            ),
+            # ── Webhook card ──────────────────────────────────────────────
+            rx.card(
+                rx.vstack(
+                    rx.hstack(
+                        rx.vstack(
+                            rx.heading("🔔 Completion Webhook", size="4", weight="bold"),
+                            rx.text("Notify a web server (e.g. cPanel PHP) when scraping finishes.", size="2", color="gray"),
+                            align="start", spacing="0",
+                        ),
+                        rx.spacer(),
+                        rx.vstack(
+                            rx.switch(
+                                checked=ScrapingControlState.webhook_enabled,
+                                on_change=ScrapingControlState.set_webhook_enabled,
+                            ),
+                            rx.text(
+                                rx.cond(ScrapingControlState.webhook_enabled, "Enabled", "Disabled"),
+                                size="1",
+                                color=rx.cond(ScrapingControlState.webhook_enabled, "green", "gray"),
+                            ),
+                            align="center", spacing="1",
+                        ),
+                        width="100%", align="start",
+                    ),
+                    rx.divider(),
+                    rx.text("Webhook URL", size="2", weight="medium"),
+                    rx.input(
+                        value=ScrapingControlState.completion_webhook_url,
+                        on_change=ScrapingControlState.set_completion_webhook_url,
+                        placeholder="https://yoursite.com/bf_hook.php",
+                        disabled=~ScrapingControlState.webhook_enabled,
+                        width="100%",
+                    ),
+                    rx.text("Secret Token (X-BF-Secret header)", size="2", weight="medium"),
+                    rx.input(
+                        value=ScrapingControlState.completion_webhook_secret,
+                        on_change=ScrapingControlState.set_completion_webhook_secret,
+                        placeholder="Random string — prevents strangers from triggering your hook",
+                        type="password",
+                        disabled=~ScrapingControlState.webhook_enabled,
+                        width="100%",
+                    ),
+                    rx.callout(
+                        rx.vstack(
+                            rx.text("📌 Local use: PHP on cPanel reads the JSON body and emails you.", size="2", weight="medium"),
+                            rx.text(
+                                "PHP: check $_SERVER['HTTP_X_BF_SECRET'] matches your secret, then mail() the stats.",
+                                size="2",
+                            ),
+                            rx.text("☁️ Cloud use: same — your scraper server POSTs outbound to cPanel. Works identically.", size="2", weight="medium"),
+                            rx.text(
+                                "Payload: event, timestamp, total_tenders, total_departments, total_portals, skipped_existing.",
+                                size="2", color="gray",
+                            ),
+                            spacing="1", align="start",
+                        ),
+                        color_scheme="gray",
+                        size="1",
+                    ),
+                    rx.hstack(
+                        rx.spacer(),
+                        rx.cond(
+                            ScrapingControlState.settings_saved,
+                            rx.button(rx.icon("check", size=18), " Saved!", color_scheme="green", variant="soft", size="2", disabled=True),
+                            rx.button(rx.icon("save", size=18), " Save", on_click=ScrapingControlState.save_worker_settings, color_scheme="blue", size="2"),
+                        ),
+                        width="100%",
+                    ),
+                    spacing="2", align="start", width="100%",
+                ),
+                size="2", width="100%",
+            ),
+
+            # ── Telegram card ─────────────────────────────────────────────
+            rx.card(
+                rx.vstack(
+                    rx.hstack(
+                        rx.vstack(
+                            rx.heading("📱 Telegram Notification", size="4", weight="bold"),
+                            rx.text("Receive a Telegram message on your phone when scraping finishes.", size="2", color="gray"),
+                            align="start", spacing="0",
+                        ),
+                        rx.spacer(),
+                        rx.vstack(
+                            rx.switch(
+                                checked=ScrapingControlState.telegram_enabled,
+                                on_change=ScrapingControlState.set_telegram_enabled,
+                            ),
+                            rx.text(
+                                rx.cond(ScrapingControlState.telegram_enabled, "Enabled", "Disabled"),
+                                size="1",
+                                color=rx.cond(ScrapingControlState.telegram_enabled, "green", "gray"),
+                            ),
+                            align="center", spacing="1",
+                        ),
+                        width="100%", align="start",
+                    ),
+                    rx.divider(),
+                    rx.text("Bot Token", size="2", weight="medium"),
+                    rx.input(
+                        value=ScrapingControlState.telegram_bot_token,
+                        on_change=ScrapingControlState.set_telegram_bot_token,
+                        placeholder="123456789:ABCdef...  (get from @BotFather on Telegram)",
+                        type="password",
+                        disabled=~ScrapingControlState.telegram_enabled,
+                        width="100%",
+                    ),
+                    rx.text("Chat ID", size="2", weight="medium"),
+                    rx.input(
+                        value=ScrapingControlState.telegram_chat_id,
+                        on_change=ScrapingControlState.set_telegram_chat_id,
+                        placeholder="Numeric chat ID — see help below",
+                        disabled=~ScrapingControlState.telegram_enabled,
+                        width="100%",
+                    ),
+                    rx.callout(
+                        rx.vstack(
+                            rx.text("How to set up (2 min):", size="2", weight="medium"),
+                            rx.text("1. Message @BotFather → /newbot → copy the token above.", size="2"),
+                            rx.text("2. Send any message to your new bot.", size="2"),
+                            rx.text("3. Open api.telegram.org/bot<TOKEN>/getUpdates in browser → find id inside chat → paste as Chat ID.", size="2"),
+                            rx.text("☁️ Cloud use: Telegram is outbound HTTP — works exactly the same whether scraper is local or on a VPS. No changes needed when you migrate.", size="2", weight="medium"),
+                            spacing="1", align="start",
+                        ),
+                        color_scheme="blue",
+                        size="1",
+                    ),
+                    rx.hstack(
+                        rx.spacer(),
+                        rx.cond(
+                            ScrapingControlState.settings_saved,
+                            rx.button(rx.icon("check", size=18), " Saved!", color_scheme="green", variant="soft", size="2", disabled=True),
+                            rx.button(rx.icon("save", size=18), " Save", on_click=ScrapingControlState.save_worker_settings, color_scheme="blue", size="2"),
+                        ),
+                        width="100%",
+                    ),
+                    spacing="2", align="start", width="100%",
+                ),
+                size="2", width="100%",
+            ),
+
+            # ── Post-scrape script card ───────────────────────────────────
+            rx.card(
+                rx.vstack(
+                    rx.hstack(
+                        rx.vstack(
+                            rx.heading("⚙️ Post-Scrape Script", size="4", weight="bold"),
+                            rx.text("Auto-run a local Python script when scraping finishes.", size="2", color="gray"),
+                            align="start", spacing="0",
+                        ),
+                        rx.spacer(),
+                        rx.vstack(
+                            rx.switch(
+                                checked=ScrapingControlState.post_scrape_script_enabled,
+                                on_change=ScrapingControlState.set_post_scrape_script_enabled,
+                            ),
+                            rx.text(
+                                rx.cond(ScrapingControlState.post_scrape_script_enabled, "Enabled", "Disabled"),
+                                size="1",
+                                color=rx.cond(ScrapingControlState.post_scrape_script_enabled, "green", "gray"),
+                            ),
+                            align="center", spacing="1",
+                        ),
+                        width="100%", align="start",
+                    ),
+                    rx.divider(),
+                    rx.text("Script Path (full absolute path to .py file)", size="2", weight="medium"),
+                    rx.input(
+                        value=ScrapingControlState.post_scrape_script,
+                        on_change=ScrapingControlState.set_post_scrape_script,
+                        placeholder=r"G:\My Drive\0dev\t84\xscripts\convert_data.py",
+                        disabled=~ScrapingControlState.post_scrape_script_enabled,
+                        width="100%",
+                    ),
+                    rx.text("CLI Arguments (optional flags passed to the script)", size="2", weight="medium"),
+                    rx.input(
+                        value=ScrapingControlState.post_scrape_script_args,
+                        on_change=ScrapingControlState.set_post_scrape_script_args,
+                        placeholder="e.g.  --mode data   or   --env prod --full",
+                        disabled=~ScrapingControlState.post_scrape_script_enabled,
+                        width="100%",
+                    ),
+                    rx.callout(
+                        rx.vstack(
+                            rx.text("How it works:", size="2", weight="medium"),
+                            rx.text("Runs as: python <script_path> <args>  — uses the same Python as the dashboard.", size="2"),
+                            rx.text("Timeout: 5 min. Exit code and first 300 chars of output appear in the scraping log.", size="2"),
+                            rx.text("Your convert_data.py can import from this project's SQLite normally — path is resolved on the machine running the dashboard.", size="2"),
+                            rx.text(
+                                "☁️ Cloud note: this only works when BOTH projects run on the same cloud server. "
+                                "If they are on different machines, use the Webhook (cPanel PHP can exec() your convert script) "
+                                "or Telegram to get notified and run manually.",
+                                size="2", weight="medium",
+                            ),
+                            spacing="1", align="start",
+                        ),
+                        color_scheme="green",
+                        size="1",
+                    ),
+                    rx.hstack(
+                        rx.spacer(),
+                        rx.cond(
+                            ScrapingControlState.settings_saved,
+                            rx.button(rx.icon("check", size=18), " Saved!", color_scheme="green", variant="soft", size="2", disabled=True),
+                            rx.button(rx.icon("save", size=18), " Save", on_click=ScrapingControlState.save_worker_settings, color_scheme="blue", size="2"),
+                        ),
+                        width="100%",
+                    ),
+                    spacing="2", align="start", width="100%",
+                ),
+                size="2", width="100%",
             ),
             rx.card(
                 rx.vstack(

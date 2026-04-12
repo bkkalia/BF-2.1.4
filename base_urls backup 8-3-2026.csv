@@ -1,6 +1,6 @@
 Name,BaseURL,Keyword
-CPPP1 eProcure,https://eprocure.gov.in/eprocure/app,"Central Public Procurement Portal, eProcure"
-CPPP2 eTenders,https://etenders.gov.in/eprocure/app,"Central Public Procurement Portal 2, eTenders"
+CPPP1 eProcure,https://eprocure.gov.in/eprocure/app,Central Public Procurement Portal
+CPPP2 eTenders,https://etenders.gov.in/eprocure/app,Central Public Procurement Portal 2
 DefProc,https://defproc.gov.in/nicgep/app,Defence eProcurement
 NRRDA,https://pmgsytenders.gov.in/nicgep/app,PMGSY eProcurement
 Arunachal Pradesh,https://arunachaltenders.gov.in/nicgep/app,Arunachal Pradesh
@@ -27,17 +27,3 @@ West Bengal,https://wbtenders.gov.in/nicgep/app,West Bengal
 CIL,https://coalindiatenders.nic.in/nicgep/app,Coal India Limited
 HSL,https://eprocurehsl.nic.in/nicgep/app,Hindustan Shipyard Limited
 IOCL,https://iocletenders.nic.in/nicgep/app,Indian Oil Corporation
-Lakshadweep,https://tendersutl.gov.in/nicgep/app,Lakshadweep UT
-NTPC,https://eprocurentpc.nic.in/nicgep/app,NTPC Limited
-Daman and Diu,https://ddtenders.gov.in/nicgep/app,Daman and Diu
-Andaman Nicobar,https://eprocure.andamannicobar.gov.in/nicgep/app,Andaman and Nicobar Islands
-Assam,https://assamtenders.gov.in/nicgep/app,Assam
-Goa,https://eprocure.goa.gov.in/nicgep/app,Goa
-BHEL,https://eprocurebhel.co.in/nicgep/app,Bharat Heavy Electricals Limited
-CPCL,https://cpcletenders.nic.in/nicgep/app,Chennai Petroleum Corporation Limited
-ePublish,https://eprocure.gov.in/epublish/app,"ePublish, publish"
-BEL,https://eprocurebel.co.in/nicgep/app,"BEL, Bharat Electronics"
-Meghalaya,https://meghalayatenders.gov.in/nicgep/app,Meghalaya
-Mizoram,https://mizoramtenders.gov.in/nicgep/app,Mizoram
-Nagaland,https://nagalandtenders.gov.in/nicgep/app,Nagaland
-Puducherry,https://pudutenders.gov.in/nicgep/app,Puducherry
