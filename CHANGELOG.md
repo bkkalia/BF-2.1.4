@@ -11,6 +11,18 @@ The tool makes a backup of CHANGELOG.md (CHANGELOG.md.bak.TIMESTAMP) before edit
 
 ## Version 2.3.11 (Apr 12, 2026) - Dashboard Enhancement & Notification System
 
+## Version 2.3.12 (Apr 23, 2026) - Selenium Driver Startup Reliability
+
+### 🐛 Bug Fixes
+- **Windows ChromeDriver startup race fix** — added a dedicated driver creation lock in `scraper/driver_manager.py` to serialize `webdriver.Chrome()` startup and prevent `PermissionError: [WinError 32]` / `chromedriver.exe` lock conflicts during multi-worker initialization.
+
+### 🔧 Technical
+- Driver binary resolution remains cached under `_CHROMEDRIVER_LOCK`; actual process creation is now guarded by `_DRIVER_CREATION_LOCK` for safe concurrent worker startup on Windows.
+
+---
+
+## Version 2.3.11 (Apr 12, 2026) - Dashboard Enhancement & Notification System
+
 ### ✨ New Features
 - **Portal Status Dashboard — V3 schema fix** — `_load_portal_status()` now detects the active DB schema at runtime and queries `portals` + `tender_items` (V3) or `tenders` (V2 fallback), resolving the 0/0/0/0 display issue.
 - **Settings persistence** — `/scraping` and `/scraping-settings` pages now wire `on_load=ScrapingControlState.on_load`, so worker count, names, and batch thresholds survive page refresh.

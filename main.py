@@ -1,12 +1,12 @@
 """
-Cloud84 Tender Scraper v2.3.11
+Cloud84 Tender Scraper v2.3.12
 DESKTOP APPLICATION - Python Tkinter GUI
 Purpose: Web scraping tender/bid data from government portals
 Tech Stack: Python, Tkinter, Selenium, pandas
 NOT a web application - NO JavaScript/HTML/CSS
 """
 
-# main.py v2.3.11
+# main.py v2.3.12
 # Main entry point for the Cloud84 Tender Scraper application.
 
 # Handle readline compatibility issues that can occur in CLI mode

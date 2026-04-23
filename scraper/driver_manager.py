@@ -27,6 +27,7 @@ logger = logging.getLogger(__name__)
 
 _CHROMEDRIVER_PATH = None
 _CHROMEDRIVER_LOCK = threading.Lock()
+_DRIVER_CREATION_LOCK = threading.Lock()  # Serializes webdriver.Chrome() to prevent WinError 32 on Windows
 
 # --- Configuration ---
 USE_UNDETECTED = UNDETECTED_AVAILABLE # Default: use UC if available
@@ -119,7 +120,8 @@ def setup_driver(initial_download_dir=None):
             service = Service()
 
         logger.info("Creating Chrome WebDriver instance...")
-        driver_instance = webdriver.Chrome(service=service, options=options)
+        with _DRIVER_CREATION_LOCK:
+            driver_instance = webdriver.Chrome(service=service, options=options)
 
         # Execute script to remove webdriver property
         driver_instance.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
