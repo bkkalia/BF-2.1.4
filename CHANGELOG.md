@@ -9,7 +9,20 @@ Run the helper tool (from project root) to infer and update version dates:
 The tool makes a backup of CHANGELOG.md (CHANGELOG.md.bak.TIMESTAMP) before editing.
 -->
 
-## Version 2.3.11 (Apr 12, 2026) - Dashboard Enhancement & Notification System
+## Version 2.3.13 (Apr 24, 2026) - Transport Timeout Fix & Smoke Test
+
+### 🐛 Bug Fixes
+- **WebDriver transport timeout detection and recovery** — added `_bf_transport_unresponsive` flag and detection logic in `scraper/actions.py` to catch `ReadTimeoutError` from urllib3 when ChromeDriver HTTP server stalls during `.click()` operations. Driver marked for recovery and browser session recreated automatically.
+- **Enhanced recovery loop** — modified `scraper/logic.py::_process_department_with_recovery()` to check transport flag and trigger browser replacement on timeout detection.
+
+### ✅ Testing
+- **New smoke test script** — created `scripts/smoke_driver_test.py` for quick validation of scraper fixes against real portal data (small department subset, no main DB writes).
+- **Temp directory cleanup fix** — added `ignore_cleanup_errors=True` to prevent `PermissionError` during temporary directory cleanup when SQLite locks files.
+
+### 📝 Documentation
+- **Scraping pipeline guide** — added `SCRAPING_PIPELINE_STEPS.md` for AI agents, mapping 15 data transformation steps, file locations, and extension points for new version development.
+
+## Version 2.3.12 (Apr 23, 2026) - Selenium Driver Startup Reliability
 
 ## Version 2.3.12 (Apr 23, 2026) - Selenium Driver Startup Reliability
 

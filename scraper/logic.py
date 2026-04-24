@@ -1,5 +1,3 @@
-print("scraper.logic module imported")  # DEBUG
-
 # Add project root to sys.path
 import os, sys
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -2650,12 +2648,31 @@ def run_scraping_logic(departments_to_scrape, base_url_config, download_dir,
                 if stop_event and stop_event.is_set():
                     return current_driver
 
+                # Clear stale transport flags before each department attempt.
+                try:
+                    setattr(current_driver, "_bf_transport_unresponsive", False)
+                except Exception:
+                    pass
+
                 _process_department_with_driver(current_driver, dept_info, worker_label)
 
                 if dept_info.get('processed'):
                     return current_driver
 
                 session_lost = False
+                transport_unresponsive = False
+                try:
+                    transport_unresponsive = bool(getattr(current_driver, "_bf_transport_unresponsive", False))
+                except Exception:
+                    transport_unresponsive = False
+
+                if transport_unresponsive:
+                    session_lost = True
+                    log_callback(
+                        f"[{worker_label}] Driver transport timeout detected for department "
+                        f"'{dept_info.get('name', 'Unknown')}'. Triggering browser recovery."
+                    )
+
                 try:
                     current_driver.current_url
                 except Exception as session_err:

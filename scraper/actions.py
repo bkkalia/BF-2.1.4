@@ -5,6 +5,7 @@ import time
 import logging
 import os
 import base64
+from urllib3.exceptions import ReadTimeoutError
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import (
@@ -20,6 +21,31 @@ from config import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def _is_driver_transport_timeout(err):
+    """Return True when the WebDriver HTTP transport appears unresponsive."""
+    msg = str(err or "").lower()
+    if "read timed out" in msg:
+        return True
+    if "httpconnectionpool(host='localhost'" in msg and "timed out" in msg:
+        return True
+    if "max retries exceeded with url" in msg and "localhost" in msg:
+        return True
+    return False
+
+
+def _mark_driver_transport_unresponsive(driver, description, err):
+    """Tag driver so orchestration can recreate browser and retry the same unit of work."""
+    try:
+        setattr(driver, "_bf_transport_unresponsive", True)
+        logger.error(
+            "Driver marked unresponsive during '%s': %s",
+            description,
+            str(err).splitlines()[0],
+        )
+    except Exception:
+        logger.debug("Unable to set _bf_transport_unresponsive flag", exc_info=True)
 
 def safe_extract_text(driver, locator, description, timeout_multiplier=1.0, default="", quick_mode=False):
     """Safely extracts text using a locator, waiting briefly for visibility."""
@@ -96,8 +122,23 @@ def click_element(driver, locator, description, scroll=True, timeout_multiplier=
             else: driver.execute_script("arguments[0].click();", element)
             logger.info(f"{action_type.capitalize()} click successful for '{description}'."); time.sleep(POST_ACTION_WAIT if attempt == 0 else STABILIZE_WAIT); return True
         except (TimeoutException, ElementNotInteractableException, StaleElementReferenceException) as e: last_exception = e; logger.warning(f"Attempt {attempt+1} ({action_type}) click failed for '{description}': {type(e).__name__}")
-        except WebDriverException as e: last_exception = e; logger.error(f"WebDriver error during {action_type} click {attempt+1} for '{description}': {e}"); break
-        except Exception as e: last_exception = e; logger.error(f"Unexpected error during {action_type} click {attempt+1} for '{description}': {e}", exc_info=True); break
+        except WebDriverException as e:
+            last_exception = e
+            if _is_driver_transport_timeout(e):
+                _mark_driver_transport_unresponsive(driver, description, e)
+            logger.error(f"WebDriver error during {action_type} click {attempt+1} for '{description}': {e}")
+            break
+        except ReadTimeoutError as e:
+            last_exception = e
+            _mark_driver_transport_unresponsive(driver, description, e)
+            logger.error(f"Transport timeout during {action_type} click {attempt+1} for '{description}': {e}")
+            break
+        except Exception as e:
+            last_exception = e
+            if _is_driver_transport_timeout(e):
+                _mark_driver_transport_unresponsive(driver, description, e)
+            logger.error(f"Unexpected error during {action_type} click {attempt+1} for '{description}': {e}", exc_info=True)
+            break
 
     error_msg = f"All click attempts failed for '{description}'."
     if last_exception: error_msg += f" Last error: {type(last_exception).__name__}: {str(last_exception).splitlines()[0]}"
