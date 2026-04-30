@@ -2,7 +2,7 @@
 
 > Desktop utility for multi-portal government tender scraping, tracking, and search with a centralized SQLite datastore and real-time Reflex web dashboard.
 
-**Current Version: v2.3.12** | [CHANGELOG](CHANGELOG.md) | [Repository](https://github.com/bkkalia/BF-2.1.4)
+**Current Version: v2.3.14** | [CHANGELOG](CHANGELOG.md) | [Repository](https://github.com/bkkalia/BF-2.1.4)
 
 ---
 
@@ -132,6 +132,7 @@ DB backups go to `db_backups/`:
 
 ## Version History (Recent)
 
+- **v2.3.14 (Apr 30, 2026):** Reflex Telegram completion message and `#BF_DONE` now use a safe fallback for `new` count: when tenders are scraped and computed unique-new is zero, `new` is reported as total tenders so downstream pipeline AI does not skip execution.
 - **v2.3.12 (Apr 23, 2026):** Selenium driver startup reliability fix on Windows — serialized `webdriver.Chrome()` creation to prevent `WinError 32` when multiple workers initialize ChromeDriver concurrently.
 - **v2.3.11 (Apr 12, 2026):** Reflex dashboard enhancements — V3 schema portal status fix, settings persistence via on_load wiring, real worker process stop/terminate, portal IP display in worker cards, completion notifications (Telegram bot, cPanel webhook with secret token), post-scrape local script runner with CLI args, all notification features toggle-able with cloud migration guidance.
 - **v2.3.10 (Apr 12, 2026):** Portal catalog expansion in `base_urls.csv` including ePublish, BEL, Meghalaya, Mizoram, Nagaland, and Puducherry; CSV keyword field consistency updates.

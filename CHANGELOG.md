@@ -9,6 +9,15 @@ Run the helper tool (from project root) to infer and update version dates:
 The tool makes a backup of CHANGELOG.md (CHANGELOG.md.bak.TIMESTAMP) before editing.
 -->
 
+## Version 2.3.14 (Apr 30, 2026) - Reflex Pipeline Trigger Guard
+
+### 🐛 Bug Fixes
+- **Telegram completion summary `new` fallback** — updated `tender_dashboard_reflex/dashboard_app/scraping_control.py` so when tenders are scraped but computed unique-new resolves to `0`, the reported `New (unique)` value falls back to total tenders. This prevents downstream AI pipeline logic from incorrectly treating successful runs as no-op runs.
+- **Machine tag consistency for automation** — the same fallback is now applied to the `#BF_DONE` line (`new=...`) and BF signal JSON payload, so human-readable and machine-readable summaries stay aligned.
+
+### 🔧 Technical
+- Added explicit `raw_new_*` intermediate calculations to preserve original unique-new formula while safely overriding only the reported output used by external automation.
+
 ## Version 2.3.13 (Apr 24, 2026) - Transport Timeout Fix & Smoke Test
 
 ### 🐛 Bug Fixes
