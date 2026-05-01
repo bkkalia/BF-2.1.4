@@ -1,0 +1,11 @@
+{
+  "worker_count": 2,
+  "worker_names": [
+    "Modi",
+    "Trump",
+    "RaGa",
+    "Putin"
+  ],
+  "js_batch_threshold": 300,
+  "js_batch_size": 2000
+}

@@ -1,0 +1,43 @@
+Name,BaseURL,Keyword
+CPPP1 eProcure,https://eprocure.gov.in/eprocure/app,"Central Public Procurement Portal, eProcure"
+CPPP2 eTenders,https://etenders.gov.in/eprocure/app,"Central Public Procurement Portal 2, eTenders"
+DefProc,https://defproc.gov.in/nicgep/app,Defence eProcurement
+NRRDA,https://pmgsytenders.gov.in/nicgep/app,PMGSY eProcurement
+Arunachal Pradesh,https://arunachaltenders.gov.in/nicgep/app,Arunachal Pradesh
+Chandigarh,https://etenders.chd.nic.in/nicgep/app,Chandigarh
+Delhi,https://govtprocurement.delhi.gov.in/nicgep/app,NCT of Delhi
+Haryana,https://etenders.hry.nic.in/nicgep/app,Haryana
+HP Tenders,https://hptenders.gov.in/nicgep/app,Himachal Pradesh
+Jammu Kashmir,https://jktenders.gov.in/nicgep/app,Jammu and Kashmir
+Jharkhand,https://jharkhandtenders.gov.in/nicgep/app,Jharkhand
+Kerala,https://etenders.kerala.gov.in/nicgep/app,Kerala
+Ladakh,https://tenders.ladakh.gov.in/nicgep/app,Ladakh
+Madhya Pradesh,https://mptenders.gov.in/nicgep/app,Madhya Pradesh
+Maharashtra,https://mahatenders.gov.in/nicgep/app,Maharashtra
+Manipur,https://manipurtenders.gov.in/nicgep/app,Manipur
+Odisha,https://tendersodisha.gov.in/nicgep/app,Odisha
+Punjab,https://eproc.punjab.gov.in/nicgep/app,Punjab
+Rajasthan,https://eproc.rajasthan.gov.in/nicgep/app,Rajasthan
+Sikkim,https://sikkimtender.gov.in/nicgep/app,Sikkim
+TamilNadu,https://tntenders.gov.in/nicgep/app,Tamil Nadu
+Tripura,https://tripuratenders.gov.in/nicgep/app,Tripura
+Uttar Pradesh,https://etender.up.nic.in/nicgep/app,Uttar Pradesh
+Uttarakhand,https://uktenders.gov.in/nicgep/app,Uttarakhand
+West Bengal,https://wbtenders.gov.in/nicgep/app,West Bengal
+CIL,https://coalindiatenders.nic.in/nicgep/app,Coal India Limited
+HSL,https://eprocurehsl.nic.in/nicgep/app,Hindustan Shipyard Limited
+IOCL,https://iocletenders.nic.in/nicgep/app,Indian Oil Corporation
+Lakshadweep,https://tendersutl.gov.in/nicgep/app,Lakshadweep UT
+NTPC,https://eprocurentpc.nic.in/nicgep/app,NTPC Limited
+Daman and Diu,https://ddtenders.gov.in/nicgep/app,Daman and Diu
+Andaman Nicobar,https://eprocure.andamannicobar.gov.in/nicgep/app,Andaman and Nicobar Islands
+Assam,https://assamtenders.gov.in/nicgep/app,Assam
+Goa,https://eprocure.goa.gov.in/nicgep/app,Goa
+BHEL,https://eprocurebhel.co.in/nicgep/app,Bharat Heavy Electricals Limited
+CPCL,https://cpcletenders.nic.in/nicgep/app,Chennai Petroleum Corporation Limited
+ePublish,https://eprocure.gov.in/epublish/app,"ePublish, publish"
+BEL,https://eprocurebel.co.in/nicgep/app,"BEL, Bharat Electronics"
+Meghalaya,https://meghalayatenders.gov.in/nicgep/app,Meghalaya
+Mizoram,https://mizoramtenders.gov.in/nicgep/app,Mizoram
+Nagaland,https://nagalandtenders.gov.in/nicgep/app,Nagaland
+Puducherry,https://pudutenders.gov.in/nicgep/app,Puducherry

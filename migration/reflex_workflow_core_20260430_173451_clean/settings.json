@@ -1,0 +1,91 @@
+{
+    "version": "1.0",
+    "download_directory": "C:\\Users\\kalia\\Downloads",
+    "selected_url_name": "Jammu Kashmir",
+    "window_geometry": "2560x1369+1902+18",
+    "dl_more_details": true,
+    "dl_zip": true,
+    "dl_notice_pdfs": true,
+    "deep_scrape_departments": true,
+    "selected_theme": "clam",
+    "use_undetected_driver": true,
+    "headless_mode": false,
+    "automation_engine": "playwright",
+    "department_parallel_workers": 3,
+    "batch_delta_mode": "quick",
+    "refresh_watch_enabled": false,
+    "refresh_watch_loop_seconds": 30,
+    "refresh_watch_portals": [
+        {
+            "name": "Odisha",
+            "enabled": true,
+            "interval_min": 60
+        }
+    ],
+    "refresh_watch_state": {
+        "Odisha": {
+            "status": "Baseline captured (59 depts)",
+            "signature": "3e6ca66e02c8ba6152cd992ffdf2a9aa1258aa26",
+            "department_count": 59,
+            "last_check_epoch": 1770980291.5991373
+        }
+    },
+    "refresh_watch_history": [
+        {
+            "ts": "16:27:53",
+            "portal": "Odisha",
+            "event": "RULE",
+            "detail": "Rule updated (enabled=True, interval=60m)"
+        },
+        {
+            "ts": "16:27:55",
+            "portal": "-",
+            "event": "WATCHER",
+            "detail": "Watcher started"
+        },
+        {
+            "ts": "16:27:55",
+            "portal": "Odisha",
+            "event": "STATUS",
+            "detail": "Checking for changes..."
+        },
+        {
+            "ts": "16:28:11",
+            "portal": "Odisha",
+            "event": "STATUS",
+            "detail": "Baseline captured (59 depts)"
+        },
+        {
+            "ts": "17:11:40",
+            "iso_ts": "2026-02-13T17:11:40",
+            "portal": "-",
+            "event": "WATCHER",
+            "detail": "Watcher started"
+        },
+        {
+            "ts": "17:23:04",
+            "iso_ts": "2026-02-13T17:23:04",
+            "portal": "-",
+            "event": "WATCHER",
+            "detail": "Watcher stop requested"
+        }
+    ],
+    "central_sqlite_db_path": "D:\\Dev84\\BF 2.1.4\\database\\blackforest_tenders.sqlite3",
+    "sqlite_backup_directory": "D:\\Dev84\\BF 2.1.4\\db_backups",
+    "sqlite_backup_retention_days": 30,
+    "excel_export_policy": "alternate_days",
+    "excel_export_interval_days": 2,
+    "PAGE_LOAD_TIMEOUT": 10.0,
+    "ELEMENT_WAIT_TIMEOUT": 8.0,
+    "STABILIZE_WAIT": 2.0,
+    "POST_ACTION_WAIT": 1.0,
+    "POST_CAPTCHA_WAIT": 4.0,
+    "CAPTCHA_CHECK_TIMEOUT": 4.0,
+    "DOWNLOAD_WAIT_TIMEOUT": 5.0,
+    "POPUP_WAIT_TIMEOUT": 8.0,
+    "POST_DOWNLOAD_CLICK_WAIT": 3.0,
+    "enable_sounds": true,
+    "sound_ding_file": "",
+    "sound_success_file": "",
+    "sound_error_file": ""
+}

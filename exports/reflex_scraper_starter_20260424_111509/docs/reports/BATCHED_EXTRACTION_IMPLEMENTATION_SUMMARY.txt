@@ -1,0 +1,144 @@
+"""
+BATCHED JS EXTRACTION - IMPLEMENTATION SUMMARY
+==============================================
+
+COMPLETED CHANGES:
+-----------------
+
+1. ✅ Configuration Settings (config.py)
+   - Added JS_BATCH_THRESHOLD = 300 (was hardcoded 3000)
+   - Added JS_BATCH_SIZE = 2000 (was hardcoded 2000)
+   - Settings are now configurable instead of hardcoded
+
+2. ✅ Settings Persistence (app_settings.py)
+   - Added js_batch_threshold to DEFAULT_SETTINGS_STRUCTURE
+   - Added js_batch_size to DEFAULT_SETTINGS_STRUCTURE
+   - Settings will be saved/loaded from settings.json
+
+3. ✅ Scraper Logic Updates (scraper/logic.py)
+   - Updated _scrape_tender_details() signature to accept js_batch_threshold and js_batch_size
+   - Changed threshold check from hardcoded 3000 to configurable js_batch_threshold
+   - Updated log messages to show threshold value: "XXX rows > 300 threshold"
+   - Extracting js_batch settings from kwargs in run_scraping_logic()
+   - Passing these parameters to all _scrape_tender_details() calls
+
+4. ✅ Dashboard Worker (tender_dashboard_reflex/scraping_worker.py)
+   - Added js_batch_threshold=300 to run_scraping_logic() call
+   - Added js_batch_size=2000 to run_scraping_logic() call
+   - Settings are now passed to scraping engine
+
+5. ✅ Encoding Fix (check_duplicates_detail.py)
+   - Fixed sys.stdout.reconfigure() AttributeError
+   - Added proper fallback for Windows console encoding
+   - Script now runs without errors
+
+TESTING STATUS:
+--------------
+
+✅ Configuration loads correctly
+✅ Settings are accessible from config.py
+✅ Settings are in DEFAULT_SETTINGS_STRUCTURE
+✅ Function signatures updated properly
+✅ All parameters passed correctly through call chain
+
+⚠️ PENDING: GUI Controls
+   - Need to add UI controls in dashboard to modify these settings
+   - Settings should be adjustable from Settings tab
+   - Currently using hardcoded values (300, 2000)
+
+CURRENT BEHAVIOR:
+----------------
+
+Before:
+  • Departments with >3000 rows triggered batched extraction
+  • Hard to test (needed very large departments like Zilla Parishad)
+
+Now:
+  • Departments with >300 rows trigger batched extraction
+  • Easy to test with many common departments
+  • Threshold is configurable (can be changed back to 3000 for production)
+
+HOW TO TEST:
+-----------
+
+1. Any department with 300+ rows will now trigger batched extraction
+2. Check logs for this message:
+   "[JS] Large department detected (XXX rows > 300 threshold) - using batched extraction"
+3. Followed by batch progress:
+   "[JS] Batch 1/N: rows 0-1999..."
+   "[JS] Batch 2/N: rows 2000-3999..."
+4. Completion message:
+   "[JS] Batched mode successful: XXXX rows extracted"
+
+EXAMPLE PORTALS TO TEST:
+------------------------
+
+West Bengal departments likely to trigger batching (>300 rows):
+  • Zilla Parishad (13,865 rows) ✓ Will definitely trigger
+  • Municipal Affairs (2,666 rows) ✓ Will trigger
+  • PHE (1,528 rows) ✓ Will trigger
+  • Irrigation (1,312 rows) ✓ Will trigger
+  • Public Works (1,070 rows) ✓ Will trigger
+  • Kolkata Municipal Corp (798 rows) ✓ Will trigger
+  • District Magistrate Purulia (603 rows) ✓ Will trigger
+  • Gorkhaland Territorial Admin (534 rows) ✓ Will trigger
+  • Panchayat & Rural Dev (526 rows) ✓ Will trigger
+  • Health & Family Welfare (411 rows) ✓ Will trigger
+
+NEXT STEPS (Optional GUI Enhancement):
+--------------------------------------
+
+To add GUI controls for these settings:
+
+1. Locate dashboard settings tab
+2. Add input fields:
+   - "JS Batch Threshold" (number input, default: 300)
+   - "JS Batch Size" (number input, default: 2000)
+3. Save to settings.json when changed
+4. Load from settings when starting scrape
+5. Pass to run_scraping_logic() from loaded settings
+
+Benefits of GUI controls:
+- Users can adjust threshold without editing code
+- Can switch between testing mode (300) and production mode (3000)
+- Can optimize batch size for their system (1000, 2000, 5000, etc.)
+
+PRODUCTION RECOMMENDATION:
+-------------------------
+
+When deploying to production, consider:
+- Change JS_BATCH_THRESHOLD back to 3000 for most portals
+- Keep at 300 for testing/development
+- Allow users to configure per their needs
+- Smaller batches = safer but slower
+- Larger batches = faster but risk timeout
+
+FILE LOCATIONS:
+--------------
+
+Modified files:
+  ✓ config.py (lines added after ADAPTIVE_WAIT_SAMPLES)
+  ✓ app_settings.py (added to DEFAULT_SETTINGS_STRUCTURE)
+  ✓ scraper/logic.py (3 locations updated)
+  ✓ tender_dashboard_reflex/scraping_worker.py (run_scraping_logic call)
+  ✓ check_duplicates_detail.py (encoding fix)
+
+Test files created:
+  ✓ test_batched_extraction_config.py
+  ✓ zilla_parishad_status.py
+  ✓ check_zilla_status.py
+  ✓ ZILLA_PARISHAD_SUMMARY.txt
+
+CHANGELOG ENTRY:
+---------------
+
+v2.3.5 - Batched JS Extraction Configuration
+  • Made JS batch extraction threshold configurable (300 for testing, was 3000)
+  • Added js_batch_threshold setting to config and app_settings
+  • Added js_batch_size setting for batch size control
+  • Updated scraper logic to use configurable thresholds
+  • Fixed encoding issue in check_duplicates_detail.py
+  • Ready for testing with smaller departments (300+ rows vs 3000+)
+"""
+
+print(__doc__)
